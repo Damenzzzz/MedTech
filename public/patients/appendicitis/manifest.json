@@ -1,0 +1,15 @@
+{
+  "caseId": "appendicitis",
+  "name": "Yermek Baizhanov",
+  "age": 27,
+  "sex": "male",
+  "specialty": "gastroenterology",
+  "portrait": "/patients/appendicitis/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "caseId": "hypertension",
+  "name": "Talgat Abdikarimov",
+  "age": 49,
+  "sex": "male",
+  "specialty": "therapy",
+  "portrait": "/patients/hypertension/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

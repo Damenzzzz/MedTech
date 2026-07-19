@@ -1,0 +1,15 @@
+{
+  "caseId": "copd-exacerbation",
+  "name": "Yerzhan Duisenbekov",
+  "age": 63,
+  "sex": "male",
+  "specialty": "pulmonology",
+  "portrait": "/patients/copd-exacerbation/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

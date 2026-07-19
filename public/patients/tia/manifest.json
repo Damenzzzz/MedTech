@@ -1,0 +1,15 @@
+{
+  "caseId": "tia",
+  "name": "Samat Aituganov",
+  "age": 67,
+  "sex": "male",
+  "specialty": "neurology",
+  "portrait": "/patients/tia/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

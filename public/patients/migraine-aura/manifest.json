@@ -1,0 +1,15 @@
+{
+  "caseId": "migraine-aura",
+  "name": "Dariya Sarsenbayeva",
+  "age": 26,
+  "sex": "female",
+  "specialty": "neurology",
+  "portrait": "/patients/migraine-aura/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

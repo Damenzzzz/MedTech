@@ -1,0 +1,15 @@
+{
+  "caseId": "stroke-ischemic",
+  "name": "Kairat Zhumagaliyev",
+  "age": 59,
+  "sex": "male",
+  "specialty": "neurology",
+  "portrait": "/patients/stroke-ischemic/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

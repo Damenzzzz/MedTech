@@ -1,5 +1,21 @@
-import {Activity,ArrowRight,BookOpenCheck,Brain,ShieldCheck,Stethoscope} from 'lucide-react';
-import {getTranslations,setRequestLocale} from 'next-intl/server';
-import {Header} from '@/components/layout/header';
-import {Link} from '@/i18n/navigation';
-export default async function Landing({params}:{params:Promise<{locale:string}>}){const {locale}=await params;setRequestLocale(locale);const t=await getTranslations('Landing');return <><Header/><main><section className="mx-auto grid min-h-[78vh] max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1fr_.9fr]"><div><p className="label mb-5 text-teal-700">{t('eyebrow')}</p><h1 className="max-w-3xl text-4xl font-semibold leading-[1.05] tracking-[-.04em] sm:text-6xl">{t('title')}</h1><p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">{t('lead')}</p><div className="mt-9 flex flex-wrap gap-3"><Link href="/patients" className="focus-ring inline-flex h-13 items-center gap-2 rounded-xl bg-teal-700 px-6 font-semibold text-white hover:bg-teal-600">{t('cta')}<ArrowRight size={18}/></Link><Link href="/login" className="focus-ring inline-flex h-13 items-center rounded-xl border border-slate-300 px-6 font-semibold dark:border-white/20">{t('demo')}</Link></div><div className="mt-10 flex items-center gap-5 text-sm text-slate-500"><span className="flex items-center gap-2"><ShieldCheck size={17} className="text-teal-600"/>{t('specialties')}</span><span className="h-4 w-px bg-slate-300"/><span>RU · KK · EN</span></div></div><div className="relative overflow-hidden rounded-[2rem] bg-[#12211f] p-4 text-white shadow-2xl shadow-teal-950/20 sm:p-6"><div className="clinical-grid absolute inset-0"/><div className="relative flex items-center justify-between border-b border-white/10 pb-4"><span className="flex items-center gap-2 text-sm font-semibold"><Activity size={17} className="text-teal-400"/>{t('workspace')}</span><span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs text-emerald-300">● {t('status')}</span></div><div className="relative mt-5 grid gap-4 sm:grid-cols-[1fr_180px]"><div className="grid min-h-72 place-items-center rounded-2xl bg-[#d8dfd6] p-8 text-slate-900"><div className="relative"><div className="mx-auto grid size-24 place-items-center rounded-full bg-teal-800 text-3xl font-semibold text-white">АС</div><div className="mt-4 text-center font-semibold">{t('patient')}</div><div className="mt-1 text-center text-xs text-slate-500">46 · M</div></div></div><div className="space-y-3"><div className="rounded-xl bg-white/7 p-4"><div className="text-xs text-slate-400">SpO₂</div><div className="mt-1 text-2xl font-semibold">94<span className="text-xs">%</span></div></div><div className="rounded-xl bg-white/7 p-4"><div className="text-xs text-slate-400">BP</div><div className="mt-1 text-xl font-semibold">150/92</div></div><div className="rounded-xl border border-teal-400/20 bg-teal-400/8 p-4 text-xs text-teal-200">{t('stage')}</div></div></div></div></section><section className="border-y border-slate-200 bg-white/60 py-20 dark:border-white/10 dark:bg-white/[.02]"><div className="mx-auto max-w-7xl px-4 sm:px-6"><h2 className="max-w-2xl text-3xl font-semibold tracking-tight">{t('featuresTitle')}</h2><div className="mt-10 grid gap-5 md:grid-cols-3">{[[Brain,'dialogue'],[Stethoscope,'clinical'],[BookOpenCheck,'rubric']].map(([Icon,key])=><article key={String(key)} className="card rounded-2xl p-6"><Icon className="text-teal-700"/><p className="mt-8 leading-7 text-slate-600 dark:text-slate-300">{t(String(key))}</p></article>)}</div></div></section><section className="mx-auto grid max-w-7xl gap-12 px-4 py-20 sm:px-6 lg:grid-cols-2"><div><p className="label text-teal-700">01 — 08</p><h2 className="mt-4 text-3xl font-semibold">{t('howTitle')}</h2><ol className="mt-8 space-y-5">{['one','two','three'].map((x,i)=><li key={x} className="flex items-center gap-4"><span className="grid size-9 place-items-center rounded-full bg-teal-700 text-sm font-bold text-white">{i+1}</span>{t(x)}</li>)}</ol></div><aside className="rounded-2xl border border-amber-300/50 bg-amber-50 p-7 text-amber-950 dark:border-amber-500/20 dark:bg-amber-500/8 dark:text-amber-100"><ShieldCheck/><h2 className="mt-5 text-xl font-semibold">{t('safetyTitle')}</h2><p className="mt-3 leading-7 opacity-80">{t('safety')}</p></aside></section></main></>}
+import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { Header } from '@/components/layout/header';
+import { HomeView } from '@/components/home/home-view';
+
+export default async function Landing({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
+  return (
+    <div className="min-h-screen bg-[color:var(--canvas)] flex flex-col">
+      <Header />
+      <main className="flex-1">
+        <HomeView />
+      </main>
+    </div>
+  );
+}
