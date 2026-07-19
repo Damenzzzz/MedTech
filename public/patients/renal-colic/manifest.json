@@ -1,0 +1,15 @@
+{
+  "caseId": "renal-colic",
+  "name": "Azamat Zhaksylykov",
+  "age": 36,
+  "sex": "male",
+  "specialty": "emergency",
+  "portrait": "/patients/renal-colic/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

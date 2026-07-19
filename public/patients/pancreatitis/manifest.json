@@ -1,0 +1,15 @@
+{
+  "caseId": "pancreatitis",
+  "name": "Bekzat Ibragimov",
+  "age": 41,
+  "sex": "male",
+  "specialty": "gastroenterology",
+  "portrait": "/patients/pancreatitis/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

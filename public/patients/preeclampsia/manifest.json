@@ -1,0 +1,15 @@
+{
+  "caseId": "preeclampsia",
+  "name": "Gulmira Sadykova",
+  "age": 32,
+  "sex": "female",
+  "specialty": "emergency",
+  "portrait": "/patients/preeclampsia/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

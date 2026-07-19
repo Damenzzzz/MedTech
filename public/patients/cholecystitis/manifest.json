@@ -1,0 +1,15 @@
+{
+  "caseId": "cholecystitis",
+  "name": "Almagul Nurgaliyeva",
+  "age": 48,
+  "sex": "female",
+  "specialty": "gastroenterology",
+  "portrait": "/patients/cholecystitis/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

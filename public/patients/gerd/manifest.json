@@ -1,0 +1,15 @@
+{
+  "caseId": "gerd",
+  "name": "Ruslan Abilov",
+  "age": 42,
+  "sex": "male",
+  "specialty": "gastroenterology",
+  "portrait": "/patients/gerd/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

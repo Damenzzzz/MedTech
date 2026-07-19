@@ -1,4 +1,247 @@
 'use client';
-import Image from 'next/image';import {useMemo,useState,useEffect} from 'react';import {Clock,Heart,Search,Shuffle,Stethoscope} from 'lucide-react';import {motion} from 'motion/react';import {useTranslations} from 'next-intl';import type {StudentCaseDTO} from '@/domain/schemas';import {Link,useRouter} from '@/i18n/navigation';import {Button} from '@/components/ui/button';
-const text=(value:{ru:string;kk?:string;en?:string},locale:string)=>value[locale as 'ru'|'kk'|'en']??value.ru;
-export function PatientCatalog({cases,locale}:{cases:StudentCaseDTO[];locale:string}){const t=useTranslations('Catalog');const c=useTranslations('Common');const router=useRouter();const [search,setSearch]=useState('');const [specialty,setSpecialty]=useState('all');const [urgency,setUrgency]=useState('all');const [difficulty,setDifficulty]=useState('all');const [favorites,setFavorites]=useState<string[]>([]);const [onlyFavorites,setOnlyFavorites]=useState(false);useEffect(()=>{setFavorites(JSON.parse(localStorage.getItem('kms-favorites')??'[]') as string[])},[]);const specialties=[...new Set(cases.map(x=>x.specialty))];const filtered=useMemo(()=>cases.filter(item=>{const hay=`${text(item.patient.name,locale)} ${text(item.complaint,locale)}`.toLowerCase();return hay.includes(search.toLowerCase())&&(specialty==='all'||item.specialty===specialty)&&(urgency==='all'||item.urgency===urgency)&&(difficulty==='all'||item.difficulty===difficulty)&&(!onlyFavorites||favorites.includes(item.id))}),[cases,locale,search,specialty,urgency,difficulty,onlyFavorites,favorites]);function toggle(id:string){const next=favorites.includes(id)?favorites.filter(x=>x!==id):[...favorites,id];setFavorites(next);localStorage.setItem('kms-favorites',JSON.stringify(next))}return <div><div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end"><div><p className="label text-teal-700">{t('eyebrow')}</p><h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{t('title')}</h1><p className="mt-3 max-w-2xl text-slate-600 dark:text-slate-300">{t('lead')}</p></div><div className="flex gap-2"><Button variant="secondary" onClick={()=>setOnlyFavorites(v=>!v)}><Heart size={17} fill={onlyFavorites?'currentColor':'none'}/>{t('favorites')}</Button><Button onClick={()=>{const selected=cases[Math.floor(Math.random()*cases.length)];router.push(`/training/${selected.id}`)}}><Shuffle size={17}/>{t('random')}</Button></div></div><div className="mt-8 grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-white/[.03] md:grid-cols-[1.5fr_1fr_1fr_1fr]"><label className="relative"><Search className="absolute left-3 top-3 text-slate-400" size={18}/><input aria-label={t('search')} className="input pl-10" placeholder={t('search')} value={search} onChange={e=>setSearch(e.target.value)}/></label><select aria-label={t('specialty')} className="input" value={specialty} onChange={e=>setSpecialty(e.target.value)}><option value="all">{t('specialty')}: {c('all')}</option>{specialties.map(x=><option key={x}>{x}</option>)}</select><select aria-label={t('urgency')} className="input" value={urgency} onChange={e=>setUrgency(e.target.value)}><option value="all">{t('urgency')}: {c('all')}</option>{['routine','urgent','emergency'].map(x=><option key={x} value={x}>{t(x)}</option>)}</select><select aria-label={t('difficulty')} className="input" value={difficulty} onChange={e=>setDifficulty(e.target.value)}><option value="all">{t('difficulty')}: {c('all')}</option>{['easy','medium','hard'].map(x=><option key={x} value={x}>{t(x)}</option>)}</select></div>{filtered.length===0?<div className="mt-12 rounded-3xl border border-dashed border-slate-300 p-14 text-center dark:border-white/15"><Stethoscope className="mx-auto text-slate-400"/><h2 className="mt-4 text-xl font-semibold">{t('empty')}</h2><Button className="mt-5" variant="secondary" onClick={()=>{setSearch('');setSpecialty('all');setUrgency('all');setDifficulty('all');setOnlyFavorites(false)}}>{t('reset')}</Button></div>:<div className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{filtered.map((item,i)=><motion.article initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{delay:Math.min(i*.035,.25)}} key={item.id} className="card group overflow-hidden rounded-2xl"><div className="relative h-48 overflow-hidden bg-slate-200"><Image src={item.patient.avatar} alt="" fill sizes="(max-width:640px) 100vw, 33vw" className="object-cover object-[50%_34%] transition duration-500 group-hover:scale-[1.025]"/><div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-950/65 to-transparent"/><button onClick={()=>toggle(item.id)} className="focus-ring absolute right-3 top-3 grid size-10 place-items-center rounded-full bg-white/90 text-slate-700 shadow" aria-label={favorites.includes(item.id)?t('unfavorite'):t('favorite')}><Heart size={18} fill={favorites.includes(item.id)?'currentColor':'none'}/></button><span className="absolute bottom-3 left-3 rounded-full bg-slate-950/65 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">{item.specialty}</span><span className={`absolute bottom-3 right-3 rounded-full px-2.5 py-1 text-xs font-bold ${item.urgency==='emergency'?'bg-red-600 text-white':item.urgency==='urgent'?'bg-amber-400 text-amber-950':'bg-emerald-500 text-white'}`}>{t(item.urgency)}</span></div><div className="p-5"><div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold">{text(item.patient.name,locale)}</h2><p className="mt-1 text-sm text-slate-500">{item.patient.age} · {item.patient.sex==='male'?'M':'F'}</p></div><span className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600 dark:bg-white/10 dark:text-slate-300">{t(item.difficulty)}</span></div><p className="mt-4 min-h-12 leading-6 text-slate-700 dark:text-slate-200">{text(item.complaint,locale)}</p><div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4 text-xs text-slate-500 dark:border-white/10"><span className="flex items-center gap-1.5"><Clock size={15}/>{item.durationMinutes} {c('minutes')}</span><span>{c('synthetic')} · {c('unreviewed')}</span></div><Link href={`/training/${item.id}`} className="focus-ring mt-5 flex h-11 items-center justify-center rounded-xl bg-teal-700 font-semibold text-white hover:bg-teal-600">{t('start')}</Link></div></motion.article>)}</div>}</div>}
+
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
+import type { StudentCaseDTO } from '@/domain/schemas';
+import { useRouter, usePathname } from '@/i18n/navigation';
+import { CatalogHeader } from './catalog-header';
+import { CatalogToolbar } from './catalog-toolbar';
+import { PatientGrid } from './patient-grid';
+import { FilterDrawer } from './filter-drawer';
+import { EmptyState } from './empty-state';
+import { useTrainingStore } from '@/stores/training-store';
+
+interface PatientCatalogProps {
+  cases: StudentCaseDTO[];
+  locale: string;
+}
+
+export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Active training session store
+  const trainingSession = useTrainingStore((s) => s.session);
+
+  // Favorites state (persisted in localStorage)
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+
+  // Initialize favorites from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('kms-favorites');
+      if (saved) {
+        setFavorites(JSON.parse(saved));
+      }
+    } catch {
+      // Fallback if localStorage unavailable
+    }
+  }, []);
+
+  const toggleFavorite = (id: string) => {
+    const next = favorites.includes(id)
+      ? favorites.filter((x) => x !== id)
+      : [...favorites, id];
+
+    setFavorites(next);
+    try {
+      localStorage.setItem('kms-favorites', JSON.stringify(next));
+    } catch {
+      // Fallback
+    }
+  };
+
+  // Filter State initialized from URL Search Params
+  const [search, setSearch] = useState<string>(searchParams.get('q') || '');
+  const [specialty, setSpecialty] = useState<string>(searchParams.get('specialty') || 'all');
+  const [urgency, setUrgency] = useState<string>(searchParams.get('urgency') || 'all');
+  const [difficulty, setDifficulty] = useState<string>(searchParams.get('difficulty') || 'all');
+  const [ageGroup, setAgeGroup] = useState<string>(searchParams.get('ageGroup') || 'all');
+  const [onlyFavorites, setOnlyFavorites] = useState<boolean>(searchParams.get('favorites') === 'true');
+
+  // Sync state changes to URL Search Params
+  const updateUrlParams = useCallback(
+    (updates: {
+      search?: string;
+      specialty?: string;
+      urgency?: string;
+      difficulty?: string;
+      ageGroup?: string;
+      onlyFavorites?: boolean;
+    }) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      const nextSearch = updates.search !== undefined ? updates.search : search;
+      const nextSpecialty = updates.specialty !== undefined ? updates.specialty : specialty;
+      const nextUrgency = updates.urgency !== undefined ? updates.urgency : urgency;
+      const nextDifficulty = updates.difficulty !== undefined ? updates.difficulty : difficulty;
+      const nextAgeGroup = updates.ageGroup !== undefined ? updates.ageGroup : ageGroup;
+      const nextFav = updates.onlyFavorites !== undefined ? updates.onlyFavorites : onlyFavorites;
+
+      if (nextSearch) params.set('q', nextSearch);
+      else params.delete('q');
+
+      if (nextSpecialty !== 'all') params.set('specialty', nextSpecialty);
+      else params.delete('specialty');
+
+      if (nextUrgency !== 'all') params.set('urgency', nextUrgency);
+      else params.delete('urgency');
+
+      if (nextDifficulty !== 'all') params.set('difficulty', nextDifficulty);
+      else params.delete('difficulty');
+
+      if (nextAgeGroup !== 'all') params.set('ageGroup', nextAgeGroup);
+      else params.delete('ageGroup');
+
+      if (nextFav) params.set('favorites', 'true');
+      else params.delete('favorites');
+
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [searchParams, search, specialty, urgency, difficulty, ageGroup, onlyFavorites, pathname, router]
+  );
+
+  const handleFilterChange = (updates: Partial<{
+    search: string;
+    specialty: string;
+    urgency: string;
+    difficulty: string;
+    ageGroup: string;
+    onlyFavorites: boolean;
+  }>) => {
+    if (updates.search !== undefined) setSearch(updates.search);
+    if (updates.specialty !== undefined) setSpecialty(updates.specialty);
+    if (updates.urgency !== undefined) setUrgency(updates.urgency);
+    if (updates.difficulty !== undefined) setDifficulty(updates.difficulty);
+    if (updates.ageGroup !== undefined) setAgeGroup(updates.ageGroup);
+    if (updates.onlyFavorites !== undefined) setOnlyFavorites(updates.onlyFavorites);
+
+    updateUrlParams(updates);
+  };
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setSpecialty('all');
+    setUrgency('all');
+    setDifficulty('all');
+    setAgeGroup('all');
+    setOnlyFavorites(false);
+
+    router.replace(pathname, { scroll: false });
+  };
+
+  // Distinct Specialties List
+  const specialties = useMemo(
+    () => Array.from(new Set(cases.map((c) => c.specialty))),
+    [cases]
+  );
+
+  // Filter Logic
+  const filteredCases = useMemo(() => {
+    return cases.filter((item) => {
+      const nameStr =
+        typeof item.patient.name === 'object'
+          ? (item.patient.name[locale as 'ru' | 'kk' | 'en'] || item.patient.name.ru)
+          : item.patient.name;
+
+      const complaintStr =
+        typeof item.complaint === 'object'
+          ? (item.complaint[locale as 'ru' | 'kk' | 'en'] || item.complaint.ru)
+          : item.complaint;
+
+      const haystack = `${nameStr} ${complaintStr} ${item.specialty}`.toLowerCase();
+      const matchesSearch = !search || haystack.includes(search.toLowerCase().trim());
+      const matchesSpecialty = specialty === 'all' || item.specialty === specialty;
+      const matchesUrgency = urgency === 'all' || item.urgency === urgency;
+      const matchesDifficulty = difficulty === 'all' || item.difficulty === difficulty;
+      const matchesFavorites = !onlyFavorites || favorites.includes(item.id);
+
+      return (
+        matchesSearch &&
+        matchesSpecialty &&
+        matchesUrgency &&
+        matchesDifficulty &&
+        matchesFavorites
+      );
+    });
+  }, [cases, locale, search, specialty, urgency, difficulty, onlyFavorites, favorites]);
+
+  // Random Case Selector
+  const handleSelectRandom = () => {
+    const pool = filteredCases.length > 0 ? filteredCases : cases;
+    const randomIndex = Math.floor(Math.random() * pool.length);
+    const selected = pool[randomIndex];
+    if (selected) {
+      router.push(`/training/${selected.id}`);
+    }
+  };
+
+  // Resume last session
+  const handleResumeLast = () => {
+    if (trainingSession?.caseId) {
+      router.push(`/training/${trainingSession.caseId}`);
+    }
+  };
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-8">
+      {/* Header */}
+      <CatalogHeader
+        totalCases={cases.length}
+        completedCount={0}
+        onSelectRandom={handleSelectRandom}
+        onResumeLast={handleResumeLast}
+        hasActiveSession={Boolean(trainingSession?.caseId)}
+      />
+
+      {/* Filter Toolbar */}
+      <CatalogToolbar
+        filters={{
+          search,
+          specialty,
+          urgency,
+          difficulty,
+          ageGroup,
+          onlyFavorites,
+        }}
+        onFilterChange={handleFilterChange}
+        onResetFilters={handleResetFilters}
+        onOpenMobileDrawer={() => setMobileDrawerOpen(true)}
+        specialties={specialties}
+        totalResults={filteredCases.length}
+      />
+
+      {/* Grid or Empty State */}
+      {filteredCases.length > 0 ? (
+        <PatientGrid
+          cases={filteredCases}
+          locale={locale}
+          favorites={favorites}
+          onToggleFavorite={toggleFavorite}
+        />
+      ) : (
+        <EmptyState onResetFilters={handleResetFilters} />
+      )}
+
+      {/* Mobile Drawer */}
+      <FilterDrawer
+        isOpen={mobileDrawerOpen}
+        onClose={() => setMobileDrawerOpen(false)}
+        filters={{
+          search,
+          specialty,
+          urgency,
+          difficulty,
+          ageGroup,
+          onlyFavorites,
+        }}
+        onFilterChange={handleFilterChange}
+        onResetFilters={handleResetFilters}
+        specialties={specialties}
+        totalResults={filteredCases.length}
+      />
+    </div>
+  );
+}

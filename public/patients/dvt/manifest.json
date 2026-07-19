@@ -1,0 +1,15 @@
+{
+  "caseId": "dvt",
+  "name": "Zauresh Kenzhebayeva",
+  "age": 52,
+  "sex": "female",
+  "specialty": "therapy",
+  "portrait": "/patients/dvt/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

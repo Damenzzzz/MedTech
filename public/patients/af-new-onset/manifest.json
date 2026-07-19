@@ -1,0 +1,15 @@
+{
+  "caseId": "af-new-onset",
+  "name": "Gulnara Temirbayeva",
+  "age": 64,
+  "sex": "female",
+  "specialty": "cardiology",
+  "portrait": "/patients/af-new-onset/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "caseId": "hypertensive-crisis",
+  "name": "Saule Musina",
+  "age": 58,
+  "sex": "female",
+  "specialty": "cardiology",
+  "portrait": "/patients/hypertensive-crisis/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

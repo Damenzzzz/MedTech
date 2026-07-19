@@ -1,0 +1,15 @@
+{
+  "caseId": "heart-failure",
+  "name": "Baurzhan Kasenov",
+  "age": 72,
+  "sex": "male",
+  "specialty": "cardiology",
+  "portrait": "/patients/heart-failure/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

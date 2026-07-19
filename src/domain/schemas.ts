@@ -3,7 +3,7 @@ import {z} from 'zod';
 export const LocaleSchema=z.enum(['ru','kk','en']);
 export const LocalizedTextSchema=z.object({ru:z.string(),kk:z.string().optional(),en:z.string().optional()});
 export type LocalizedText=z.infer<typeof LocalizedTextSchema>;
-export const PatientVisualStateSchema=z.enum(['neutral','thinking','speaking','coughing','pain','distressed','relieved']);
+export const PatientVisualStateSchema=z.enum(['neutral','listening','thinking','speaking','coughing','pain','dyspnea','anxious','dizzy','relieved','deteriorating','emergency','distressed']);
 export type PatientVisualState=z.infer<typeof PatientVisualStateSchema>;
 export const VitalSignsSchema=z.object({heartRate:z.number(),bloodPressure:z.string(),respiratoryRate:z.number(),temperature:z.number(),spo2:z.number(),glucose:z.number().optional()});
 export type VitalSigns=z.infer<typeof VitalSignsSchema>;

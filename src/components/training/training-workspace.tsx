@@ -1,9 +1,328 @@
 'use client';
-import Image from 'next/image';import {useEffect,useState} from 'react';import {Activity,ArrowLeft,Check,ChevronRight,ClipboardList,Clock,FlaskConical,HeartPulse,MessageCircle,Search,ShieldAlert,Stethoscope} from 'lucide-react';import {AnimatePresence,motion} from 'motion/react';import {useLocale,useTranslations} from 'next-intl';import {useForm} from 'react-hook-form';import type {PatientVisualState,StudentCaseDTO} from '@/domain/schemas';import {PatientMessageResultSchema} from '@/engines/patient-engine';import {useTrainingStore} from '@/stores/training-store';import {useRouter} from '@/i18n/navigation';import {Button} from '@/components/ui/button';
-const local=(v:{ru:string;kk?:string;en?:string},l:string)=>v[l as 'ru'|'kk'|'en']??v.ru;type Chat={role:'student'|'patient';text:string};
-export function TrainingWorkspace({patient}:{patient:StudentCaseDTO}){const t=useTranslations('Training');const c=useTranslations('Common');const locale=useLocale() as 'ru'|'kk'|'en';const router=useRouter();const store=useTrainingStore();const s=store.session;const [chat,setChat]=useState<Chat[]>([]);const [visual,setVisual]=useState<PatientVisualState>('neutral');const [thinking,setThinking]=useState(false);const [leave,setLeave]=useState(false);const [elapsed,setElapsed]=useState(0);const [testQuery,setTestQuery]=useState('');const [ready,setReady]=useState<string[]>([]);const [customDiff,setCustomDiff]=useState('');const [customFinal,setCustomFinal]=useState('');const {register,handleSubmit,reset,setValue}=useForm<{question:string}>({defaultValues:{question:''}});useEffect(()=>store.init(patient.id),[patient.id,store.init]);useEffect(()=>{if(!s)return;const timer=setInterval(()=>setElapsed(Math.floor((Date.now()-s.startedAt)/1000)),1000);return()=>clearInterval(timer)},[s?.startedAt]);const stage=s?.stage??0;const tests=patient.investigations.filter(x=>local(x.name,locale).toLowerCase().includes(testQuery.toLowerCase()));async function ask({question}:{question:string}){if(!s||!question.trim())return;setChat(x=>[...x,{role:'student',text:question}]);store.addAction('question',question);setThinking(true);setVisual('thinking');try{const response=await fetch('/api/session/respond',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({caseId:patient.id,message:question,locale,revealedFactIds:s.revealedFactIds,dialogue:[...chat,{role:'student',text:question}]})});if(!response.ok)throw new Error();const result=PatientMessageResultSchema.parse(await response.json());store.reveal(result.newFactIds);setVisual(result.visualState);setChat(x=>[...x,{role:'patient',text:result.answer}])}catch{setChat(x=>[...x,{role:'patient',text:c('retry')}])}finally{setThinking(false);reset()}}
-function order(id:string,delay:number){if(!s||s.selectedInvestigations.includes(id))return;store.orderTest(id);store.addAction('investigation',id);setTimeout(()=>setReady(x=>[...x,id]),delay)}function appendManagement(value:string){if(!s)return;const next=s.managementNotes.includes(value)?s.managementNotes:[s.managementNotes,value].filter(Boolean).join('\n');store.setManagement(next);store.addAction('management',value)}async function finish(){if(!s)return;store.addAction('management',s.managementNotes);const response=await fetch('/api/session/debrief',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...s,completedAt:Date.now()})});if(response.ok){localStorage.setItem(`kms-debrief-${patient.id}`,JSON.stringify(await response.json()));const progress=JSON.parse(localStorage.getItem('kms-progress')??'[]') as unknown[];localStorage.setItem('kms-progress',JSON.stringify([...progress,{caseId:patient.id,date:new Date().toISOString()}].slice(-20)));router.push(`/debrief/${patient.id}`)}}
-const stateText=visual==='thinking'?t('patientThinking'):visual==='speaking'?t('patientSpeaking'):visual==='pain'?t('patientPain'):t('patientNeutral');return <main className="noise min-h-screen bg-[#0d1615] text-slate-100"><header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-white/10 bg-[#0d1615]/95 px-3 backdrop-blur sm:px-5"><Button size="sm" variant="ghost" onClick={()=>setLeave(true)} className="text-slate-300 hover:bg-white/10"><ArrowLeft size={17}/><span className="hidden sm:inline">{t('queue')}</span></Button><div className="h-5 w-px bg-white/10"/><div className="min-w-0"><div className="truncate text-sm font-semibold">{local(patient.patient.name,locale)}</div><div className="text-[11px] text-slate-400">{patient.patient.age} · {c('synthetic')}</div></div><div className="ml-auto hidden items-center gap-2 text-xs text-emerald-300 sm:flex"><span className="size-2 animate-pulse rounded-full bg-emerald-400"/>{t('stable')}</div><div className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 font-mono text-sm"><Clock size={15}/>{String(Math.floor(elapsed/60)).padStart(2,'0')}:{String(elapsed%60).padStart(2,'0')}</div></header><div className="grid min-h-[calc(100vh-4rem)] xl:grid-cols-[220px_minmax(0,1fr)_390px]"><aside className="hidden border-r border-white/10 p-4 xl:block"><p className="label text-slate-500">{t('stage')}</p><ol className="mt-4 space-y-1">{(t.raw('stages') as string[]).map((label,i)=><li key={label}><button onClick={()=>store.setStage(i)} className={`focus-ring flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm ${stage===i?'bg-teal-400/12 text-teal-300':i<stage?'text-slate-400':'text-slate-500 hover:bg-white/5'}`}><span className={`grid size-6 shrink-0 place-items-center rounded-full text-[11px] font-bold ${i<stage?'bg-teal-500 text-slate-950':'border border-current'}`}>{i<stage?<Check size={13}/>:i+1}</span>{label}</button></li>)}</ol></aside><section className="relative flex min-h-[42vh] items-center justify-center overflow-hidden border-b border-white/10 bg-[#162320] p-5 xl:border-b-0 xl:border-r"><div className="clinical-grid absolute inset-0"/><div className="absolute left-5 top-5 rounded-full bg-black/30 px-3 py-1.5 text-xs text-slate-300 backdrop-blur">● {stateText}</div><motion.div animate={visual==='coughing'?{x:[0,-4,4,-2,0]}:visual==='pain'?{scale:[1,.985,1]}:{y:[0,-3,0]}} transition={{repeat:Infinity,duration:visual==='coughing'?.45:3}} className="relative aspect-[4/3] w-full max-w-3xl overflow-hidden rounded-3xl border border-white/10 shadow-2xl"><Image src={patient.patient.avatar} alt={local(patient.patient.name,locale)} fill priority sizes="(max-width:1280px) 100vw, 55vw" className={`object-cover transition duration-500 ${visual==='thinking'?'brightness-90 saturate-75':visual==='pain'?'brightness-75 saturate-50':'brightness-95'}`}/><div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-6 pt-20"><h1 className="text-xl font-semibold">{local(patient.patient.name,locale)}</h1><p className="mt-1 text-sm text-slate-300">{local(patient.complaint,locale)}</p></div></motion.div></section><aside className="min-h-[520px] bg-[#111c1a] p-4 sm:p-5">{renderStagePanel()}</aside></div><AnimatePresence>{leave&&<motion.div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><div role="dialog" aria-modal="true" className="w-full max-w-sm rounded-2xl border border-white/10 bg-[#182522] p-6"><ShieldAlert className="text-amber-400"/><h2 className="mt-4 text-xl font-semibold">{t('leaveTitle')}</h2><p className="mt-2 text-sm text-slate-400">{t('leaveText')}</p><div className="mt-6 flex justify-end gap-2"><Button variant="ghost" onClick={()=>setLeave(false)}>{c('cancel')}</Button><Button variant="danger" onClick={()=>router.push('/patients')}>{c('confirm')}</Button></div></div></motion.div>}</AnimatePresence></main>;
-function renderStagePanel(){if(!s)return <div className="animate-pulse space-y-3"><div className="h-8 rounded bg-white/5"/><div className="h-32 rounded bg-white/5"/></div>;if(stage===0)return <div><PanelTitle icon={ClipboardList} text={(t.raw('stages') as string[])[0]}/><div className="mt-5 grid grid-cols-2 gap-3">{Object.entries(patient.vitals).map(([k,v])=><div key={k} className="rounded-xl bg-white/5 p-3"><div className="text-[11px] uppercase tracking-wider text-slate-500">{k}</div><div className="mt-1 text-lg font-semibold">{String(v)}</div></div>)}</div><p className="mt-5 rounded-xl border border-teal-400/10 bg-teal-400/5 p-4 text-sm leading-6 text-slate-300">{local(patient.complaint,locale)}</p><Next/></div>;if(stage===1)return <div><PanelTitle icon={MessageCircle} text={(t.raw('stages') as string[])[1]}/><div className="mt-4 max-h-64 space-y-3 overflow-y-auto pr-1">{chat.length===0&&<p className="rounded-xl bg-white/5 p-4 text-sm text-slate-400">{t('historyEmpty')}</p>}{chat.map((m,i)=><div key={i} className={`rounded-xl p-3 text-sm leading-6 ${m.role==='student'?'ml-6 bg-teal-500/12 text-teal-100':'mr-6 bg-white/7 text-slate-200'}`}>{m.text}</div>)}{thinking&&<div className="mr-6 rounded-xl bg-white/7 p-3 text-sm text-slate-400">{t('thinking')}</div>}</div><form className="mt-4 flex gap-2" onSubmit={handleSubmit(ask)}><input className="input border-white/10 bg-white/5 text-white placeholder:text-slate-600" placeholder={t('ask')} {...register('question',{required:true})}/><Button aria-label={t('send')}><ChevronRight/></Button></form><div className="mt-3 flex flex-wrap gap-2">{(t.raw('quickItems') as string[]).map(q=><button key={q} type="button" onClick={()=>setValue('question',q)} className="focus-ring rounded-full border border-white/10 px-3 py-1.5 text-xs text-slate-400 hover:border-teal-400/30 hover:text-teal-300">{q}</button>)}</div><Next/></div>;if(stage===2)return <div><PanelTitle icon={Stethoscope} text={(t.raw('stages') as string[])[2]}/><div className="mt-5 space-y-3">{patient.examinations.map(x=>{const done=s.actions.some(a=>a.type==='examination'&&a.value===x.id);return <div key={x.id} className="rounded-xl bg-white/5 p-4"><div className="flex items-center justify-between gap-3"><span className="font-medium">{local(x.label,locale)}</span><Button size="sm" variant="secondary" disabled={done} onClick={()=>store.addAction('examination',x.id)}>{done?t('performed'):t('perform')}</Button></div>{done&&<p className="mt-3 border-t border-white/10 pt-3 text-sm leading-6 text-slate-300">{local(x.result,locale)}</p>}</div>})}</div><Next/></div>;if(stage===3)return <div><PanelTitle icon={FlaskConical} text={(t.raw('stages') as string[])[3]}/><label className="relative mt-4 block"><Search className="absolute left-3 top-3 text-slate-500" size={17}/><input className="input border-white/10 bg-white/5 pl-10 text-white" placeholder={locale==='kk'?'Іздеу':locale==='en'?'Search':'Поиск'} value={testQuery} onChange={e=>setTestQuery(e.target.value)}/></label><div className="mt-4 space-y-3">{tests.map(x=>{const ordered=s.selectedInvestigations.includes(x.id),isReady=ready.includes(x.id);return <div key={x.id} className="rounded-xl bg-white/5 p-4"><div className="flex items-center justify-between gap-3"><div><div className="font-medium">{local(x.name,locale)}</div><div className="mt-1 text-xs text-slate-500">{x.cost} {c('points')}</div></div><Button size="sm" variant="secondary" disabled={ordered} onClick={()=>order(x.id,x.delayMs)}>{ordered?t('ordered'):t('perform')}</Button></div>{ordered&&<p className="mt-3 text-sm text-slate-300">{isReady?local(x.result,locale):t('resultPending')}</p>}</div>})}</div><Next/></div>;if(stage===4)return <div><PanelTitle icon={HeartPulse} text={t('differentials')}/><div className="mt-5 space-y-2">{patient.differentials.map(x=><label key={x.code} className="flex cursor-pointer items-center gap-3 rounded-xl bg-white/5 p-4"><input type="checkbox" checked={s.differentials.includes(x.code)} onChange={()=>{store.toggleDifferential(x.code);store.addAction('differential',x.code)}}/><span><b>{x.code}</b> · {local(x.name,locale)}</span></label>)}</div><div className="mt-4 flex gap-2"><input className="input border-white/10 bg-white/5 text-white" placeholder="Свой вариант диагноза" value={customDiff} onChange={e=>setCustomDiff(e.target.value)}/><Button type="button" variant="secondary" onClick={()=>{const value=customDiff.trim();if(!value||s.differentials.includes(value))return;store.toggleDifferential(value);store.addAction('differential',value);setCustomDiff('')}}>{t('addDifferential')}</Button></div><Next/></div>;if(stage===5)return <div><PanelTitle icon={Activity} text={t('final')}/><select className="input mt-5 border-white/10 bg-[#182522] text-white" value={s.finalDiagnosis??''} onChange={e=>{store.setFinal(e.target.value);store.addAction('diagnosis',e.target.value)}}><option value="">—</option>{patient.differentials.map(x=><option key={x.code} value={x.code}>{x.code} · {local(x.name,locale)}</option>)}{s.differentials.filter(x=>!patient.differentials.some(d=>d.code===x)).map(x=><option key={x} value={x}>{x}</option>)}</select><div className="mt-3 flex gap-2"><input className="input border-white/10 bg-white/5 text-white" placeholder="Свой основной диагноз" value={customFinal} onChange={e=>setCustomFinal(e.target.value)}/><Button type="button" variant="secondary" onClick={()=>{const value=customFinal.trim();if(!value)return;store.setFinal(value);store.addAction('diagnosis',value);setCustomFinal('')}}>{t('addDifferential')}</Button></div><label className="mt-5 block text-sm font-semibold">{t('reasoning')}<textarea className="input mt-2 min-h-32 border-white/10 bg-white/5 text-white" placeholder={t('reasoningPlaceholder')} value={s.clinicalReasoning} onChange={e=>store.setReasoning(e.target.value)}/></label><Next/></div>;if(stage===6)return <div><PanelTitle icon={ClipboardList} text={t('management')}/><div className="mt-5 grid gap-2">{[...patient.managementPlan.recommendations,...patient.managementPlan.medications,...patient.managementPlan.nonDrug,patient.managementPlan.disposition,patient.managementPlan.followUp,...patient.managementPlan.redFlags].map((x,i)=>{const value=local(x,locale);return <button key={value+i} type="button" onClick={()=>appendManagement(value)} className="focus-ring rounded-xl border border-white/10 bg-white/5 p-3 text-left text-sm leading-5 text-slate-200 hover:border-teal-400/30 hover:bg-teal-400/8">{value}</button>})}</div><textarea className="input mt-4 min-h-44 border-white/10 bg-white/5 text-white" placeholder={t('managementPlaceholder')} value={s.managementNotes} onChange={e=>store.setManagement(e.target.value)}/><p className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/8 p-4 text-xs leading-5 text-amber-200">{t('medicationWarning')}</p><Next/></div>;return <div><PanelTitle icon={Check} text={(t.raw('stages') as string[])[7]}/><div className="mt-6 rounded-2xl border border-teal-400/20 bg-teal-400/7 p-5"><p className="font-semibold">{t('finish')}</p><p className="mt-2 text-sm leading-6 text-slate-400">{t('finishHint')}</p></div><Button className="mt-5 w-full" onClick={finish}>{t('finish')}</Button></div>}
-function Next(){return <Button className="mt-5 w-full" onClick={()=>store.setStage(Math.min(7,stage+1))}>{t('next')}<ChevronRight size={17}/></Button>}
-function PanelTitle({icon:Icon,text}:{icon:typeof Activity;text:string}){return <div className="flex items-center gap-3 border-b border-white/10 pb-4"><span className="grid size-9 place-items-center rounded-xl bg-teal-400/10 text-teal-300"><Icon size={18}/></span><h2 className="font-semibold">{text}</h2></div>}}
+
+import { useEffect, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import type { PatientVisualState, StudentCaseDTO } from '@/domain/schemas';
+import { PatientMessageResultSchema } from '@/engines/patient-engine';
+import { useTrainingStore } from '@/stores/training-store';
+import { useRouter } from '@/i18n/navigation';
+
+import { TrainingHeader } from './training-header';
+import { StageNavigation } from './stage-navigation';
+import { PatientStage } from './patient-stage';
+import { ConversationPanel } from './conversation-panel';
+import { ExaminationPanel } from './examination-panel';
+import { InvestigationPanel } from './investigation-panel';
+import { DifferentialPanel } from './differential-panel';
+import { DiagnosisPanel } from './diagnosis-panel';
+import { ManagementPanel } from './management-panel';
+import { FinishPanel } from './finish-panel';
+import { LeaveDialog } from './leave-dialog';
+import { CommandPalette } from './command-palette';
+import { ClipboardList, ArrowRight } from 'lucide-react';
+
+export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
+  const t = useTranslations('Training');
+  const locale = useLocale() as 'ru' | 'kk' | 'en';
+  const router = useRouter();
+
+  const store = useTrainingStore();
+  const session = store.session;
+
+  const [visualState, setVisualState] = useState<PatientVisualState>('neutral');
+  const [isThinking, setIsThinking] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+
+  const [latestPatientAnswer, setLatestPatientAnswer] = useState<string>('');
+
+  // Initialize store session
+  useEffect(() => {
+    store.init(patient.id);
+  }, [patient.id, store]);
+
+  // Timer countdown / elapsed
+  useEffect(() => {
+    if (!session) return;
+    const timer = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - session.startedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [session?.startedAt, session]);
+
+  // Shortcut key listener for Cmd+K / Ctrl+K
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen((prev) => !prev);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const currentStage = session?.stage ?? 0;
+
+  // Ask question logic calling /api/session/respond
+  const handleAskQuestion = async (question: string) => {
+    if (!session || !question.trim()) return;
+
+    store.addAction('question', question);
+    setIsThinking(true);
+    setHasError(false);
+    setVisualState('thinking');
+
+    try {
+      const response = await fetch('/api/session/respond', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          caseId: patient.id,
+          message: question,
+          locale,
+          revealedFactIds: session.revealedFactIds,
+          dialogue: [{ role: 'student', text: question }],
+        }),
+      });
+
+      if (!response.ok) throw new Error('API Error');
+
+      const result = PatientMessageResultSchema.parse(await response.json());
+      store.reveal(result.newFactIds);
+      setVisualState(result.visualState);
+      setLatestPatientAnswer(result.answer);
+    } catch {
+      setHasError(true);
+      setVisualState('neutral');
+    } finally {
+      setIsThinking(false);
+    }
+  };
+
+  // Order investigation
+  const handleOrderTest = (testId: string, delayMs: number) => {
+    if (!session || session.selectedInvestigations.includes(testId)) return;
+    store.orderTest(testId);
+    store.addAction('investigation', testId);
+  };
+
+  // Perform physical examination
+  const handlePerformExam = (examId: string) => {
+    if (!session) return;
+    store.addAction('examination', examId);
+  };
+
+  // Append management item
+  const handleAppendManagementItem = (val: string) => {
+    if (!session) return;
+    const next = session.managementNotes
+      ? `${session.managementNotes}\n• ${val}`
+      : `• ${val}`;
+    store.setManagement(next);
+    store.addAction('management', val);
+  };
+
+  // Finish session & trigger /api/session/debrief
+  const handleFinishSession = async () => {
+    if (!session) return;
+    store.addAction('management', session.managementNotes);
+
+    const response = await fetch('/api/session/debrief', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ...session, completedAt: Date.now() }),
+    });
+
+    if (response.ok) {
+      const resultData = await response.json();
+      localStorage.setItem(`kms-debrief-${patient.id}`, JSON.stringify(resultData));
+
+      const progress = JSON.parse(localStorage.getItem('kms-progress') ?? '[]') as unknown[];
+      localStorage.setItem(
+        'kms-progress',
+        JSON.stringify([...progress, { caseId: patient.id, date: new Date().toISOString() }].slice(-20))
+      );
+
+      router.push(`/debrief/${patient.id}`);
+    }
+  };
+
+  const handleNextStage = () => {
+    store.setStage(Math.min(7, currentStage + 1));
+  };
+
+  return (
+    <div className="min-h-screen bg-[color:var(--canvas)] flex flex-col font-sans">
+      {/* Clinical Header */}
+      <TrainingHeader
+        patient={patient}
+        elapsedSeconds={elapsed}
+        currentStage={currentStage}
+        totalStages={8}
+        onOpenLeave={() => setLeaveOpen(true)}
+        onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+      />
+
+      {/* Main Workspace Body */}
+      <div className="flex-1 flex flex-col xl:flex-row min-h-[calc(100vh-4rem)]">
+        {/* Stage Navigation */}
+        <StageNavigation
+          currentStage={currentStage}
+          onSelectStage={(idx) => store.setStage(idx)}
+        />
+
+        {/* Center: Patient Visual Stage */}
+        <div className="flex-1 p-4 sm:p-6 flex flex-col border-b xl:border-b-0 xl:border-r border-slate-200/80">
+          <PatientStage
+            patient={patient}
+            visualState={visualState}
+            latestAnswer={latestPatientAnswer}
+            isThinking={isThinking}
+            locale={locale}
+          />
+        </div>
+
+        {/* Right Side: Active Stage Medical Panel */}
+        <aside className="w-full xl:w-[440px] bg-white p-4 sm:p-6 flex flex-col justify-between shrink-0 shadow-xs">
+          {/* Stage 0: Patient Chart Overview */}
+          {currentStage === 0 && (
+            <div className="space-y-5 flex-1 flex flex-col">
+              <div className="flex items-center gap-2.5 border-b border-slate-200 pb-3">
+                <div className="grid size-9 place-items-center rounded-xl bg-teal-100 text-teal-700">
+                  <ClipboardList size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Карта пациента
+                  </h3>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    Первичный клинический обзор
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-teal-200 bg-teal-50/70 p-4 space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-teal-800">
+                  Первичная жалоба:
+                </p>
+                <p className="text-xs font-semibold text-teal-950 leading-relaxed">
+                  {typeof patient.complaint === 'object' ? patient.complaint.ru : patient.complaint}
+                </p>
+              </div>
+
+              <button
+                onClick={handleNextStage}
+                className="focus-ring mt-auto w-full rounded-xl bg-teal-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all flex items-center justify-center gap-1.5"
+              >
+                <span>Начать беседу с пациентом</span>
+                <ArrowRight size={16} />
+              </button>
+            </div>
+          )}
+
+          {/* Stage 1: Conversation Panel */}
+          {currentStage === 1 && (
+            <ConversationPanel
+              patient={patient}
+              revealedFactCount={session?.revealedFactIds.length || 0}
+              onAskQuestion={handleAskQuestion}
+              isThinking={isThinking}
+              hasError={hasError}
+              onRetry={() => handleAskQuestion('Повторите жалоба')}
+              onNextStage={handleNextStage}
+            />
+          )}
+
+          {/* Stage 2: Examination Panel */}
+          {currentStage === 2 && (
+            <ExaminationPanel
+              patient={patient}
+              performedExamIds={
+                session?.actions
+                  .filter((a) => a.type === 'examination')
+                  .map((a) => a.value) || []
+              }
+              onPerformExam={handlePerformExam}
+              onNextStage={handleNextStage}
+              locale={locale}
+            />
+          )}
+
+          {/* Stage 3: Investigation Panel */}
+          {currentStage === 3 && (
+            <InvestigationPanel
+              patient={patient}
+              orderedIds={session?.selectedInvestigations || []}
+              onOrderTest={handleOrderTest}
+              onNextStage={handleNextStage}
+              locale={locale}
+            />
+          )}
+
+          {/* Stage 4: Differential Panel */}
+          {currentStage === 4 && (
+            <DifferentialPanel
+              patient={patient}
+              selectedDifferentials={session?.differentials || []}
+              onToggleDifferential={(code) => {
+                store.toggleDifferential(code);
+                store.addAction('differential', code);
+              }}
+              onNextStage={handleNextStage}
+              locale={locale}
+            />
+          )}
+
+          {/* Stage 5: Diagnosis Panel */}
+          {currentStage === 5 && (
+            <DiagnosisPanel
+              patient={patient}
+              finalDiagnosis={session?.finalDiagnosis}
+              onSetFinalDiagnosis={(code) => {
+                store.setFinal(code);
+                store.addAction('diagnosis', code);
+              }}
+              reasoning={session?.clinicalReasoning || ''}
+              onSetReasoning={(val) => store.setReasoning(val)}
+              selectedDifferentials={session?.differentials || []}
+              onNextStage={handleNextStage}
+              locale={locale}
+            />
+          )}
+
+          {/* Stage 6: Management Panel */}
+          {currentStage === 6 && (
+            <ManagementPanel
+              patient={patient}
+              managementNotes={session?.managementNotes || ''}
+              onSetManagementNotes={(notes) => store.setManagement(notes)}
+              onAppendNoteItem={handleAppendManagementItem}
+              onNextStage={handleNextStage}
+              locale={locale}
+            />
+          )}
+
+          {/* Stage 7: Finish Panel */}
+          {currentStage === 7 && (
+            <FinishPanel
+              patient={patient}
+              onFinishSession={handleFinishSession}
+            />
+          )}
+        </aside>
+      </div>
+
+      {/* Leave Modal & Command Palette */}
+      <LeaveDialog isOpen={leaveOpen} onClose={() => setLeaveOpen(false)} />
+      <CommandPalette
+        isOpen={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        currentStage={currentStage}
+        onSelectStage={(idx) => store.setStage(idx)}
+      />
+    </div>
+  );
+}

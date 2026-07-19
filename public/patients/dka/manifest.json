@@ -1,0 +1,15 @@
+{
+  "caseId": "dka",
+  "name": "Dana Omarova",
+  "age": 19,
+  "sex": "female",
+  "specialty": "endocrinology",
+  "portrait": "/patients/dka/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}
