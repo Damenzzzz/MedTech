@@ -6,6 +6,7 @@ type RagSource={title?:string;protocol_id?:string;chunk_id?:string;section?:stri
 type RagDiagnosis={rank?:number;diagnosis?:string;icd10_code?:string;confidence?:string;why_this_diagnosis?:string;sources?:RagSource[]};
 type RagResult={diagnoses?:RagDiagnosis[];sources?:RagSource[];case_id?:string};
 type AdviceMessage={role:'clinician'|'assistant';content:string};
+type RagDecision={need_rag:boolean;reason:string};
 
 export async function POST(request:Request) {
   const body=await request.json() as {scenario?:string;role?:string;resources?:string;mode?:'chat'|'action';messages?:AdviceMessage[]};
@@ -18,9 +19,56 @@ export async function POST(request:Request) {
     return NextResponse.json(await buildFastChat({scenario,role,resources,messages:body.messages??[]}));
   }
 
-  const rag=await getRagContext(scenario,resources);
+  const decision=await decideRagNeed({scenario,role,resources,messages:body.messages??[]});
+  const rag=decision.need_rag?await getRagContext(scenario,resources):{status:'llm-direct-no-rag',result:null};
   const advice=await buildAdvice({scenario,role,resources,rag});
-  return NextResponse.json(advice);
+  return NextResponse.json({...advice,rag_decision:decision.reason});
+}
+
+async function decideRagNeed({scenario,role,resources,messages}:{scenario:string;role:string;resources:string;messages:AdviceMessage[]}):Promise<RagDecision> {
+  const apiKey=process.env.OPENAI_API_KEY;
+  if (!apiKey) return {need_rag:true,reason:'OpenAI router unavailable, using RAG/fallback for safety.'};
+  const history=messages.slice(-10).map(m=>`${m.role==='clinician'?'Медработник':'AI'}: ${m.content}`).join('\n');
+  const prompt=`Decide whether this rural clinical assistant request needs slow official-protocol RAG before giving an action plan.
+
+Return need_rag=true when:
+- possible emergency, red flags, unstable vitals, pregnancy, child/elderly high risk;
+- diagnosis, differential diagnosis, treatment, medication, contraindications, referral/evacuation, protocol-specific decision;
+- clinician asks "what to do" for a real patient and harm is possible.
+
+Return need_rag=false only when:
+- low-risk general workflow/admin explanation;
+- very light self-care/common-sense guidance with no medication/diagnostic commitment;
+- the answer can be safely framed as general triage without protocol details.
+
+Role: ${role}
+Resources: ${resources || 'not specified'}
+Scenario: ${scenario}
+Chat:
+${history || 'none'}
+
+JSON only: {"need_rag":true|false,"reason":"short reason"}`;
+  try {
+    const response=await fetch('https://api.openai.com/v1/chat/completions',{
+      method:'POST',
+      headers:{authorization:`Bearer ${apiKey}`,'content-type':'application/json'},
+      body:JSON.stringify({
+        model:process.env.OPENAI_CLINICAL_MODEL??'gpt-5.5',
+        messages:[{role:'system',content:'Return valid JSON only.'},{role:'user',content:prompt}],
+        response_format:{type:'json_object'},
+        reasoning_effort:'low',
+        max_completion_tokens:300,
+      }),
+      cache:'no-store',
+      signal:AbortSignal.timeout(9000),
+    });
+    if (!response.ok) throw new Error('router_failed');
+    const data=await response.json();
+    const parsed=JSON.parse(data.choices?.[0]?.message?.content??'{}');
+    return {need_rag:parsed.need_rag!==false,reason:String(parsed.reason??'LLM router decision')};
+  } catch {
+    return {need_rag:true,reason:'Router failed, using RAG/fallback for safety.'};
+  }
 }
 
 async function buildFastChat({scenario,role,resources,messages}:{scenario:string;role:string;resources:string;messages:AdviceMessage[]}) {
@@ -122,7 +170,9 @@ async function buildAdvice({scenario,role,resources,rag}:{scenario:string;role:s
     sources:sources.slice(0,6),
   },null,2).slice(0,16000);
   const prompt=`Ты клинический AI-ассистент для врача/медсестры в сельской местности Казахстана.
-Задача: помочь медработнику быстро сориентироваться, что делать сейчас, опираясь на RAG-контекст официальных клинических протоколов и на данные пациента.
+Задача: помочь медработнику быстро сориентироваться, что делать сейчас.
+Если rag_status = "rag-ready", опирайся на RAG-контекст официальных клинических протоколов.
+Если rag_status = "llm-direct-no-rag", RAG намеренно не запускался для скорости: дай общий безопасный план, не утверждай, что сверялся с протоколами, и при риске советуй очную маршрутизацию/протокол.
 
 Критически важные правила:
 - Ты НЕ заменяешь врача. Последнее решение принимает врач или ответственный медработник на месте.
