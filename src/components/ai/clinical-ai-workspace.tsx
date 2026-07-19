@@ -8,6 +8,7 @@ type Finding={finding:string;patient_evidence?:string|null};
 type Diagnosis={rank:number;diagnosis:string;icd10_code:string;confidence?:string|null;why_this_diagnosis?:string|null;supporting_findings?:Finding[];missing_findings?:string[];recommended_checks?:string[]};
 type Question={question:string;target_diagnoses?:string[];rationale?:string};
 type DiagnoseResponse={case_id?:string|null;diagnoses:Diagnosis[];follow_up_questions?:Question[];cached_context?:boolean};
+type DiagnoseJobStatus={job_id?:string;status?:string;result?:DiagnoseResponse;error?:string};
 type AdviceStep={step?:string;action?:string;why?:string};
 type AdviceOption={option?:string;treatment?:string;when?:string;avoid_if?:string};
 type AdviceResponse={safety_notice:string;urgency?:string;most_likely_risks?:string[];do_now?:AdviceStep[];ask_or_measure_next?:string[];treatment_options?:AdviceOption[];referral?:{decision?:string;reason?:string};what_not_to_do?:string[];sources?:{title?:string;protocol_id?:string;excerpt?:string}[];rag_status?:string;rag_decision?:string};
@@ -74,9 +75,15 @@ function RagPanel(){
   async function diagnose(){
     setLoading(true);setError('');
     try{
-      const response=await fetch('/api/clinical/diagnose',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({symptoms})});
-      if(!response.ok)throw new Error(await response.text());
-      setData(await response.json());
+      const job=await startDiagnoseJob(symptoms);
+      if(job?.job_id){
+        const result=await waitDiagnoseJob(job.job_id);
+        setData(result);
+      }else{
+        const response=await fetch('/api/clinical/diagnose',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({symptoms})});
+        if(!response.ok)throw new Error(await response.text());
+        setData(await response.json());
+      }
     }catch(e){setError(e instanceof Error?e.message:'Ошибка анализа');}
     finally{setLoading(false);}
   }
@@ -111,6 +118,30 @@ function RagPanel(){
       {data&&<><div className="flex items-center justify-between"><h2 className="text-2xl font-semibold">Дифференциальный ряд</h2><span className="text-sm text-slate-400">{data.diagnoses.length} вариантов</span></div><div className="grid gap-4">{data.diagnoses.slice(0,3).map(d=><DiagnosisCard key={`${d.rank}-${d.icd10_code}`} item={d}/>)}</div><Questions questions={data.follow_up_questions??[]}/></>}
     </section>
   </div>;
+}
+
+async function startDiagnoseJob(symptoms:string) {
+  try{
+    const response=await fetch('/api/clinical/diagnose/jobs',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({symptoms})});
+    if(!response.ok)return null;
+    return await response.json() as DiagnoseJobStatus;
+  }catch{return null;}
+}
+
+async function waitDiagnoseJob(jobId:string) {
+  const deadline=Date.now()+300000;
+  let lastError='';
+  while(Date.now()<deadline){
+    await new Promise(resolve=>setTimeout(resolve,3500));
+    try{
+      const response=await fetch(`/api/clinical/diagnose/jobs/${encodeURIComponent(jobId)}`,{cache:'no-store'});
+      if(!response.ok){lastError=await response.text();continue;}
+      const data=await response.json() as DiagnoseJobStatus;
+      if(data.status==='completed'&&data.result)return data.result;
+      if(data.status==='failed'||data.status==='not_found')throw new Error(`RAG job ${data.status}`);
+    }catch(e){lastError=e instanceof Error?e.message:lastError;}
+  }
+  throw new Error(lastError||'RAG анализ занял больше 5 минут');
 }
 
 function EmptyState({loading}:{loading:boolean}){return <div className="grid min-h-[520px] place-items-center rounded-2xl border border-white/10 bg-white/[.03] p-8 text-center">
