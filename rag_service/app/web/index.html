@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Clinical Platform KZ</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Kazakhstan protocols RAG</p>
+            <h1>AI Clinical Assistant</h1>
+          </div>
+          <div class="status" id="health">Index loading</div>
+        </header>
+
+        <section class="input-panel">
+          <label for="query">Клинический случай или жалобы пациента</label>
+          <textarea id="query" spellcheck="false">Пациент жалуется на кашель, температуру 38.5, слабость и боль в груди при дыхании. Одышка при нагрузке.</textarea>
+          <div class="controls">
+            <button id="analyze">Analyze</button>
+            <select id="topK" aria-label="Top K">
+              <option value="5">top_k 5</option>
+              <option value="3">top_k 3</option>
+              <option value="8">top_k 8</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="results" id="results">
+          <div class="empty">Введите случай и нажмите Analyze.</div>
+        </section>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
