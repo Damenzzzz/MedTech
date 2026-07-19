@@ -1,0 +1,17 @@
+.DS_Store
+.venv/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+data/index.json
+data/evals/
+data/corpus/merged_protocols.jsonl
+data/corpus/merged_protocols_structured_dedup.jsonl
+data/corpus/corpus/
+data/kz_clinical_protocols/
+data/indexes/
+data/trees/
+data/models/
+*.log
