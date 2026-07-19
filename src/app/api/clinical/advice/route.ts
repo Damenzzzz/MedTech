@@ -1,6 +1,6 @@
 import {NextResponse} from 'next/server';
 
-export const maxDuration=60;
+export const maxDuration=300;
 
 type RagSource={title?:string;protocol_id?:string;chunk_id?:string;section?:string;text?:string;excerpt?:string};
 type RagDiagnosis={rank?:number;diagnosis?:string;icd10_code?:string;confidence?:string;why_this_diagnosis?:string;sources?:RagSource[]};
@@ -151,7 +151,7 @@ async function getRagContext(scenario:string,resources:string) {
       headers:{'content-type':'application/json'},
       body:JSON.stringify({symptoms:`${scenario}\n\nУсловия помощи: ${resources}`}),
       cache:'no-store',
-      signal:AbortSignal.timeout(36000),
+      signal:AbortSignal.timeout(180000),
     });
     if (!response.ok) return {status:`rag-error-${response.status}`,result:null};
     return {status:'rag-ready',result:await response.json() as RagResult};
@@ -172,7 +172,7 @@ async function buildAdvice({scenario,role,resources,rag}:{scenario:string;role:s
   const prompt=`Ты клинический AI-ассистент для врача/медсестры в сельской местности Казахстана.
 Задача: помочь медработнику быстро сориентироваться, что делать сейчас.
 Если rag_status = "rag-ready", опирайся на RAG-контекст официальных клинических протоколов.
-Если rag_status = "llm-direct-no-rag", RAG намеренно не запускался для скорости: дай общий безопасный план, не утверждай, что сверялся с протоколами, и при риске советуй очную маршрутизацию/протокол.
+Если rag_status НЕ "rag-ready", RAG не запускался или не успел: дай общий безопасный план, не утверждай, что сверялся с протоколами, и при риске советуй очную маршрутизацию/локальный протокол.
 
 Критически важные правила:
 - Ты НЕ заменяешь врача. Последнее решение принимает врач или ответственный медработник на месте.
@@ -218,7 +218,7 @@ ${protocolContext}
         max_completion_tokens:2600,
       }),
       cache:'no-store',
-      signal:AbortSignal.timeout(22000),
+      signal:AbortSignal.timeout(45000),
     });
     if (!response.ok) return fallbackAdvice(scenario,rag);
     const data=await response.json();
