@@ -1,15 +1,53 @@
 import {NextResponse} from 'next/server';
 
+export const maxDuration=300;
+
 export async function POST(request:Request) {
   const body=await request.json();
   const base=process.env.RAG_SERVICE_URL;
   if (base) {
     try {
-      const response=await fetch(`${base.replace(/\/$/,'')}/diagnose`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),cache:'no-store'});
+      const jobResult=await diagnoseViaJob(base, body);
+      if (jobResult) return NextResponse.json(jobResult);
+      const response=await fetch(`${base.replace(/\/$/,'')}/diagnose`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(180000)});
       if (response.ok) return NextResponse.json(await response.json());
     } catch {}
   }
   return NextResponse.json(await openAiClinicalFallback(String(body.symptoms??'')));
+}
+
+async function diagnoseViaJob(base:string, body:unknown) {
+  const root=base.replace(/\/$/,'');
+  try {
+    const start=await fetch(`${root}/api/diagnose-jobs`,{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify(body),
+      cache:'no-store',
+      signal:AbortSignal.timeout(8000),
+    });
+    if (!start.ok) return null;
+    const started=await start.json() as {job_id?:string;result?:unknown};
+    if (started.result) return started.result;
+    if (!started.job_id) return null;
+    const deadline=Date.now()+185000;
+    while (Date.now()<deadline) {
+      await sleep(3500);
+      const statusResponse=await fetch(`${root}/api/diagnose-jobs/${started.job_id}`,{
+        cache:'no-store',
+        signal:AbortSignal.timeout(8000),
+      });
+      if (!statusResponse.ok) continue;
+      const status=await statusResponse.json() as {status?:string;result?:unknown};
+      if (status.status==='completed' && status.result) return status.result;
+      if (status.status==='failed' || status.status==='not_found') return null;
+    }
+  } catch {}
+  return null;
+}
+
+function sleep(ms:number) {
+  return new Promise(resolve=>setTimeout(resolve,ms));
 }
 
 async function openAiClinicalFallback(symptoms:string) {

@@ -145,11 +145,14 @@ ${history || 'Пока нет.'}
 async function getRagContext(scenario:string,resources:string) {
   const base=process.env.RAG_SERVICE_URL;
   if (!base) return {status:'rag-unavailable',result:null};
+  const symptoms=`${scenario}\n\nУсловия помощи: ${resources}`;
+  const viaJob=await getRagContextViaJob(base, symptoms);
+  if (viaJob.status !== "rag-job-unavailable") return viaJob;
   try {
     const response=await fetch(`${base.replace(/\/$/,'')}/diagnose`,{
       method:'POST',
       headers:{'content-type':'application/json'},
-      body:JSON.stringify({symptoms:`${scenario}\n\nУсловия помощи: ${resources}`}),
+      body:JSON.stringify({symptoms}),
       cache:'no-store',
       signal:AbortSignal.timeout(180000),
     });
@@ -158,6 +161,47 @@ async function getRagContext(scenario:string,resources:string) {
   } catch {
     return {status:'rag-timeout-or-unavailable',result:null};
   }
+}
+
+async function getRagContextViaJob(base:string,symptoms:string) {
+  const root=base.replace(/\/$/,'');
+  try {
+    const start=await fetch(`${root}/api/diagnose-jobs`,{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({symptoms}),
+      cache:'no-store',
+      signal:AbortSignal.timeout(8000),
+    });
+    if (!start.ok) return {status:'rag-job-unavailable',result:null};
+    const started=await start.json() as {job_id?:string;status?:string;result?:RagResult};
+    if (started.result) return {status:'rag-ready',result:started.result};
+    if (!started.job_id) return {status:'rag-job-unavailable',result:null};
+
+    const deadline=Date.now()+185000;
+    while (Date.now()<deadline) {
+      await sleep(3500);
+      const statusResponse=await fetch(`${root}/api/diagnose-jobs/${started.job_id}`,{
+        cache:'no-store',
+        signal:AbortSignal.timeout(8000),
+      });
+      if (!statusResponse.ok) continue;
+      const status=await statusResponse.json() as {status?:string;result?:RagResult;warning?:string};
+      if (status.status==='completed' && status.result) {
+        return {status:status.warning?'rag-ready-with-warning':'rag-ready',result:status.result};
+      }
+      if (status.status==='failed' || status.status==='not_found') {
+        return {status:`rag-job-${status.status}`,result:null};
+      }
+    }
+    return {status:'rag-job-timeout',result:null};
+  } catch {
+    return {status:'rag-job-unavailable',result:null};
+  }
+}
+
+function sleep(ms:number) {
+  return new Promise(resolve=>setTimeout(resolve,ms));
 }
 
 async function buildAdvice({scenario,role,resources,rag}:{scenario:string;role:string;resources:string;rag:{status:string;result:RagResult|null}}) {
