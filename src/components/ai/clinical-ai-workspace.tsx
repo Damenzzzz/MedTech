@@ -108,25 +108,109 @@ function FactList({title,items}:{title:string;items:string[]}){return <div><h4 c
 function Questions({questions}:{questions:Question[]}){return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">Что уточнить врачу</h3><div className="mt-4 grid gap-3">{questions.slice(0,5).map(q=><div key={q.question} className="rounded-xl bg-white/5 p-4"><p className="font-medium">{q.question}</p>{q.rationale&&<p className="mt-2 text-sm leading-5 text-slate-400">{q.rationale}</p>}</div>)}</div></section>}
 
 function SimulatorPanel(){
-  const [dialogue,setDialogue]=useState<DialogueTurn[]>([{speaker:'patient',text:'Доктор, у меня третий день сильная головная боль и сегодня стало хуже.'}]);
+  const scenarios=[
+    {
+      title:'Беременность 34 недели · тяжелая преэклампсия / HELLP',
+      opening:'Доктор, у меня сильная головная боль, перед глазами мелькает, и болит справа под ребрами.',
+      publicBrief:'Женщина 32 лет, беременность 34 недели. Пришла с жалобами на сильную головную боль, зрительные нарушения, боль в правом подреберье и отеки.',
+      hiddenContext:'Пациентка Гульмира, 32 года. Беременность 34 недели. АД дома 170/110, в приемном отделении 168/108. Есть мелькание мушек, выраженные отеки ног, боль в правом подреберье. Анализы: АЛТ/АСТ повышены, тромбоциты снижены. Протеинурия пока не проверялась. Гемолиз не подтвержден, если врач спросит про билирубин/ЛДГ/шистоциты, скажи, что результатов пока нет. Пациентка тревожится за ребенка, говорит как обычный пациент, не знает диагноз.',
+      correctDiagnosis:'O14.1 Тяжелая преэклампсия; O14.2 HELLP-синдром нужно исключить.',
+    },
+    {
+      title:'Боль в груди · острый коронарный синдром',
+      opening:'У меня давит за грудиной, боль идет в левую руку, стало страшно.',
+      publicBrief:'Мужчина 46 лет, внезапная давящая боль за грудиной, слабость, холодный пот.',
+      hiddenContext:'Пациент Арман, 46 лет. Боль началась 40 минут назад после подъема по лестнице, давящая, за грудиной, отдает в левую руку и нижнюю челюсть. Курит 20 лет. Тошнота, холодный пот. Нитроглицерин раньше не принимал. Одышки в покое мало. Если спрашивают факторы риска: отец умер от инфаркта в 55. Пациент испуган, отвечает коротко.',
+      correctDiagnosis:'I20.0 Нестабильная стенокардия / острый коронарный синдром без подъема ST до уточнения ЭКГ и тропонина.',
+    },
+    {
+      title:'Лихорадка и кашель · пневмония',
+      opening:'Температура уже четвертый день, кашляю с мокротой, идти тяжело.',
+      publicBrief:'Мужчина 45 лет, температура, кашель с мокротой, слабость, одышка при ходьбе.',
+      hiddenContext:'Пациент Сергей, 45 лет. Болен 4 дня. Температура до 39.1, кашель с желтоватой мокротой, боль в груди при глубоком вдохе справа, одышка при ходьбе. SpO2 91%, ЧДД 26. Контактов с туберкулезом не знает. Антибиотики не принимал. Не курит. Говорит устало, просит понять, нужно ли в больницу.',
+      correctDiagnosis:'J18.9 Внебольничная пневмония, оценить тяжесть и сатурацию.',
+    },
+  ];
+  const diagnosisOptions=['O14.1 Тяжелая преэклампсия','O14.2 HELLP-синдром','O15.0 Эклампсия','O13 Гестационная гипертензия','O10 Хроническая гипертензия при беременности','I20.0 Нестабильная стенокардия','I21 Острый инфаркт миокарда','I16.0 Гипертонический криз','J18.9 Внебольничная пневмония','J06.9 ОРВИ','K35.8 Острый аппендицит','N10 Острый пиелонефрит','E10.1 Диабетический кетоацидоз','E16.2 Гипогликемия','G45.9 ТИА','R69 Неуточненное состояние'];
+  const treatmentOptions=['Срочная госпитализация/маршрутизация','Вызов акушера-гинеколога и реанимационной команды','Контроль АД, неврологического статуса и диуреза','Магния сульфат при риске судорог по протоколу','Антигипертензивная терапия по протоколу','Оценка белка мочи/креатинина/печеночных ферментов/тромбоцитов','ЛДГ, билирубин, гаптоглобин, мазок крови на шистоциты','Экстренная ЭКГ','Тропонин в динамике','Кислород при гипоксемии','Рентген/КТ грудной клетки по показаниям','Антибиотикотерапия по протоколу','Наблюдение амбулаторно','Назначить НПВС и отпустить домой','Игнорировать красные флаги','Дать только успокоительное'];
+  const [scenario,setScenario]=useState(scenarios[0]);
+  const [publicBrief,setPublicBrief]=useState(scenarios[0].publicBrief);
+  const [hiddenContext,setHiddenContext]=useState(scenarios[0].hiddenContext);
+  const [dialogue,setDialogue]=useState<DialogueTurn[]>([{speaker:'patient',text:scenarios[0].opening}]);
   const [message,setMessage]=useState('Когда началась головная боль и есть ли нарушения зрения?');
+  const [selectedDx,setSelectedDx]=useState<string[]>([]);
+  const [selectedPlan,setSelectedPlan]=useState<string[]>([]);
+  const [feedback,setFeedback]=useState('');
   const [loading,setLoading]=useState(false);
+  function loadScenario(index:number){
+    const next=scenarios[index];
+    setScenario(next);
+    setPublicBrief(next.publicBrief);
+    setHiddenContext(next.hiddenContext);
+    setDialogue([{speaker:'patient',text:next.opening}]);
+    setSelectedDx([]);
+    setSelectedPlan([]);
+    setFeedback('');
+  }
+  function customScenario(){
+    const next={title:'Свой сценарий',opening:'Здравствуйте, доктор. Что вы хотите уточнить?',publicBrief,hiddenContext,correctDiagnosis:'Проверьте по своему скрытому контексту.'};
+    setScenario(next);
+    setDialogue([{speaker:'patient',text:next.opening}]);
+    setSelectedDx([]);
+    setSelectedPlan([]);
+    setFeedback('');
+  }
   async function ask(){
     if(!message.trim())return;
     const next=[...dialogue,{speaker:'doctor' as const,text:message}];
     setDialogue(next);setMessage('');setLoading(true);
     try{
-      const response=await fetch('/api/simulator/respond',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({casePrompt:sampleCase,dialogue:next})});
+      const response=await fetch('/api/simulator/respond',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({caseTitle:scenario.title,publicBrief,hiddenContext,dialogue:next})});
       const data=await response.json();
       setDialogue([...next,{speaker:'patient',text:data.answer??'Можете повторить вопрос?'}]);
     }finally{setLoading(false);}
   }
+  function toggle(value:string,list:string[],setList:(next:string[])=>void){
+    setList(list.includes(value)?list.filter(x=>x!==value):[...list,value]);
+  }
+  function evaluate(){
+    const text=[...selectedDx,...selectedPlan].join(' ').toLowerCase();
+    const misses=[];
+    if(scenario.title.includes('преэклампсия')&&!text.includes('o14.1'))misses.push('Основной диагноз O14.1 не выбран.');
+    if(scenario.title.includes('преэклампсия')&&!text.includes('магния'))misses.push('Не выбран магния сульфат/профилактика судорог.');
+    if(scenario.title.includes('коронарный')&&!text.includes('экг'))misses.push('Для боли в груди нужна срочная ЭКГ.');
+    if(scenario.title.includes('пневмония')&&!text.includes('j18.9'))misses.push('Пневмония не выбрана как основной вариант.');
+    if(text.includes('игнорировать')||text.includes('отпустить домой'))misses.push('Есть опасная тактика при красных флагах.');
+    setFeedback(misses.length?misses.join(' '):'Хорошо: выбранные диагнозы и тактика согласуются с ключевыми рисками сценария.');
+  }
   const clinicalText=useMemo(()=>dialogue.map(x=>`${roleLabel(x.speaker)}: ${x.text}`).join('\n'),[dialogue]);
-  return <div className="grid gap-5 py-6 lg:grid-cols-[minmax(0,1fr)_380px]">
-    <section className="rounded-2xl border border-white/10 bg-[#162320] p-5"><div className="flex items-center gap-3 border-b border-white/10 pb-4"><UserRound className="text-teal-300"/><h2 className="font-semibold">Симулятор пациента</h2></div><div className="mt-5 max-h-[520px] space-y-3 overflow-y-auto pr-1">{dialogue.map((m,i)=><div key={i} className={`max-w-[82%] rounded-2xl p-4 text-sm leading-6 ${m.speaker==='doctor'?'ml-auto bg-teal-500/15 text-teal-50':'bg-white/7 text-slate-200'}`}><span className="mb-1 block text-xs font-bold uppercase text-slate-500">{roleLabel(m.speaker)}</span>{m.text}</div>)}{loading&&<div className="rounded-2xl bg-white/7 p-4 text-sm text-slate-400">Пациент отвечает...</div>}</div><div className="mt-5 flex gap-2"><input className="input border-white/10 bg-white/5 text-white" value={message} onChange={e=>setMessage(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')ask()}}/><Button onClick={ask} disabled={loading}><Send size={17}/></Button></div></section>
-    <aside className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">Текст для RAG</h3><textarea readOnly className="input mt-4 min-h-80 border-white/10 bg-white/5 text-sm leading-6 text-slate-200" value={clinicalText}/><p className="mt-4 text-sm leading-6 text-slate-400">После диалога этот текст можно передать в AI-ассистент для дифференциального ряда и протокола приёма.</p></aside>
+  return <div className="grid gap-5 py-6 xl:grid-cols-[360px_minmax(0,1fr)_420px]">
+    <aside className="rounded-2xl border border-white/10 bg-[#162320] p-5">
+      <div className="flex items-center gap-3 border-b border-white/10 pb-4"><Brain className="text-teal-300"/><h2 className="font-semibold">Сценарий</h2></div>
+      <div className="mt-5 grid gap-2">{scenarios.map((item,index)=><button key={item.title} onClick={()=>loadScenario(index)} className={`focus-ring rounded-xl border px-3 py-3 text-left text-sm ${scenario.title===item.title?'border-teal-400/40 bg-teal-400/10 text-teal-100':'border-white/10 bg-white/5 text-slate-300 hover:bg-white/8'}`}>{item.title}</button>)}</div>
+      <label className="mt-5 block text-sm font-semibold text-slate-300">Открытая вводная для студента</label>
+      <textarea className="input mt-2 min-h-28 border-white/10 bg-white/5 text-sm leading-6 text-white" value={publicBrief} onChange={e=>setPublicBrief(e.target.value)}/>
+      <label className="mt-4 block text-sm font-semibold text-slate-300">Скрытый контекст пациента для LLM</label>
+      <textarea className="input mt-2 min-h-52 border-white/10 bg-white/5 text-sm leading-6 text-white" value={hiddenContext} onChange={e=>setHiddenContext(e.target.value)}/>
+      <Button variant="secondary" className="mt-3 w-full" onClick={customScenario}>Начать свой сценарий</Button>
+      <p className="mt-4 text-xs leading-5 text-slate-500">LLM видит скрытый контекст каждый ход и отвечает только как пациент. Студент может задавать любые вопросы.</p>
+    </aside>
+    <section className="rounded-2xl border border-white/10 bg-[#162320] p-5">
+      <div className="flex items-center gap-3 border-b border-white/10 pb-4"><UserRound className="text-teal-300"/><div><h2 className="font-semibold">Приём пациента</h2><p className="mt-1 text-xs text-slate-500">{publicBrief}</p></div></div>
+      <div className="mt-5 max-h-[520px] space-y-3 overflow-y-auto pr-1">{dialogue.map((m,i)=><div key={i} className={`max-w-[86%] rounded-2xl p-4 text-sm leading-6 ${m.speaker==='doctor'?'ml-auto bg-teal-500/15 text-teal-50':'bg-white/7 text-slate-200'}`}><span className="mb-1 block text-xs font-bold uppercase text-slate-500">{roleLabel(m.speaker)}</span>{m.text}</div>)}{loading&&<div className="rounded-2xl bg-white/7 p-4 text-sm text-slate-400">Пациент отвечает...</div>}</div>
+      <div className="mt-5 flex gap-2"><input className="input border-white/10 bg-white/5 text-white" value={message} placeholder="Задайте любой вопрос пациенту..." onChange={e=>setMessage(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')ask()}}/><Button onClick={ask} disabled={loading}><Send size={17}/></Button></div>
+      <textarea readOnly className="input mt-4 min-h-36 border-white/10 bg-white/5 text-sm leading-6 text-slate-200" value={clinicalText}/>
+    </section>
+    <aside className="space-y-5">
+      <ChoicePanel title="Диагнозы: выберите возможные" options={diagnosisOptions} selected={selectedDx} onToggle={value=>toggle(value,selectedDx,setSelectedDx)}/>
+      <ChoicePanel title="Тактика и лечение" options={treatmentOptions} selected={selectedPlan} onToggle={value=>toggle(value,selectedPlan,setSelectedPlan)}/>
+      <Button className="w-full" onClick={evaluate}><ClipboardCheck size={17}/>Проверить выбор</Button>
+      {feedback&&<div className="rounded-2xl border border-teal-400/20 bg-teal-400/8 p-4 text-sm leading-6 text-teal-50">{feedback}<p className="mt-3 text-xs text-slate-400">Эталон под капотом: {scenario.correctDiagnosis}</p></div>}
+    </aside>
   </div>;
 }
+
+function ChoicePanel({title,options,selected,onToggle}:{title:string;options:string[];selected:string[];onToggle:(value:string)=>void}){return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">{title}</h3><div className="mt-4 max-h-72 space-y-2 overflow-y-auto pr-1">{options.map(option=><label key={option} className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 text-sm leading-5 ${selected.includes(option)?'border-teal-400/40 bg-teal-400/10 text-teal-50':'border-white/10 bg-white/5 text-slate-300 hover:bg-white/8'}`}><input type="checkbox" className="mt-1" checked={selected.includes(option)} onChange={()=>onToggle(option)}/><span>{option}</span></label>)}</div></section>}
 
 function VoicePanel(){
   const recorder=useRef<MediaRecorder|null>(null);
