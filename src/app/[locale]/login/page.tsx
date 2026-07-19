@@ -1,0 +1,1 @@
+import {Header} from '@/components/layout/header';import {DemoEntry} from '@/components/auth/demo-entry';export default function Login(){return <><Header/><main className="grid min-h-[calc(100vh-4rem)] place-items-center px-4 py-12"><DemoEntry/></main></>}

@@ -1,0 +1,1 @@
+import {scoreSession} from '@/services/debrief.server';export async function POST(request:Request){try{return Response.json(await scoreSession(await request.json()))}catch(error){return Response.json({error:error instanceof Error?error.message:'invalid_session'},{status:400})}}

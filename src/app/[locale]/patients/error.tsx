@@ -1,0 +1,1 @@
+'use client';import {useTranslations} from 'next-intl';import {Button} from '@/components/ui/button';export default function Error({reset}:{reset:()=>void}){const t=useTranslations('Common');return <main className="grid min-h-screen place-items-center"><Button onClick={reset}>{t('retry')}</Button></main>}

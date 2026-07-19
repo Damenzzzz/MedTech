@@ -1,0 +1,2 @@
+import {setRequestLocale} from 'next-intl/server';import {Header} from '@/components/layout/header';import {PatientCatalog} from '@/components/patients/patient-catalog';import {getCaseRepository} from '@/repositories/index.server';
+export default async function Patients({params}:{params:Promise<{locale:string}>}){const {locale}=await params;setRequestLocale(locale);const cases=await getCaseRepository().listStudentCases();return <><Header/><main className="mx-auto max-w-7xl px-4 py-10 sm:px-6"><PatientCatalog cases={cases} locale={locale}/></main></>}

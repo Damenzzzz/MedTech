@@ -1,0 +1,1 @@
+import {notFound} from 'next/navigation';import {Header} from '@/components/layout/header';import {CaseBuilder} from '@/components/builder/case-builder';export const dynamic='force-dynamic';export default function Builder(){if(process.env.NODE_ENV==='production')notFound();return <><Header/><main className="mx-auto max-w-6xl px-4 py-10 sm:px-6"><CaseBuilder/></main></>}

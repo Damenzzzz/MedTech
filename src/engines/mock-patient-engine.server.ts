@@ -1,0 +1,5 @@
+import 'server-only';
+import {getCaseRepository} from '@/repositories/index.server';
+import {PatientMessageInputSchema,PatientMessageResultSchema,type PatientEngine} from './patient-engine';
+const fallbacks={ru:'Не совсем понимаю вопрос. Уточните, пожалуйста.',kk:'Сұрақты толық түсінбедім. Нақтылап айтыңызшы.',en:'I am not sure I understand. Could you clarify?'};
+export class MockPatientEngine implements PatientEngine {async respond(raw:Parameters<PatientEngine['respond']>[0]){const input=PatientMessageInputSchema.parse(raw);const item=await getCaseRepository().getGroundTruth(input.caseId);if(!item)throw new Error('Case not found');const normalized=input.message.toLocaleLowerCase();const fact=item.hiddenFacts.find(f=>!input.revealedFactIds.includes(f.id)&&f.unlockKeywords.some(k=>normalized.includes(k.toLocaleLowerCase())));const ids=fact?[...input.revealedFactIds,fact.id]:input.revealedFactIds;return PatientMessageResultSchema.parse({answer:fact?(fact.value[input.locale]??fact.value.ru):fallbacks[input.locale],intent:fact?.intent??'fallback',revealedFactIds:ids,newFactIds:fact?[fact.id]:[],visualState:fact?.visualState??'thinking'});}}

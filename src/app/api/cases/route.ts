@@ -1,0 +1,1 @@
+import {StudentCaseDTOSchema} from '@/domain/schemas';import {getCaseRepository} from '@/repositories/index.server';export async function GET(){const data=await getCaseRepository().listStudentCases();return Response.json(StudentCaseDTOSchema.array().parse(data))}

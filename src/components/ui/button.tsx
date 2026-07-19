@@ -1,0 +1,4 @@
+import type {ButtonHTMLAttributes} from 'react';
+import {cn} from '@/lib/utils';
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & {variant?:'primary'|'secondary'|'ghost'|'danger'; size?:'sm'|'md'|'lg'};
+export function Button({className,variant='primary',size='md',...props}:Props){return <button className={cn('focus-ring inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition active:scale-[.98] disabled:pointer-events-none disabled:opacity-45',variant==='primary'&&'bg-teal-600 text-white shadow-sm hover:bg-teal-500',variant==='secondary'&&'border border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-white',variant==='ghost'&&'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10',variant==='danger'&&'bg-red-600 text-white hover:bg-red-500',size==='sm'&&'h-9 px-3 text-sm',size==='md'&&'h-11 px-4 text-sm',size==='lg'&&'h-13 px-6',className)} {...props}/>}
