@@ -26,7 +26,7 @@ export async function getRagReferences(item:MedicalCase,session?:TrainingSession
  const base=process.env.RAG_SERVICE_URL;
  if(!base)return [DebriefReferenceSchema.parse({title:'RAG backend не настроен для этого окружения',status:'rag-unavailable',excerpt:'Укажите RAG_SERVICE_URL, чтобы debrief подтягивал источники из протоколов.'})];
  try{
-  const response=await fetch(`${base.replace(/\/$/,'')}/diagnose`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({symptoms:buildRagQuery(item,session)}),cache:'no-store',signal:AbortSignal.timeout(18000)});
+  const response=await fetch(`${base.replace(/\/$/,'')}/diagnose`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({symptoms:buildRagQuery(item,session)}),cache:'no-store',signal:AbortSignal.timeout(55000)});
   if(!response.ok)throw new Error(`RAG failed ${response.status}`);
   const data=await response.json() as {sources?:RagSource[];diagnoses?:{sources?:RagSource[]}[]};
   const raw=[...(data.sources??[]),...((data.diagnoses??[]).flatMap(d=>d.sources??[]))];

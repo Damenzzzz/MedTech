@@ -1,13 +1,18 @@
 'use client';
 
 import {useMemo,useRef,useState} from 'react';
-import {Bot,Brain,ClipboardCheck,FileAudio,Loader2,Mic,RefreshCw,Search,Send,Square,Stethoscope,UserRound} from 'lucide-react';
+import {Bot,Brain,ClipboardCheck,FileAudio,Loader2,Mic,RefreshCw,Search,Send,ShieldAlert,Square,Stethoscope,UserRound} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 
 type Finding={finding:string;patient_evidence?:string|null};
 type Diagnosis={rank:number;diagnosis:string;icd10_code:string;confidence?:string|null;why_this_diagnosis?:string|null;supporting_findings?:Finding[];missing_findings?:string[];recommended_checks?:string[]};
 type Question={question:string;target_diagnoses?:string[];rationale?:string};
 type DiagnoseResponse={case_id?:string|null;diagnoses:Diagnosis[];follow_up_questions?:Question[];cached_context?:boolean};
+type AdviceStep={step?:string;action?:string;why?:string};
+type AdviceOption={option?:string;treatment?:string;when?:string;avoid_if?:string};
+type AdviceResponse={safety_notice:string;urgency?:string;most_likely_risks?:string[];do_now?:AdviceStep[];ask_or_measure_next?:string[];treatment_options?:AdviceOption[];referral?:{decision?:string;reason?:string};what_not_to_do?:string[];sources?:{title?:string;protocol_id?:string;excerpt?:string}[];rag_status?:string};
+type AdviceChatTurn={role:'clinician'|'assistant';content:string};
+type AdviceChatResponse={reply:string;questions?:string[];need_rag?:boolean;urgency_hint?:string;safety_notice?:string};
 type DialogueTurn={speaker:'doctor'|'patient'|'relative'|'nurse'|'unknown';text:string;start?:number;end?:number};
 type SimCase={id:string;title:string;level:'Базовый'|'Средний'|'Сложный';specialty:string;opening:string;publicBrief:string;hiddenContext:string;diagnosis:string;keyFindings:string[];expectedQuestions:string[];expectedDiagnoses:string[];distractorDiagnoses:string[];expectedPlan:string[];unsafePlan:string[]};
 
@@ -30,7 +35,7 @@ const SIM_CASES:SimCase[]=[
 ];
 
 export function ClinicalAIWorkspace(){
-  const [tab,setTab]=useState<'rag'|'sim'|'voice'>('rag');
+  const [tab,setTab]=useState<'rag'|'advice'|'sim'|'voice'>('rag');
   return <main className="noise min-h-[calc(100vh-4rem)] bg-[#0f1917] text-slate-100">
     <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
       <div className="flex flex-col gap-5 border-b border-white/10 pb-5 lg:flex-row lg:items-end lg:justify-between">
@@ -38,13 +43,15 @@ export function ClinicalAIWorkspace(){
           <p className="label text-teal-300">AI Clinical Platform</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Клинический AI-ассистент</h1>
         </div>
-        <div className="grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-white/5 p-1">
+        <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-white/5 p-1 sm:grid-cols-4">
           <Tab active={tab==='rag'} onClick={()=>setTab('rag')} icon={Stethoscope} label="RAG"/>
+          <Tab active={tab==='advice'} onClick={()=>setTab('advice')} icon={ShieldAlert} label="Срочный совет"/>
           <Tab active={tab==='sim'} onClick={()=>setTab('sim')} icon={Brain} label="Симулятор"/>
           <Tab active={tab==='voice'} onClick={()=>setTab('voice')} icon={Mic} label="STT"/>
         </div>
       </div>
       {tab==='rag'&&<RagPanel/>}
+      {tab==='advice'&&<AdvicePanel/>}
       {tab==='sim'&&<SimulatorPanel/>}
       {tab==='voice'&&<VoicePanel/>}
     </section>
@@ -110,6 +117,67 @@ function EmptyState({loading}:{loading:boolean}){return <div className="grid min
   <div>{loading?<Loader2 className="mx-auto animate-spin text-teal-300" size={38}/>:<Bot className="mx-auto text-teal-300" size={42}/>}<h2 className="mt-5 text-xl font-semibold">{loading?'Идёт анализ протоколов':'Готов к анализу'}</h2><p className="mt-2 max-w-md text-sm leading-6 text-slate-400">RAG сопоставит запрос с протоколами, вернёт top-3 диагнозов, объяснения и уточняющие вопросы.</p></div>
 </div>}
 
+function AdvicePanel(){
+  const [scenario,setScenario]=useState('Аул, ФАП. Мужчина 55 лет, давящая боль за грудиной 40 минут, отдает в левую руку, холодный пот, тошнота. АД 150/90, пульс 104, SpO2 94%. Кардиолога рядом нет, есть ЭКГ, кислород, аспирин, нитроглицерин.');
+  const [role,setRole]=useState('Врач общей практики');
+  const [resources,setResources]=useState('ФАП/сельская амбулатория: медсестра, врач общей практики, ЭКГ, кислород, базовые лекарства, скорая/эвакуация до районной больницы.');
+  const [chat,setChat]=useState<AdviceChatTurn[]>([{role:'assistant',content:'Опишите ситуацию или задайте вопрос. Я могу быстро уточнить ключевые данные, а для финального протокольного плана нажмите "Дать действия".'}]);
+  const [message,setMessage]=useState('Что делать сейчас до приезда скорой?');
+  const [data,setData]=useState<AdviceResponse|null>(null);
+  const [loading,setLoading]=useState(false);
+  const [chatLoading,setChatLoading]=useState(false);
+  const [error,setError]=useState('');
+  async function sendAdviceMessage(){
+    const value=message.trim();
+    if(!value)return;
+    const next=[...chat,{role:'clinician' as const,content:value}];
+    setChat(next);setMessage('');setChatLoading(true);setError('');
+    try{
+      const response=await fetch('/api/clinical/advice',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'chat',scenario,role,resources,messages:next})});
+      if(!response.ok)throw new Error(await response.text());
+      const result=await response.json() as AdviceChatResponse;
+      const extra=(result.questions??[]).length?`\n\nУточнить:\n${(result.questions??[]).map((q,i)=>`${i+1}. ${q}`).join('\n')}`:'';
+      const hint=result.need_rag?'\n\nДля точной тактики по протоколам нажмите "Дать действия".':'';
+      setChat([...next,{role:'assistant',content:`${result.reply}${extra}${hint}`}]);
+    }catch(e){setError(e instanceof Error?e.message:'Ошибка консультации');}
+    finally{setChatLoading(false);}
+  }
+  async function askAdvice(){
+    setLoading(true);setError('');
+    try{
+      const dialogue=chat.map(turn=>`${turn.role==='clinician'?'Медработник':'AI'}: ${turn.content}`).join('\n');
+      const response=await fetch('/api/clinical/advice',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mode:'action',scenario:`${scenario}\n\nКороткий чат до решения:\n${dialogue}`,role,resources})});
+      if(!response.ok)throw new Error(await response.text());
+      setData(await response.json());
+    }catch(e){setError(e instanceof Error?e.message:'Ошибка консультации');}
+    finally{setLoading(false);}
+  }
+  return <div className="grid gap-5 py-6 lg:grid-cols-[430px_minmax(0,1fr)]">
+    <aside className="rounded-2xl border border-white/10 bg-[#162320] p-5">
+      <div className="flex items-center gap-3 border-b border-white/10 pb-4"><ShieldAlert className="text-teal-300"/><h2 className="font-semibold">Срочный совет врачу</h2></div>
+      <div className="mt-5 rounded-xl border border-amber-400/20 bg-amber-400/8 p-4 text-sm leading-6 text-amber-100">AI-ассистент помогает сориентироваться по протоколам. Последнее клиническое решение принимает врач или ответственный медработник на месте.</div>
+      <label className="mt-5 block text-sm font-semibold text-slate-300">Кто спрашивает</label>
+      <input className="input mt-2 border-white/10 bg-white/5 text-white" value={role} onChange={e=>setRole(e.target.value)} placeholder="Врач, медсестра, фельдшер"/>
+      <label className="mt-4 block text-sm font-semibold text-slate-300">Что есть на месте</label>
+      <textarea className="input mt-2 min-h-28 border-white/10 bg-white/5 text-sm leading-6 text-white" value={resources} onChange={e=>setResources(e.target.value)}/>
+      <label className="mt-4 block text-sm font-semibold text-slate-300">Ситуация, жалобы, витальные показатели</label>
+      <textarea className="input mt-2 min-h-64 border-white/10 bg-white/5 text-lg leading-8 text-white" value={scenario} onChange={e=>setScenario(e.target.value)}/>
+      <Button onClick={askAdvice} disabled={loading||!scenario.trim()} className="mt-4 h-12 w-full"><Search size={18}/>{loading?'Сверяю с протоколами...':'Дать действия'}</Button>
+    </aside>
+    <section className="space-y-5">
+      {error&&<div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-4 text-red-100">{error}</div>}
+      <div className="rounded-2xl border border-white/10 bg-[#162320] p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4"><div><h2 className="text-2xl font-semibold">Быстрый чат</h2><p className="mt-1 text-sm text-slate-400">Короткие уточнения идут без тяжелого RAG. Кнопка ниже принудительно дает план действий через RAG.</p></div><Button onClick={askAdvice} disabled={loading||!scenario.trim()} variant="secondary"><ShieldAlert size={17}/>{loading?'RAG...':'Дать действия'}</Button></div>
+        <div className="mt-5 max-h-[360px] space-y-3 overflow-y-auto pr-1">{chat.map((turn,index)=><div key={`${index}-${turn.content}`} className={`max-w-[86%] whitespace-pre-line rounded-2xl p-4 text-sm leading-6 ${turn.role==='clinician'?'ml-auto bg-teal-500/15 text-teal-50':'bg-white/7 text-slate-200'}`}><span className="mb-1 block text-xs font-bold uppercase text-slate-500">{turn.role==='clinician'?'Медработник':'AI'}</span>{turn.content}</div>)}{chatLoading&&<div className="rounded-2xl bg-white/7 p-4 text-sm text-slate-400">AI думает быстро...</div>}</div>
+        <div className="mt-5 flex gap-2"><input className="input border-white/10 bg-white/5 text-white" value={message} placeholder="Спросите, что уточнить или что делать..." onChange={e=>setMessage(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')sendAdviceMessage()}}/><Button onClick={sendAdviceMessage} disabled={chatLoading}><Send size={17}/></Button></div>
+        <p className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/8 p-3 text-xs leading-5 text-amber-100">Если нужна конкретная тактика лечения или маршрутизации, нажмите “Дать действия”: тогда подключается RAG по протоколам.</p>
+      </div>
+      {!data&&<div className="grid min-h-60 place-items-center rounded-2xl border border-white/10 bg-white/[.03] p-8 text-center"><div>{loading?<Loader2 className="mx-auto animate-spin text-teal-300" size={38}/>:<ShieldAlert className="mx-auto text-teal-300" size={42}/>}<h2 className="mt-5 text-xl font-semibold">{loading?'Ищу протоколы и формирую совет':'План действий появится здесь'}</h2><p className="mt-2 max-w-md text-sm leading-6 text-slate-400">Для финального плана нажмите “Дать действия”: RAG сверит ситуацию с протоколами, а GPT соберёт безопасные шаги.</p></div></div>}
+      {data&&<><div className="rounded-2xl border border-amber-400/20 bg-amber-400/8 p-4 text-sm leading-6 text-amber-100">{data.safety_notice}</div><div className="rounded-2xl border border-white/10 bg-[#162320] p-5"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-2xl font-semibold">Тактика сейчас</h2>{data.urgency&&<span className="rounded-full bg-red-500/15 px-3 py-1 text-sm font-semibold text-red-100">{data.urgency}</span>}</div><AdviceList title="Главные риски" items={data.most_likely_risks??[]}/><StepList title="Что сделать сразу" steps={data.do_now??[]}/><AdviceList title="Что уточнить или измерить" items={data.ask_or_measure_next??[]}/></div><div className="grid gap-5 xl:grid-cols-2"><OptionList title="Варианты лечения" options={data.treatment_options??[]}/><section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">Маршрутизация</h3><p className="mt-3 rounded-xl bg-white/5 p-4 text-sm leading-6 text-slate-200">{data.referral?.decision??'Уточнить по тяжести и доступности помощи.'}</p>{data.referral?.reason&&<p className="mt-3 text-sm leading-6 text-slate-400">{data.referral.reason}</p>}<AdviceList title="Чего не делать" items={data.what_not_to_do??[]}/></section></div><SourcesList sources={data.sources??[]} status={data.rag_status}/></>}
+    </section>
+  </div>;
+}
+
 function DiagnosisCard({item}:{item:Diagnosis}){return <article className="rounded-2xl border border-white/10 bg-[#162320] p-5">
   <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="text-sm font-bold text-teal-300">#{item.rank} · {item.icd10_code}{item.confidence?` · ${item.confidence}`:''}</div><h3 className="mt-2 text-xl font-semibold">{item.diagnosis}</h3></div><ClipboardCheck className="text-teal-300"/></div>
   {item.why_this_diagnosis&&<p className="mt-4 rounded-xl bg-white/5 p-4 text-sm leading-6 text-slate-200">{item.why_this_diagnosis}</p>}
@@ -122,6 +190,14 @@ function DiagnosisCard({item}:{item:Diagnosis}){return <article className="round
 function FactList({title,items}:{title:string;items:string[]}){return <div><h4 className="text-sm font-semibold text-slate-300">{title}</h4><ul className="mt-2 space-y-2">{items.length?items.map(x=><li key={x} className="rounded-lg bg-white/5 px-3 py-2 text-sm leading-5 text-slate-300">{x}</li>):<li className="text-sm text-slate-500">Нет данных</li>}</ul></div>}
 
 function Questions({questions}:{questions:Question[]}){return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">Что уточнить врачу</h3><div className="mt-4 grid gap-3">{questions.slice(0,5).map(q=><div key={q.question} className="rounded-xl bg-white/5 p-4"><p className="font-medium">{q.question}</p>{q.rationale&&<p className="mt-2 text-sm leading-5 text-slate-400">{q.rationale}</p>}</div>)}</div></section>}
+
+function AdviceList({title,items}:{title:string;items:string[]}){return <section className="mt-5"><h3 className="text-sm font-semibold text-slate-300">{title}</h3><div className="mt-3 grid gap-2">{items.length?items.slice(0,8).map(item=><div key={item} className="rounded-xl bg-white/5 p-3 text-sm leading-5 text-slate-200">{item}</div>):<div className="rounded-xl bg-white/5 p-3 text-sm text-slate-500">Недостаточно данных</div>}</div></section>}
+
+function StepList({title,steps}:{title:string;steps:AdviceStep[]}){return <section className="mt-5"><h3 className="text-sm font-semibold text-slate-300">{title}</h3><ol className="mt-3 space-y-2">{steps.length?steps.slice(0,8).map((step,index)=><li key={`${index}-${step.step??step.action}`} className="rounded-xl bg-white/5 p-3 text-sm leading-5 text-slate-200"><span className="font-semibold text-teal-200">{index+1}. {step.step??step.action}</span>{step.why&&<p className="mt-1 text-slate-400">{step.why}</p>}</li>):<li className="rounded-xl bg-white/5 p-3 text-sm text-slate-500">Недостаточно данных</li>}</ol></section>}
+
+function OptionList({title,options}:{title:string;options:AdviceOption[]}){return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">{title}</h3><div className="mt-4 grid gap-3">{options.length?options.slice(0,8).map((item,index)=><div key={`${index}-${item.option??item.treatment}`} className="rounded-xl bg-white/5 p-4 text-sm leading-6 text-slate-200"><p className="font-semibold text-teal-100">{item.option??item.treatment}</p>{item.when&&<p className="mt-1 text-slate-400">Когда: {item.when}</p>}{item.avoid_if&&<p className="mt-1 text-amber-100">Осторожно/не применять: {item.avoid_if}</p>}</div>):<p className="rounded-xl bg-white/5 p-4 text-sm text-slate-500">Нет безопасных вариантов без уточнения данных.</p>}</div></section>}
+
+function SourcesList({sources,status}:{sources:{title?:string;protocol_id?:string;excerpt?:string}[];status?:string}){return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold">Источники RAG</h3>{status&&<span className="rounded-full bg-white/5 px-3 py-1 text-xs text-slate-400">{status}</span>}</div><div className="mt-4 grid gap-3">{sources.length?sources.slice(0,5).map((source,index)=><div key={`${index}-${source.title??source.protocol_id}`} className="rounded-xl bg-white/5 p-4 text-sm leading-6"><p className="font-semibold text-slate-200">{source.title??source.protocol_id??`Источник ${index+1}`}</p>{source.excerpt&&<p className="mt-2 text-slate-400">{source.excerpt}</p>}</div>):<p className="rounded-xl bg-white/5 p-4 text-sm text-slate-500">RAG-источники не вернулись, совет помечен как ограниченный.</p>}</div></section>}
 
 function SimulatorPanel(){
   const [scenario,setScenario]=useState<SimCase>(SIM_CASES[0]);

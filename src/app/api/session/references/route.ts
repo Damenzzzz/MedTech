@@ -1,5 +1,7 @@
 import {getRagReferencesByCaseId} from '@/services/debrief.server';
 
+export const maxDuration=60;
+
 export async function GET(request:Request){
  try{
   const caseId=new URL(request.url).searchParams.get('caseId');
