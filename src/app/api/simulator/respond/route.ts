@@ -1,7 +1,7 @@
 import {NextResponse} from 'next/server';
 
 export async function POST(request:Request) {
-  const {caseTitle,publicBrief,hiddenContext,casePrompt,dialogue}=await request.json();
+  const {caseContext,caseTitle,publicBrief,hiddenContext,casePrompt,dialogue}=await request.json();
   const apiKey=process.env.OPENAI_API_KEY;
   if (!apiKey) return NextResponse.json({answer:'Сейчас мне сложно ответить, уточните вопрос.'});
   const system=`Ты медицинский симулятор. Твоя единственная роль: играть пациента на русском языке.
@@ -15,13 +15,16 @@ export async function POST(request:Request) {
 - Можно отвечать живо и естественно, но без медицинского рассуждения ассистента.
 - Если врач задает закрытый вопрос, отвечай коротко. Если открытый, дай 1-3 предложения.
 - Это учебный синтетический случай, не реальный пациент.`;
-  const prompt=`Название сценария: ${caseTitle??'custom'}
+  const prompt=`Структура сценария:
+${JSON.stringify(caseContext??{}, null, 2)}
+
+Название сценария: ${caseContext?.title??caseTitle??'custom'}
 
 Открытая вводная для студента:
 ${publicBrief??''}
 
 Скрытый контекст пациента, известный только симулятору:
-${hiddenContext??casePrompt??''}
+${hiddenContext??caseContext?.hiddenContext??casePrompt??''}
 
 Текущий диалог:
 ${JSON.stringify(dialogue, null, 2)}

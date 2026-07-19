@@ -9,9 +9,35 @@ export async function POST(request:Request) {
       if (response.ok) return NextResponse.json(await response.json());
     } catch {}
   }
-  return NextResponse.json(demoDiagnosis());
+  return NextResponse.json(await openAiClinicalFallback(String(body.symptoms??'')));
 }
 
-function demoDiagnosis(){
-  return {case_id:'demo-vercel',diagnoses:[{rank:1,diagnosis:'Тяжелая преэклампсия',icd10_code:'O14.1',confidence:'high',why_this_diagnosis:'Беременность 34 недели, АД 170/110, головная боль, зрительные нарушения, боль в правом подреберье, повышение АЛТ/АСТ и тромбоцитопения соответствуют тяжелой преэклампсии. Протеинурия не указана и остается неизвестной.',supporting_findings:[{finding:'АД 170/110',patient_evidence:'Артериальное давление 170/110 мм рт. ст.'},{finding:'Неврологические симптомы',patient_evidence:'Сильная головная боль, мелькание мушек перед глазами'},{finding:'Печеночные признаки',patient_evidence:'Боль в правом подреберье, повышены АЛТ и АСТ'}],missing_findings:['Протеинурия не указана','Креатинин не указан']},{rank:2,diagnosis:'HELLP-синдром',icd10_code:'O14.2',confidence:'medium',why_this_diagnosis:'Повышенные АЛТ/АСТ и тромбоцитопения поддерживают HELLP, но гемолиз пока не подтвержден.',supporting_findings:[{finding:'Повышены АЛТ/АСТ',patient_evidence:'В анализах повышены АЛТ и АСТ'},{finding:'Тромбоцитопения',patient_evidence:'снижены тромбоциты'}],missing_findings:['ЛДГ, билирубин, гаптоглобин, шистоциты']},{rank:3,diagnosis:'Эклампсия во время беременности',icd10_code:'O15.0',confidence:'low',why_this_diagnosis:'Тяжелая преэклампсия может перейти в эклампсию, но судороги не указаны.',supporting_findings:[{finding:'Тяжелая гипертензия и неврологические симптомы',patient_evidence:'АД 170/110, головная боль, нарушения зрения'}],missing_findings:['Судороги не указаны']}],follow_up_questions:[{question:'Есть ли протеинурия или отношение белок/креатинин?',target_diagnoses:['O14.1'],rationale:'Критерий преэклампсии.'},{question:'Есть ли ЛДГ, билирубин, гаптоглобин или шистоциты?',target_diagnoses:['O14.2'],rationale:'Подтверждение гемолиза для HELLP.'},{question:'Были ли судороги?',target_diagnoses:['O15.0'],rationale:'Ключевой критерий эклампсии.'}]};
+async function openAiClinicalFallback(symptoms:string) {
+  const apiKey=process.env.OPENAI_API_KEY;
+  if (!apiKey || !symptoms.trim()) return emptyResponse();
+  const prompt=`Ты клинический AI-assistant для учебного MVP. Настоящий RAG-сервис сейчас не подключен, поэтому делай осторожный clinical reasoning по введенному тексту.
+
+Строгие правила:
+- Не выдумывай факты пациента. Supporting findings должны иметь patient_evidence из входного текста.
+- Критерии, которых нет во входном тексте, помещай только в missing_findings/recommended_checks.
+- Верни 3 разных возможных диагноза, если это клинически возможно.
+- Это не финальный диагноз и не замена врача.
+
+Симптомы:
+${symptoms}
+
+Верни JSON строго такого вида:
+{"case_id":"openai-fallback","diagnoses":[{"rank":1,"diagnosis":"...","icd10_code":"...","confidence":"high|medium|low","why_this_diagnosis":"...","supporting_findings":[{"finding":"...","patient_evidence":"..."}],"missing_findings":["..."],"recommended_checks":["..."]}],"follow_up_questions":[{"question":"...","target_diagnoses":["..."],"rationale":"..."}]}`;
+  try {
+    const response=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{authorization:`Bearer ${apiKey}`,'content-type':'application/json'},body:JSON.stringify({model:process.env.OPENAI_CLINICAL_MODEL??'gpt-5.5',messages:[{role:'system',content:'Return valid JSON only.'},{role:'user',content:prompt}],response_format:{type:'json_object'},reasoning_effort:'low',max_completion_tokens:2600}),cache:'no-store'});
+    if (!response.ok) return emptyResponse();
+    const data=await response.json();
+    return JSON.parse(data.choices?.[0]?.message?.content??'{}');
+  } catch {
+    return emptyResponse();
+  }
+}
+
+function emptyResponse(){
+  return {case_id:'openai-fallback',diagnoses:[],follow_up_questions:[]};
 }
