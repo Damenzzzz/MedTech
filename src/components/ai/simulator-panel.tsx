@@ -2,9 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
-import { Stethoscope, Search, Send, RotateCcw, Award, User, Bot } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Stethoscope, Search, Send, Bot } from 'lucide-react';
 import type { StudentCaseDTO } from '@/domain/schemas';
 
 interface SimulatorPanelProps {
@@ -13,9 +11,6 @@ interface SimulatorPanelProps {
 }
 
 export function SimulatorPanel({ cases, locale }: SimulatorPanelProps) {
-  const t = useTranslations('Training');
-  const c = useTranslations('Common');
-
   const [search, setSearch] = useState('');
   const [selectedCaseId, setSelectedCaseId] = useState<string>(cases[0]?.id || 'chest-pain');
   const [difficultyFilter, setDifficultyFilter] = useState<'all' | 'easy' | 'medium' | 'hard'>('all');

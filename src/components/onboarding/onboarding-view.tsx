@@ -14,10 +14,6 @@ import {
   CheckCircle2,
   AlertCircle,
   ArrowRight,
-  Activity,
-  HeartPulse,
-  Thermometer,
-  Zap,
 } from 'lucide-react';
 import { useRouter } from '@/i18n/navigation';
 import { useUserStore } from '@/stores/user-store';
@@ -49,6 +45,12 @@ export function OnboardingView() {
     setOnboardingStepStore(step);
   }, [step, setOnboardingStepStore]);
 
+  const finishOnboarding = () => {
+    setOnboardingCompleted(true);
+    setOnboardingStepStore(3);
+    router.push('/patients');
+  };
+
   // Keyboard navigation (ArrowLeft, ArrowRight, Escape)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -63,12 +65,6 @@ export function OnboardingView() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [step]);
-
-  const finishOnboarding = () => {
-    setOnboardingCompleted(true);
-    setOnboardingStepStore(3);
-    router.push('/patients');
-  };
 
   const userName = (hydrated && profile?.name) ? profile.name : 'Коллега';
 

@@ -3,7 +3,6 @@
 import { useTranslations } from 'next-intl';
 import { Shuffle, RotateCcw, Activity, Sparkles, Trophy } from 'lucide-react';
 import { motion } from 'motion/react';
-import { useRouter } from '@/i18n/navigation';
 import { useUserStore } from '@/stores/user-store';
 
 interface CatalogHeaderProps {

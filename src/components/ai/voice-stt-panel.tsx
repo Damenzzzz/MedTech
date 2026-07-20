@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-import { Mic, Square, RotateCcw, Copy, Check, Send, AlertTriangle, UserCheck, Stethoscope, User, HeartPulse } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useState, useRef } from 'react';
+import { Mic, Square, Copy, Check, Send, AlertTriangle, UserCheck, Stethoscope, User, HeartPulse } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export interface Turn {
   speaker: 'doctor' | 'patient' | 'relative' | 'nurse' | 'unknown';
@@ -17,8 +16,6 @@ interface VoiceSTTPanelProps {
 }
 
 export function VoiceSTTPanel({ onSendTranscriptToAI }: VoiceSTTPanelProps) {
-  const t = useTranslations('Ai');
-
   const [isRecording, setIsRecording] = useState(false);
   const [recordTime, setRecordTime] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -38,7 +35,7 @@ export function VoiceSTTPanel({ onSendTranscriptToAI }: VoiceSTTPanelProps) {
   const startRecording = async () => {
     setHasMicError(false);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      await navigator.mediaDevices.getUserMedia({ audio: true });
       // Stream acquired successfully
       setIsRecording(true);
       setRecordTime(0);
@@ -132,7 +129,7 @@ export function VoiceSTTPanel({ onSendTranscriptToAI }: VoiceSTTPanelProps) {
             {minutes}:{seconds}
           </div>
           <p className="text-xs font-semibold text-slate-500 mt-0.5">
-            {isRecording ? 'Идёт запись разговора врач-пациент...' : 'Нажмите кнопку для начала записи'}
+            {isProcessing ? 'Распознавание речи и расшифровка аудио...' : isRecording ? 'Идёт запись разговора врач-пациент...' : 'Нажмите кнопку для начала записи'}
           </p>
         </div>
 

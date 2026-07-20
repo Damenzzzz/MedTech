@@ -14,7 +14,7 @@ test('landing opens patient queue and API does not leak ground truth', async ({ 
   const response = await request.get('/api/cases');
   expect(response.ok()).toBeTruthy();
   const cases = (await response.json()) as Record<string, unknown>[];
-  expect(cases.length).toBeGreaterThanOrEqual(15);
+  expect(cases.length).toBeGreaterThanOrEqual(32);
   expect(cases[0]).not.toHaveProperty('hiddenFacts');
   expect(cases[0]).not.toHaveProperty('correctDiagnosis');
   expect(cases[0]).not.toHaveProperty('scoringRubric');

@@ -1,33 +1,59 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { FlaskConical, Search, Clock, DollarSign, CheckCircle2, AlertTriangle, AlertCircle } from 'lucide-react';
+import { FlaskConical, Search, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import type { StudentCaseDTO, Investigation } from '@/domain/schemas';
+import type { StudentCaseDTO, StudentInvestigationDTO, OrderedInvestigation } from '@/domain/schemas';
 
 interface InvestigationPanelProps {
   patient: StudentCaseDTO;
-  orderedIds: string[];
-  onOrderTest: (id: string, delayMs: number) => void;
+  orderedInvestigations: OrderedInvestigation[];
+  onOrderTest: (id: string, result: string, delayMs: number) => Promise<void>;
+  onUpdateStatus: (id: string, status: 'pending' | 'ready' | 'failed') => void;
   onNextStage: () => void;
   locale: string;
 }
 
 export function InvestigationPanel({
   patient,
-  orderedIds,
+  orderedInvestigations,
   onOrderTest,
+  onUpdateStatus,
   onNextStage,
   locale,
 }: InvestigationPanelProps) {
-  const t = useTranslations('Training');
   const c = useTranslations('Common');
 
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<'all' | 'laboratory' | 'functional' | 'imaging'>('all');
-  const [readyIds, setReadyIds] = useState<string[]>(orderedIds);
-  const [confirmTest, setConfirmTest] = useState<Investigation | null>(null);
+  const [confirmTest, setConfirmTest] = useState<StudentInvestigationDTO | null>(null);
+  const [orderingId, setOrderingId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Setup timers for pending investigations with proper cleanup
+  useEffect(() => {
+    const timers: NodeJS.Timeout[] = [];
+
+    for (const inv of orderedInvestigations) {
+      if (inv.status === 'pending') {
+        const remaining = inv.readyAt - Date.now();
+
+        if (remaining <= 0) {
+          onUpdateStatus(inv.id, 'ready');
+        } else {
+          const tId = setTimeout(() => {
+            onUpdateStatus(inv.id, 'ready');
+          }, remaining);
+          timers.push(tId);
+        }
+      }
+    }
+
+    return () => {
+      timers.forEach((tId) => clearTimeout(tId));
+    };
+  }, [orderedInvestigations, onUpdateStatus]);
 
   const filteredTests = patient.investigations.filter((invItem) => {
     const name =
@@ -41,10 +67,10 @@ export function InvestigationPanel({
     return matchesSearch && matchesCategory;
   });
 
-  const handleAttemptOrder = (invItem: Investigation) => {
-    if (orderedIds.includes(invItem.id)) return;
+  const handleAttemptOrder = (invItem: StudentInvestigationDTO) => {
+    const existing = orderedInvestigations.find((inv) => inv.id === invItem.id);
+    if (existing) return;
 
-    // Expensive test confirmation threshold (e.g. cost >= 5 or imaging)
     if (invItem.cost >= 5 || invItem.category === 'imaging') {
       setConfirmTest(invItem);
     } else {
@@ -52,14 +78,33 @@ export function InvestigationPanel({
     }
   };
 
-  const executeOrder = (invItem: Investigation) => {
-    onOrderTest(invItem.id, invItem.delayMs);
+  const executeOrder = async (invItem: StudentInvestigationDTO) => {
     setConfirmTest(null);
+    setOrderingId(invItem.id);
+    setErrorMessage(null);
 
-    // Simulate result arrival delay
-    setTimeout(() => {
-      setReadyIds((prev) => [...prev, invItem.id]);
-    }, Math.min(invItem.delayMs, 1000));
+    try {
+      const res = await fetch('/api/session/investigations/order', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          caseId: patient.id,
+          investigationId: invItem.id,
+          locale,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('order_failed');
+      }
+
+      const data = await res.json();
+      await onOrderTest(invItem.id, data.result, invItem.delayMs);
+    } catch {
+      setErrorMessage(`Не удалось выписать направление на "${typeof invItem.name === 'object' ? invItem.name.ru : invItem.name}".`);
+    } finally {
+      setOrderingId(null);
+    }
   };
 
   return (
@@ -78,6 +123,19 @@ export function InvestigationPanel({
           </p>
         </div>
       </div>
+
+      {/* Error Banner */}
+      {errorMessage && (
+        <div className="flex items-center justify-between rounded-2xl border border-red-200 bg-red-50 p-3 text-xs text-red-900">
+          <span>{errorMessage}</span>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="font-bold text-red-700 hover:underline"
+          >
+            Закрыть
+          </button>
+        </div>
+      )}
 
       {/* Search & Category Tabs */}
       <div className="space-y-2">
@@ -117,24 +175,24 @@ export function InvestigationPanel({
       {/* Investigations List */}
       <div className="flex-1 space-y-3 overflow-y-auto pr-1 min-h-[240px]">
         {filteredTests.map((invItem) => {
-          const isOrdered = orderedIds.includes(invItem.id);
-          const isReady = readyIds.includes(invItem.id) || isOrdered;
+          const orderedEntry = orderedInvestigations.find((inv) => inv.id === invItem.id);
+          const isOrdered = Boolean(orderedEntry);
+          const isPending = orderedEntry?.status === 'pending';
+          const isReady = orderedEntry?.status === 'ready';
+          const isOrderingThis = orderingId === invItem.id;
 
           const name =
             typeof invItem.name === 'object'
               ? invItem.name[locale as 'ru' | 'kk' | 'en'] || invItem.name.ru
               : invItem.name;
 
-          const result =
-            typeof invItem.result === 'object'
-              ? invItem.result[locale as 'ru' | 'kk' | 'en'] || invItem.result.ru
-              : invItem.result;
-
           return (
             <div
               key={invItem.id}
               className={`rounded-2xl border p-4 transition-all ${
-                isOrdered
+                isReady
+                  ? 'border-emerald-200 bg-emerald-50/40'
+                  : isPending
                   ? 'border-amber-200 bg-amber-50/40'
                   : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
@@ -146,34 +204,56 @@ export function InvestigationPanel({
                     <span className="flex items-center gap-0.5 text-amber-700">
                       Учебная стоимость: {invItem.cost} {c('points')}
                     </span>
+                    {invItem.delayMs > 0 && (
+                      <span className="text-slate-400">• Время выполнения: {Math.round(invItem.delayMs / 1000)}с</span>
+                    )}
                   </div>
                 </div>
 
                 <button
                   onClick={() => handleAttemptOrder(invItem)}
-                  disabled={isOrdered}
+                  disabled={isOrdered || isOrderingThis}
                   className={`focus-ring inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
-                    isOrdered
-                      ? 'bg-amber-100 text-amber-900 border border-amber-300 cursor-default'
+                    isReady
+                      ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 cursor-default'
+                      : isPending
+                      ? 'bg-amber-100 text-amber-900 border border-amber-300 cursor-default animate-pulse'
+                      : isOrderingThis
+                      ? 'bg-teal-700 text-white cursor-wait'
                       : 'bg-teal-600 text-white hover:bg-teal-700 shadow-xs'
                   }`}
                 >
-                  {isOrdered ? (
+                  {isReady ? (
                     <>
                       <CheckCircle2 size={14} />
-                      <span>{t('ordered')}</span>
+                      <span>Готово</span>
                     </>
+                  ) : isPending ? (
+                    <>
+                      <Clock size={14} className="animate-spin" />
+                      <span>В обработке...</span>
+                    </>
+                  ) : isOrderingThis ? (
+                    <span>Назначение...</span>
                   ) : (
                     <span>Назначить</span>
                   )}
                 </button>
               </div>
 
-              {/* Reveal Result when Ordered */}
-              {isOrdered && (
-                <div className="mt-3 pt-3 border-t border-amber-200/80 text-xs font-medium text-slate-800 leading-relaxed">
-                  <p className="font-bold text-amber-950">Результат исследования:</p>
-                  <p className="mt-0.5 text-slate-900">{result}</p>
+              {/* Pending state banner */}
+              {isPending && (
+                <div className="mt-3 pt-2 border-t border-amber-200/60 text-xs font-medium text-amber-900 flex items-center gap-2">
+                  <Clock size={14} className="animate-spin text-amber-600" />
+                  <span>Лаборатория проводит анализ. Результат появится через несколько секунд...</span>
+                </div>
+              )}
+
+              {/* Ready Result View */}
+              {isReady && orderedEntry && (
+                <div className="mt-3 pt-3 border-t border-emerald-200/80 text-xs font-medium text-slate-800 leading-relaxed">
+                  <p className="font-bold text-emerald-950">Результат исследования:</p>
+                  <p className="mt-0.5 text-slate-900">{orderedEntry.result}</p>
                 </div>
               )}
             </div>
@@ -199,7 +279,7 @@ export function InvestigationPanel({
               </div>
 
               <p className="text-xs leading-relaxed font-medium text-slate-600">
-                Вы назначаете дорогая/инвазивное исследование{' '}
+                Вы назначаете исследование{' '}
                 <strong className="text-slate-900">
                   {typeof confirmTest.name === 'object' ? confirmTest.name.ru : confirmTest.name}
                 </strong>{' '}

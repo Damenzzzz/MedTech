@@ -1,11 +1,9 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
 import { Stethoscope, Home } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
 
 export default function NotFound() {
-  const t = useTranslations('Common');
 
   return (
     <div className="min-h-screen bg-[color:var(--canvas)] flex items-center justify-center p-4">

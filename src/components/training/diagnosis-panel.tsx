@@ -28,12 +28,29 @@ export function DiagnosisPanel({
 }: DiagnosisPanelProps) {
   const t = useTranslations('Training');
   const [customFinal, setCustomFinal] = useState('');
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const handleAddCustomFinal = () => {
     const trimmed = customFinal.trim();
     if (!trimmed) return;
     onSetFinalDiagnosis(trimmed);
     setCustomFinal('');
+    setValidationError(null);
+  };
+
+  const handleAttemptNext = () => {
+    if (!finalDiagnosis) {
+      setValidationError('Для продолжения необходимо выбрать основной диагноз.');
+      return;
+    }
+
+    if (reasoning.trim().length < 20) {
+      setValidationError('Клиническое обоснование обязательно и должно содержать минимум 20 символов.');
+      return;
+    }
+
+    setValidationError(null);
+    onNextStage();
   };
 
   const isSelected = Boolean(finalDiagnosis);
@@ -56,8 +73,19 @@ export function DiagnosisPanel({
       </div>
 
       <div className="space-y-4 flex-1 overflow-y-auto pr-1">
+        {/* Validation Error Banner */}
+        {validationError && (
+          <div className="flex items-start gap-2.5 rounded-2xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-900 font-medium leading-relaxed">
+            <AlertTriangle size={18} className="text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Ошибка заполнения диагноза</p>
+              <p className="mt-0.5 text-red-800">{validationError}</p>
+            </div>
+          </div>
+        )}
+
         {/* Warning if no final diagnosis selected */}
-        {!isSelected && (
+        {!isSelected && !validationError && (
           <div className="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-900 font-medium leading-relaxed">
             <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
             <div>
@@ -76,7 +104,10 @@ export function DiagnosisPanel({
           </label>
           <select
             value={finalDiagnosis || ''}
-            onChange={(e) => onSetFinalDiagnosis(e.target.value)}
+            onChange={(e) => {
+              onSetFinalDiagnosis(e.target.value);
+              setValidationError(null);
+            }}
             className="input text-xs border-slate-200 focus:border-teal-600 h-11 bg-white font-semibold"
           >
             <option value="">— Не выбран —</option>
@@ -128,19 +159,27 @@ export function DiagnosisPanel({
           </label>
           <textarea
             value={reasoning}
-            onChange={(e) => onSetReasoning(e.target.value)}
+            onChange={(e) => {
+              onSetReasoning(e.target.value);
+              setValidationError(null);
+            }}
             placeholder={t('reasoningPlaceholder')}
             className="input text-xs border-slate-200 focus:border-teal-600 min-h-[120px] leading-relaxed p-3"
           />
           <p className="text-[11px] text-slate-400">
-            Укажите факты анамнеза, осмотра и результаты исследований, подтверждающие диагноз.
+            Укажите факты анамнеза, осмотра и результаты исследований, подтверждающие диагноз (минимум 20 символов).
+            {reasoning.trim().length > 0 && (
+              <span className={`ml-2 font-bold ${reasoning.trim().length >= 20 ? 'text-emerald-700' : 'text-amber-700'}`}>
+                ({reasoning.trim().length}/20)
+              </span>
+            )}
           </p>
         </div>
       </div>
 
       {/* Next Stage Button */}
       <button
-        onClick={onNextStage}
+        onClick={handleAttemptNext}
         className="focus-ring mt-auto w-full rounded-xl bg-teal-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all"
       >
         Перейти к плану ведения →

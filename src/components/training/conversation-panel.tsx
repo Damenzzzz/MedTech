@@ -2,19 +2,13 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { MessageSquare, Send, Sparkles, Mic, RotateCcw, User, Bot } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import type { StudentCaseDTO } from '@/domain/schemas';
-
-interface ChatMessage {
-  id: string;
-  role: 'student' | 'patient';
-  text: string;
-  timestamp: string;
-}
+import { MessageSquare, Send, Sparkles, Mic, RotateCcw, Bot } from 'lucide-react';
+import { motion } from 'motion/react';
+import type { StudentCaseDTO, DialogueMessage } from '@/domain/schemas';
 
 interface ConversationPanelProps {
   patient: StudentCaseDTO;
+  dialogue: DialogueMessage[];
   revealedFactCount: number;
   onAskQuestion: (question: string) => Promise<void>;
   isThinking: boolean;
@@ -24,7 +18,8 @@ interface ConversationPanelProps {
 }
 
 export function ConversationPanel({
-  patient,
+  patient: _patient,
+  dialogue,
   revealedFactCount,
   onAskQuestion,
   isThinking,
@@ -34,7 +29,6 @@ export function ConversationPanel({
 }: ConversationPanelProps) {
   const t = useTranslations('Training');
   const c = useTranslations('Common');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputQuestion, setInputQuestion] = useState('');
   const [isVoiceActive, setIsVoiceActive] = useState(false);
 
@@ -46,7 +40,7 @@ export function ConversationPanel({
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [messages, isThinking]);
+  }, [dialogue, isThinking]);
 
   // Retain focus in input field after asking
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -54,23 +48,14 @@ export function ConversationPanel({
     const text = inputQuestion.trim();
     if (!text || isThinking) return;
 
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const studentMsg: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: 'student',
-      text,
-      timestamp: timeStr,
-    };
-
-    setMessages((prev) => [...prev, studentMsg]);
     setInputQuestion('');
 
     try {
       await onAskQuestion(text);
-      // Retain focus
-      setTimeout(() => inputRef.current?.focus(), 50);
     } catch {
-      // Error handled by parent / state
+      // Handled by parent error state
+    } finally {
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
   };
 
@@ -115,51 +100,55 @@ export function ConversationPanel({
         ref={chatContainerRef}
         className="flex-1 min-h-[260px] max-h-[360px] overflow-y-auto space-y-3 pr-2 scrollbar-thin"
       >
-        {messages.length === 0 && (
+        {dialogue.length === 0 && (
           <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 text-center text-xs font-medium text-slate-500">
             👋 {t('historyEmpty')}
           </div>
         )}
 
-        {messages.map((m) => (
-          <motion.div
-            key={m.id}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`flex items-start gap-2.5 ${
-              m.role === 'student' ? 'justify-end' : 'justify-start'
-            }`}
-          >
-            {m.role === 'patient' && (
-              <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-teal-600 text-white font-bold text-xs shadow-xs">
-                П
-              </div>
-            )}
+        {dialogue.map((m) => {
+          const timeStr = new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            <div
-              className={`max-w-[82%] rounded-2xl p-3.5 text-xs leading-relaxed shadow-xs ${
-                m.role === 'student'
-                  ? 'bg-teal-600 text-white rounded-tr-none'
-                  : 'bg-white border border-slate-200 text-slate-900 rounded-tl-none'
+          return (
+            <motion.div
+              key={m.id}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`flex items-start gap-2.5 ${
+                m.role === 'student' ? 'justify-end' : 'justify-start'
               }`}
             >
-              <p className="font-medium">{m.text}</p>
-              <p
-                className={`mt-1 text-[10px] text-right ${
-                  m.role === 'student' ? 'text-teal-100' : 'text-slate-400'
+              {m.role === 'patient' && (
+                <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-teal-600 text-white font-bold text-xs shadow-xs">
+                  П
+                </div>
+              )}
+
+              <div
+                className={`max-w-[82%] rounded-2xl p-3.5 text-xs leading-relaxed shadow-xs ${
+                  m.role === 'student'
+                    ? 'bg-teal-600 text-white rounded-tr-none'
+                    : 'bg-white border border-slate-200 text-slate-900 rounded-tl-none'
                 }`}
               >
-                {m.timestamp}
-              </p>
-            </div>
-
-            {m.role === 'student' && (
-              <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-slate-200 text-slate-700 font-bold text-xs">
-                В
+                <p className="font-medium">{m.text}</p>
+                <p
+                  className={`mt-1 text-[10px] text-right ${
+                    m.role === 'student' ? 'text-teal-100' : 'text-slate-400'
+                  }`}
+                >
+                  {timeStr}
+                </p>
               </div>
-            )}
-          </motion.div>
-        ))}
+
+              {m.role === 'student' && (
+                <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-slate-200 text-slate-700 font-bold text-xs">
+                  В
+                </div>
+              )}
+            </motion.div>
+          );
+        })}
 
         {/* Typing indicator */}
         {isThinking && (

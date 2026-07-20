@@ -1,6 +1,8 @@
 import 'server-only';
-import type { DifferentialDiagnosis, Investigation, ManagementPlan, MedicalCase, LocalizedText } from '@/domain/schemas';
-import { additionalSeeds, type AdditionalSeed } from './additional-cases.server';
+
+import type { MedicalCase, LocalizedText } from '@/domain/schemas';
+import { additionalSeeds } from './additional-cases.server';
+import { caseDefinitions } from './case-definitions.server';
 
 const t = (ru: string, kk: string, en: string): LocalizedText => ({ ru, kk, en });
 
@@ -53,152 +55,52 @@ const initialSeeds: Seed[] = [
 // Combine all 32 seed cases
 const allSeeds: Seed[] = [...initialSeeds, ...additionalSeeds];
 
-const dx = (code: string, ru: string, kk: string, en: string, required = false): DifferentialDiagnosis => ({
-  code,
-  name: t(ru, kk, en),
-  required,
-});
+export const cases: MedicalCase[] = allSeeds.map((s) => {
+  const caseDef = caseDefinitions[s.id];
+  if (!caseDef) {
+    throw new Error(`Missing caseDefinition for caseId: "${s.id}"`);
+  }
 
-const inv = (
-  id: string,
-  category: Investigation['category'],
-  ru: string,
-  kk: string,
-  en: string,
-  resultRu: string,
-  resultKk: string,
-  resultEn: string,
-  cost: number,
-  delayMs: number,
-  indicated: boolean
-): Investigation => ({
-  id,
-  category,
-  name: t(ru, kk, en),
-  result: t(resultRu, resultKk, resultEn),
-  cost,
-  delayMs,
-  indicated,
-});
-
-const plans = (
-  routine: boolean,
-  items: string[],
-  meds: string[] = [],
-  nonDrug: string[] = [],
-  redFlags: string[] = []
-): ManagementPlan => ({
-  recommendations: items.map((x) => t(x, x, x)),
-  medications: (meds.length ? meds : ['Лекарства и дозировки указать только после проверки протокола']).map((x) => t(x, x, x)),
-  nonDrug: (nonDrug.length ? nonDrug : ['Объяснить пациенту план и контрольные признаки']).map((x) => t(x, x, x)),
-  disposition: t(
-    routine ? 'Амбулаторное ведение при отсутствии красных флагов' : 'Срочная очная маршрутизация или госпитализация',
-    routine ? 'Қауіпті белгілер жоқ болса амбулаториялық жүргізу' : 'Шұғыл госпитализация',
-    routine ? 'Outpatient care if no red flags' : 'Urgent escalation or admission'
-  ),
-  followUp: t('Контроль по клинической необходимости', 'Клиникалық қажеттілік бойынша бақылау', 'Follow-up as clinically indicated'),
-  redFlags: (redFlags.length ? redFlags : ['Ухудшение состояния, одышка, нарушение сознания']).map((x) => t(x, x, x)),
-});
-
-const differentialMap: Record<string, DifferentialDiagnosis[]> = {
-  'chest-pain': [dx('I20.0', 'Нестабильная стенокардия', 'Тұрақсыз стенокардия', 'Unstable angina', true), dx('I21.9', 'Острый инфаркт миокарда', 'Жедел миокард инфаркті', 'Acute myocardial infarction'), dx('I26.9', 'ТЭЛА', 'ӨАТЭ', 'Pulmonary embolism')],
-  'hypertensive-crisis': [dx('I16.0', 'Гипертонический криз', 'Гипертониялық криз', 'Hypertensive crisis', true), dx('I63.9', 'Ишемический инсульт', 'Ишемиялық инсульт', 'Ischemic stroke')],
-  'pneumonia': [dx('J18.9', 'Внебольничная пневмония', 'Қауымдастықтан тыс пневмония', 'Community-acquired pneumonia', true), dx('J20.9', 'Острый бронхит', 'Жедел бронхит', 'Acute bronchitis')],
-  'asthma': [dx('J45.901', 'Обострение бронхиальной астмы', 'Бронх демікпесінің өршуі', 'Asthma exacerbation', true), dx('T78.2', 'Анафилаксия', 'Анафилаксия', 'Anaphylaxis')],
-  'hypoglycemia': [dx('E16.2', 'Гипогликемия', 'Гипогликемия', 'Hypoglycemia', true), dx('I63.9', 'Инсульт', 'Инсульт', 'Stroke')],
-  'dka': [dx('E10.1', 'Диабетический кетоацидоз', 'Диабеттік кетоацидоз', 'Diabetic ketoacidosis', true), dx('E16.2', 'Гипогликемия', 'Гипогликемия', 'Hypoglycemia')],
-  'appendicitis': [dx('K35.8', 'Острый аппендицит', 'Жедел аппендицит', 'Acute appendicitis', true), dx('N23', 'Почечная колика', 'Бүйрек шаншуы', 'Renal colic')],
-  'pyelonephritis': [dx('N10', 'Острый пиелонефрит', 'Жедел пиелонефрит', 'Acute pyelonephritis', true), dx('N30.0', 'Острый цистит', 'Жедел цистит', 'Acute cystitis')],
-  'tia': [dx('G45.9', 'Транзиторная ишемическая атака', 'Өтпелі ишемиялық шабуыл', 'Transient ischemic attack', true), dx('I63.9', 'Ишемический инсульт', 'Ишемиялық инсульт', 'Ischemic stroke')],
-  'anaphylaxis': [dx('T78.2', 'Анафилаксия', 'Анафилаксия', 'Anaphylaxis', true), dx('J45.901', 'Астматический приступ', 'Демікпе ұстамасы', 'Asthma attack')],
-  'anemia': [dx('D50.9', 'Железодефицитная анемия', 'Темір тапшылығы анемиясы', 'Iron deficiency anemia', true), dx('D51.9', 'B12-дефицитная анемия', 'B12 тапшылық анемиясы', 'B12 deficiency anemia')],
-  'migraine': [dx('G43.0', 'Мигрень без ауры', 'Аурасыз мигрень', 'Migraine without aura', true), dx('G44.2', 'Головная боль напряжения', 'Кернеу бас ауыруы', 'Tension headache')],
-  'gerd': [dx('K21.9', 'Гастроэзофагеальная рефлюксная болезнь', 'Гастроэзофагеалды рефлюкс ауруы', 'GERD', true), dx('K29.7', 'Гастрит', 'Гастрит', 'Gastritis')],
-  'viral-uri': [dx('J06.9', 'Острая вирусная инфекция верхних дыхательных путей', 'Жоғарғы тыныс жолдарының жедел вирустық инфекциясы', 'Acute viral upper respiratory infection', true), dx('J10.1', 'Грипп', 'Тұмау', 'Influenza')],
-  'preeclampsia': [dx('O14.1', 'Тяжёлая преэклампсия', 'Ауыр преэклампсия', 'Severe preeclampsia', true), dx('O13', 'Гестационная гипертензия', 'Гестациялық гипертензия', 'Gestational hypertension')]
-};
-
-export const cases: MedicalCase[] = allSeeds.map((s) => ({
-  id: s.id,
-  synthetic: true as const,
-  medicalReviewStatus: 'unreviewed' as const,
-  title: t(...s.title),
-  specialty: s.specialty,
-  patient: {
-    name: t(...s.name),
-    age: s.age,
-    sex: s.sex,
-    avatar: `/patients/${s.id}/portrait.svg`,
-  },
-  complaint: t(...s.complaint),
-  urgency: s.urgency,
-  difficulty: s.difficulty,
-  durationMinutes: s.difficulty === 'hard' ? 25 : s.difficulty === 'medium' ? 18 : 12,
-  visualStates: ['neutral', 'thinking', 'speaking', 'pain', 'relieved'],
-  vitals: {
-    heartRate: s.vitals[0],
-    bloodPressure: s.vitals[1],
-    respiratoryRate: s.vitals[2],
-    temperature: s.vitals[3],
-    spo2: s.vitals[4],
-    ...(s.id === 'hypoglycemia' ? { glucose: 2.4 } : {}),
-  },
-  hiddenFacts: s.facts.map((f, i) => ({
-    id: `${s.id}-fact-${i}`,
-    intent: f[0],
-    value: t(f[1], f[2], f[3]),
-    unlockKeywords: i === 0 ? ['когда', 'начал', 'бастал', 'when', 'history', 'анамнез'] : ['ещё', 'тағы', 'other', 'риск', 'risk', 'симптом'],
-    visualState: i === 0 ? 'speaking' : 'thinking',
-    critical: s.urgency === 'emergency',
-  })),
-  examinations: [
-    {
-      id: 'general',
-      category: 'general',
-      label: t('Общий осмотр', 'Жалпы қарау', 'General examination'),
-      result: t(
-        s.urgency === 'emergency' ? 'Состояние тяжёлое, требуется быстрая оценка' : 'Сознание ясное, контакт сохранён',
-        s.urgency === 'emergency' ? 'Жағдайы ауыр, жедел бағалау қажет' : 'Санасы анық, байланыс сақталған',
-        s.urgency === 'emergency' ? 'Unwell, rapid assessment required' : 'Alert and communicative'
-      ),
-      relevant: true,
+  return {
+    id: s.id,
+    synthetic: true as const,
+    medicalReviewStatus: 'unreviewed' as const,
+    title: t(...s.title),
+    specialty: s.specialty,
+    patient: {
+      name: t(...s.name),
+      age: s.age,
+      sex: s.sex,
+      avatar: `/patients/${s.id}/portrait.svg`,
     },
-    {
-      id: 'auscultation',
-      category: 'auscultation',
-      label: t('Аускультация', 'Аускультация', 'Auscultation'),
-      result: t(
-        s.specialty === 'pulmonology' ? 'Выслушиваются патологические дыхательные шумы' : 'Грубых изменений не выявлено',
-        s.specialty === 'pulmonology' ? 'Патологиялық тыныс шуы естіледі' : 'Айқын өзгеріс жоқ',
-        s.specialty === 'pulmonology' ? 'Abnormal breath sounds are present' : 'No gross abnormality'
-      ),
-      relevant: s.specialty === 'pulmonology',
+    complaint: t(...s.complaint),
+    urgency: s.urgency,
+    difficulty: s.difficulty,
+    durationMinutes: s.difficulty === 'hard' ? 25 : s.difficulty === 'medium' ? 18 : 12,
+    visualStates: ['neutral', 'thinking', 'speaking', 'pain', 'relieved'],
+    vitals: {
+      heartRate: s.vitals[0],
+      bloodPressure: s.vitals[1],
+      respiratoryRate: s.vitals[2],
+      temperature: s.vitals[3],
+      spo2: s.vitals[4],
+      ...(s.id === 'hypoglycemia' ? { glucose: 2.4 } : {}),
     },
-  ],
-  investigations: [
-    inv('cbc', 'laboratory', 'Общий анализ крови', 'Жалпы қан талдауы', 'Complete blood count', 'Результат соответствует клиническому контексту', 'Нәтиже клиникалық жағдайға сәйкес', 'Result supports clinical context', 4, 900, true),
-    inv('ecg', 'functional', 'ЭКГ', 'ЭКГ', 'ECG', 'ЭКГ выполнена, ишемических изменений нет', 'ЭКГ орындалды, ишемиялық өзгерістер жоқ', 'ECG completed, no acute ischemic changes', 3, 500, false),
-  ],
-  differentials: differentialMap[s.id] ?? [
-    dx(s.diagnosis[0], s.diagnosis[1], s.diagnosis[2], s.diagnosis[3], true),
-    dx('R69', 'Другое неуточнённое состояние', 'Басқа нақтыланбаған жағдай', 'Other unspecified condition'),
-  ],
-  correctDiagnosis: {
-    code: s.diagnosis[0],
-    name: t(s.diagnosis[1], s.diagnosis[2], s.diagnosis[3]),
-    required: true,
-  },
-  managementPlan: plans(s.urgency === 'routine', ['Оценить тяжесть и пересматривать состояние', 'Сформулировать рабочий диагноз и проверить красные флаги']),
-  expectedActions: ['general', 'cbc', s.diagnosis[0]],
-  dangerousActions: ['dismiss-red-flags', 'unsafe-dose'],
-  scoringRubric: {
-    history: 20,
-    examination: 15,
-    investigations: 15,
-    differential: 10,
-    diagnosis: 15,
-    management: 15,
-    communication: 5,
-    critical: 5,
-  },
-}));
+    hiddenFacts: s.facts.map((f, i) => ({
+      id: `${s.id}-fact-${i}`,
+      intent: f[0],
+      value: t(f[1], f[2], f[3]),
+      unlockKeywords: i === 0 ? ['когда', 'начал', 'бастал', 'when', 'history', 'анамнез'] : ['ещё', 'тағы', 'other', 'риск', 'risk', 'симптом'],
+      visualState: i === 0 ? 'speaking' : 'thinking',
+      critical: s.urgency === 'emergency',
+    })),
+    examinations: caseDef.examinations,
+    investigations: caseDef.investigations,
+    differentials: caseDef.differentials,
+    correctDiagnosis: caseDef.correctDiagnosis,
+    managementPlan: caseDef.managementPlan,
+    expectedActions: caseDef.expectedActions,
+    dangerousActions: caseDef.dangerousActions,
+    scoringRubric: caseDef.scoringRubric,
+  };
+});

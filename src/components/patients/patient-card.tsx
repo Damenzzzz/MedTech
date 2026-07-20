@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Clock, Heart, ArrowRight, ShieldAlert } from 'lucide-react';
+import { Clock, Heart, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import type { StudentCaseDTO } from '@/domain/schemas';
@@ -34,11 +34,6 @@ export function PatientCard({
     typeof item.complaint === 'object'
       ? item.complaint[locale as 'ru' | 'kk' | 'en'] || item.complaint.ru
       : item.complaint;
-
-  const title =
-    typeof item.title === 'object'
-      ? item.title[locale as 'ru' | 'kk' | 'en'] || item.title.ru
-      : item.title;
 
   const urgencyBg =
     item.urgency === 'emergency'

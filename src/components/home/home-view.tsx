@@ -9,17 +9,17 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Activity,
   ArrowRight,
-  Brain,
-  Stethoscope,
-  BookOpenCheck,
-  ShieldCheck,
   Sparkles,
+  Stethoscope,
   Bot,
-  UserCheck,
   Edit3,
-  HeartPulse,
+  UserCheck,
   Thermometer,
+  HeartPulse,
   FileSpreadsheet,
+  ShieldCheck,
+  Brain,
+  BookOpenCheck,
 } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/navigation';
 import { useUserStore } from '@/stores/user-store';

@@ -1,16 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { Activity, ShieldAlert, CheckCircle2, BookOpen, Copy, Check, ChevronDown, AlertTriangle } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { Activity, ShieldAlert, CheckCircle2, BookOpen, Copy, Check, ChevronDown, AlertCircle } from 'lucide-react';
+import { motion } from 'motion/react';
+
+export type RagStatus = 'rag-ready' | 'rag-empty' | 'fallback' | 'unavailable';
 
 export interface DiagnosisItem {
   rank: number;
   diagnosis: string;
   icd10_code: string;
-  confidence: 'high' | 'medium' | 'low';
-  why_this_diagnosis: string;
+  confidence?: 'high' | 'medium' | 'low';
+  why_this_diagnosis?: string;
   supporting_findings?: { finding: string; patient_evidence?: string }[];
   missing_findings?: string[];
   recommended_checks?: string[];
@@ -26,15 +27,14 @@ export interface ProtocolSource {
 interface DifferentialResultsProps {
   diagnoses: DiagnosisItem[];
   sources?: ProtocolSource[];
-  isRagReady?: boolean;
+  ragStatus?: RagStatus;
 }
 
 export function DifferentialResults({
   diagnoses,
   sources,
-  isRagReady = true,
+  ragStatus = 'rag-ready',
 }: DifferentialResultsProps) {
-  const t = useTranslations('Ai');
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [expandedSourceIdx, setExpandedSourceIdx] = useState<number | null>(null);
 
@@ -46,6 +46,8 @@ export function DifferentialResults({
     setCopiedIdx(idx);
     setTimeout(() => setCopiedIdx(null), 2000);
   };
+
+  const hasSources = Array.isArray(sources) && sources.length > 0;
 
   return (
     <div className="space-y-6">
@@ -60,6 +62,14 @@ export function DifferentialResults({
         </div>
       </div>
 
+      {/* RAG Status Banner */}
+      {ragStatus === 'fallback' && (
+        <div className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs font-semibold text-amber-900 shadow-xs">
+          <AlertCircle size={16} className="text-amber-600 shrink-0" />
+          <span>Выполнен повторный / автономный анализ (RAG-сервис недоступен или локальный fallback).</span>
+        </div>
+      )}
+
       {/* Ranked Diagnoses Cards */}
       <div className="space-y-4">
         <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -69,17 +79,18 @@ export function DifferentialResults({
 
         <div className="grid gap-4">
           {diagnoses.map((item) => {
+            const conf = item.confidence || 'medium';
             const confBg =
-              item.confidence === 'high'
+              conf === 'high'
                 ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
-                : item.confidence === 'medium'
+                : conf === 'medium'
                 ? 'bg-amber-100 text-amber-900 border-amber-300'
                 : 'bg-slate-100 text-slate-700 border-slate-300';
 
             const confLabel =
-              item.confidence === 'high'
+              conf === 'high'
                 ? 'Высокая вероятность'
-                : item.confidence === 'medium'
+                : conf === 'medium'
                 ? 'Умеренная вероятность'
                 : 'Низкая вероятность';
 
@@ -112,10 +123,12 @@ export function DifferentialResults({
                 </div>
 
                 {/* Clinical Rationale */}
-                <p className="text-xs font-medium text-slate-700 leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
-                  <strong className="text-slate-900 font-bold block mb-1">Обоснование нозологии:</strong>
-                  {item.why_this_diagnosis}
-                </p>
+                {item.why_this_diagnosis && (
+                  <p className="text-xs font-medium text-slate-700 leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                    <strong className="text-slate-900 font-bold block mb-1">Обоснование нозологии:</strong>
+                    {item.why_this_diagnosis}
+                  </p>
+                )}
 
                 {/* Supporting Findings */}
                 {item.supporting_findings && item.supporting_findings.length > 0 && (
@@ -130,7 +143,7 @@ export function DifferentialResults({
                           <span className="font-bold text-emerald-900">• {f.finding}</span>
                           {f.patient_evidence && (
                             <span className="text-slate-500 text-[11px]">
-                              (Свидетельство: "{f.patient_evidence}")
+                              (Свидетельство: &quot;{f.patient_evidence}&quot;)
                             </span>
                           )}
                         </li>
@@ -176,19 +189,25 @@ export function DifferentialResults({
         </div>
       </div>
 
-      {/* Protocol Sources (RAG Citations) */}
-      {sources && sources.length > 0 && (
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-              <BookOpen size={18} className="text-teal-600" />
-              <span>Источники клинических протоколов МЗ РК (RAG Sources)</span>
-            </div>
-            <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-800 border border-teal-200">
-              Официальные протоколы
-            </span>
+      {/* Protocol Sources (RAG Citations or Empty State) */}
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
+            <BookOpen size={18} className="text-teal-600" />
+            <span>Источники клинических протоколов МЗ РК</span>
           </div>
+          <span
+            className={`rounded-full px-2.5 py-1 text-[11px] font-bold border ${
+              hasSources
+                ? 'bg-teal-50 text-teal-800 border-teal-200'
+                : 'bg-slate-100 text-slate-600 border-slate-200'
+            }`}
+          >
+            {hasSources ? 'Официальные протоколы' : 'RAG-источники не получены'}
+          </span>
+        </div>
 
+        {hasSources ? (
           <div className="space-y-3">
             {sources.map((src, idx) => {
               const isExpanded = expandedSourceIdx === idx;
@@ -230,8 +249,12 @@ export function DifferentialResults({
               );
             })}
           </div>
-        </div>
-      )}
+        ) : (
+          <p className="text-xs font-medium text-slate-500 py-2">
+            Прямые ссылки на статьи протоколов отсутствуют для данного ответа. Использован автономный расчет.
+          </p>
+        )}
+      </div>
     </div>
   );
 }

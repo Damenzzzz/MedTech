@@ -11,27 +11,27 @@ interface AIModeTabsProps {
 }
 
 export function AIModeTabs({ activeMode, onChangeMode }: AIModeTabsProps) {
-  const t = useTranslations('Ai');
+  const t = useTranslations('AI');
 
   const tabs: { id: AIMode; label: string; icon: typeof Bot; badge?: string; desc: string }[] = [
     {
       id: 'clinical',
-      label: 'Клинический запрос',
+      label: t('clinicalTab'),
       icon: Bot,
-      desc: 'AI-помощник дифференциальной диагностики & RAG',
+      desc: t('clinicalDesc'),
     },
     {
       id: 'simulator',
-      label: 'Симулятор пациента',
+      label: t('simulatorTab'),
       icon: Stethoscope,
-      badge: '13 сценариев',
-      desc: 'Учебный тренажёр отработки навыков',
+      badge: t('simulatorBadge'),
+      desc: t('simulatorDesc'),
     },
     {
       id: 'stt',
-      label: 'Запись приёма',
+      label: t('sttTab'),
       icon: Mic,
-      desc: 'Голосовая расшифровка и диаризация реплик',
+      desc: t('sttDesc'),
     },
   ];
 

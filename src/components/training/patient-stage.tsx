@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'motion/react';
 import type { PatientVisualState, StudentCaseDTO } from '@/domain/schemas';
 import { HeartPulse, MessageSquare, AlertTriangle, Sparkles, Thermometer } from 'lucide-react';
@@ -21,8 +20,6 @@ export function PatientStage({
   isThinking,
   locale,
 }: PatientStageProps) {
-  const t = useTranslations('Training');
-
   const patientName =
     typeof patient.patient.name === 'object'
       ? patient.patient.name[locale as 'ru' | 'kk' | 'en'] || patient.patient.name.ru

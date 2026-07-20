@@ -2,29 +2,61 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Award, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
-import type { StudentCaseDTO } from '@/domain/schemas';
+import { Award, ArrowRight, ShieldCheck, CheckCircle2, AlertTriangle, AlertCircle } from 'lucide-react';
+import type { StudentCaseDTO, TrainingSession } from '@/domain/schemas';
 
 interface FinishPanelProps {
   patient: StudentCaseDTO;
+  session: TrainingSession | null;
   onFinishSession: () => Promise<void>;
+  onSelectStage: (stageIndex: number) => void;
 }
 
-export function FinishPanel({ patient, onFinishSession }: FinishPanelProps) {
+export function FinishPanel({
+  patient: _patient,
+  session,
+  onFinishSession,
+  onSelectStage,
+}: FinishPanelProps) {
   const t = useTranslations('Training');
   const [isFinishing, setIsFinishing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const hasDialogue = Boolean(session?.dialogue && session.dialogue.length > 0);
+  const hasExams = Boolean(session?.performedExaminations && session.performedExaminations.length > 0);
+  const hasTests = Boolean(session?.selectedInvestigations && session.selectedInvestigations.length > 0);
+  const hasDiffs = Boolean(session?.differentials && session.differentials.length > 0);
+  const hasFinal = Boolean(session?.finalDiagnosis);
+  const hasReasoning = Boolean(session?.clinicalReasoning && session.clinicalReasoning.trim().length >= 20);
+
+  const missingSections: { label: string; stageIdx: number }[] = [];
+
+  if (!hasFinal) {
+    missingSections.push({ label: 'Основной диагноз не выбран', stageIdx: 4 });
+  }
+  if (!hasReasoning) {
+    missingSections.push({ label: 'Клиническое обоснование < 20 символов', stageIdx: 4 });
+  }
 
   const handleFinish = async () => {
+    if (missingSections.length > 0) {
+      setErrorMessage('Не заполнены обязательные разделы диагноза. Перейдите к этапу «Диагноз» и завершите оформление.');
+      return;
+    }
+
     setIsFinishing(true);
+    setErrorMessage(null);
+
     try {
       await onFinishSession();
     } catch {
       setIsFinishing(false);
+      setErrorMessage('Не удалось сформировать клинический разбор (Debrief). Попробуйте ещё раз.');
     }
   };
 
   return (
-    <div className="flex flex-col h-full space-y-6 justify-between">
+    <div className="flex flex-col h-full space-y-5">
       {/* Header */}
       <div className="flex items-center gap-2.5 border-b border-slate-200 pb-3">
         <div className="grid size-9 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
@@ -35,54 +67,102 @@ export function FinishPanel({ patient, onFinishSession }: FinishPanelProps) {
             Завершение клинического приёма
           </h3>
           <p className="text-[11px] font-medium text-slate-500">
-            Подведение итогов и переход к Debrief
+            Подведение итогов и экспертный разбор
           </p>
         </div>
       </div>
 
-      {/* Summary Card */}
-      <div className="rounded-3xl border border-teal-200 bg-gradient-to-br from-teal-50 to-emerald-50 p-6 space-y-4 shadow-sm my-auto">
-        <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-bold text-teal-800 shadow-xs">
-          <ShieldCheck size={16} className="text-teal-600" />
-          <span>Клинический цикл завершён</span>
+      <div className="space-y-4 flex-1 overflow-y-auto pr-1">
+        {/* Error Banner */}
+        {errorMessage && (
+          <div className="flex items-start gap-2.5 rounded-2xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-900 font-medium leading-relaxed">
+            <AlertTriangle size={18} className="text-red-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Ошибка завершения</p>
+              <p className="mt-0.5 text-red-800">{errorMessage}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Missing Required Sections Warning */}
+        {missingSections.length > 0 && !errorMessage && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-2 text-xs">
+            <div className="flex items-center gap-2 text-amber-900 font-bold">
+              <AlertCircle size={16} className="text-amber-600" />
+              <span>Пропущены обязательные разделы:</span>
+            </div>
+            <ul className="space-y-1.5 pl-6 list-disc text-amber-950 font-medium">
+              {missingSections.map((sec) => (
+                <li key={sec.label}>
+                  <button
+                    onClick={() => onSelectStage(sec.stageIdx)}
+                    className="underline text-amber-900 hover:text-amber-950 font-bold text-left"
+                  >
+                    {sec.label} (Заполнить →)
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Stages Readiness Checklist */}
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-2.5 shadow-xs">
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            Готовность разделов приёма:
+          </p>
+          <div className="grid grid-cols-1 gap-2 text-xs font-semibold">
+            <div className={`flex items-center justify-between p-2 rounded-xl border ${hasDialogue ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+              <span>1. Сбор анамнеза ({session?.dialogue?.length || 0} сообщ.)</span>
+              {hasDialogue ? <CheckCircle2 size={16} className="text-emerald-600" /> : <span className="text-[11px]">Пропущено</span>}
+            </div>
+
+            <div className={`flex items-center justify-between p-2 rounded-xl border ${hasExams ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+              <span>2. Осмотр ({session?.performedExaminations?.length || 0} выполн.)</span>
+              {hasExams ? <CheckCircle2 size={16} className="text-emerald-600" /> : <span className="text-[11px]">Пропущено</span>}
+            </div>
+
+            <div className={`flex items-center justify-between p-2 rounded-xl border ${hasTests ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+              <span>3. Исследования ({session?.selectedInvestigations?.length || 0} назн.)</span>
+              {hasTests ? <CheckCircle2 size={16} className="text-emerald-600" /> : <span className="text-[11px]">Пропущено</span>}
+            </div>
+
+            <div className={`flex items-center justify-between p-2 rounded-xl border ${hasDiffs ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+              <span>4. Дифференциальный ряд ({session?.differentials?.length || 0} подтв.)</span>
+              {hasDiffs ? <CheckCircle2 size={16} className="text-emerald-600" /> : <span className="text-[11px]">Пропущено</span>}
+            </div>
+
+            <div className={`flex items-center justify-between p-2 rounded-xl border ${hasFinal && hasReasoning ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-amber-50 border-amber-200 text-amber-900'}`}>
+              <span>5. Основной диагноз и обоснование</span>
+              {hasFinal && hasReasoning ? <CheckCircle2 size={16} className="text-emerald-600" /> : <AlertTriangle size={16} className="text-amber-600" />}
+            </div>
+          </div>
         </div>
 
-        <h4 className="text-base font-bold text-slate-900 leading-snug">
-          Вы готовы отправить решение на автоматический клиника-диагностический разбор.
-        </h4>
-
-        <p className="text-xs font-medium text-slate-600 leading-relaxed">
-          {t('finishHint')}
-        </p>
-
-        <div className="space-y-2 pt-2 border-t border-teal-200/60 text-xs font-semibold text-teal-900">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 size={15} className="text-emerald-600" />
-            <span>Оценка 8 клинических компетенций</span>
+        {/* Info Banner */}
+        <div className="rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50 to-emerald-50 p-4 space-y-2">
+          <div className="flex items-center gap-2 text-teal-900 font-bold text-xs">
+            <ShieldCheck size={16} className="text-teal-600" />
+            <span>Автоматический экспертный разбор</span>
           </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle2 size={15} className="text-emerald-600" />
-            <span>Анализ пропущенных вопросов и красных флагов</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle2 size={15} className="text-emerald-600" />
-            <span>Сравнение с эталоном (Ground Truth)</span>
-          </div>
+          <p className="text-xs text-slate-600 leading-relaxed font-medium">
+            После нажатия кнопки система сформирует оценку клиника-диагностических решений и откроет интерактивный Debrief.
+          </p>
         </div>
       </div>
 
-      {/* Big Finish Button */}
+      {/* Submit Button */}
       <button
         onClick={handleFinish}
         disabled={isFinishing}
-        className="focus-ring w-full rounded-2xl bg-emerald-600 py-4 text-sm font-bold text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+        className="focus-ring w-full rounded-2xl bg-emerald-600 py-3.5 text-xs font-bold text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-auto"
       >
         {isFinishing ? (
           <span>Формирование разбора...</span>
         ) : (
           <>
             <span>{t('finish')}</span>
-            <ArrowRight size={18} />
+            <ArrowRight size={16} />
           </>
         )}
       </button>

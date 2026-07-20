@@ -23,15 +23,7 @@ export function ManagementPanel({
 }: ManagementPanelProps) {
   const t = useTranslations('Training');
 
-  const plan = patient.managementPlan;
-  const items = [
-    ...plan.recommendations,
-    ...plan.medications,
-    ...plan.nonDrug,
-    plan.disposition,
-    plan.followUp,
-    ...plan.redFlags,
-  ];
+  const options = patient.managementOptions || [];
 
   return (
     <div className="flex flex-col h-full space-y-4">
@@ -57,15 +49,15 @@ export function ManagementPanel({
             Нажмите, чтобы добавить в план ведения:
           </p>
           <div className="space-y-1.5">
-            {items.map((itemObj, idx) => {
+            {options.map((opt) => {
               const val =
-                typeof itemObj === 'object'
-                  ? itemObj[locale as 'ru' | 'kk' | 'en'] || itemObj.ru
-                  : String(itemObj);
+                typeof opt.label === 'object'
+                  ? opt.label[locale as 'ru' | 'kk' | 'en'] || opt.label.ru
+                  : String(opt.label);
 
               return (
                 <button
-                  key={val + idx}
+                  key={opt.id}
                   type="button"
                   onClick={() => onAppendNoteItem(val)}
                   className="focus-ring flex w-full items-start gap-2 rounded-xl border border-slate-200 bg-white p-2.5 text-left text-xs font-medium text-slate-700 hover:border-teal-300 hover:bg-teal-50 hover:text-teal-900 transition-all"

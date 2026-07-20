@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
-import { Sparkles, Send, History, X, HelpCircle, FileText } from 'lucide-react';
+import { Sparkles, Send, History, HelpCircle, FileText } from 'lucide-react';
 
 interface ClinicalQueryFormProps {
   onSubmitQuery: (symptoms: string) => void;
@@ -22,8 +21,6 @@ export function ClinicalQueryForm({
   isLoading,
   onCancelLoading,
 }: ClinicalQueryFormProps) {
-  const t = useTranslations('Ai');
-
   const [query, setQuery] = useState('');
   const [history, setHistory] = useState<string[]>([]);
 
