@@ -1,6 +1,10 @@
 type JsonValue=Record<string,unknown>;
 
 export async function callClinicalJson<T extends JsonValue>(prompt:string, options?:{system?:string;maxTokens?:number;timeoutMs?:number}):Promise<T|null> {
+  const gemini=await callGemini(prompt,{...options,json:true});
+  const geminiJson=gemini ? parseJsonObject<T>(gemini) : null;
+  if (geminiJson) return geminiJson;
+
   const apiKey=process.env.ALEM_API_KEY;
   if (!apiKey) return null;
   try {
@@ -28,6 +32,9 @@ export async function callClinicalJson<T extends JsonValue>(prompt:string, optio
 }
 
 export async function callClinicalText(prompt:string, options?:{system?:string;maxTokens?:number;timeoutMs?:number}):Promise<string|null> {
+  const gemini=await callGemini(prompt,{...options,json:false});
+  if (gemini) return gemini;
+
   const apiKey=process.env.ALEM_API_KEY;
   if (!apiKey) return null;
   try {
@@ -52,6 +59,40 @@ export async function callClinicalText(prompt:string, options?:{system?:string;m
   } catch {
     return null;
   }
+}
+
+async function callGemini(prompt:string, options?:{system?:string;maxTokens?:number;timeoutMs?:number;json?:boolean}) {
+  const apiKey=process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+  try {
+    const model=process.env.GEMINI_MODEL??'gemini-2.5-flash';
+    const response=await fetch(`${geminiBaseUrl()}/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({
+        systemInstruction:options?.system?{parts:[{text:options.system}]}:undefined,
+        contents:[{role:'user',parts:[{text:prompt}]}],
+        generationConfig:{
+          temperature:options?.json?0.1:0.2,
+          maxOutputTokens:options?.maxTokens??1200,
+          responseMimeType:options?.json?'application/json':'text/plain',
+        },
+      }),
+      cache:'no-store',
+      signal:AbortSignal.timeout(options?.timeoutMs??30000),
+    });
+    if (!response.ok) return null;
+    const data=await response.json();
+    const parts=data.candidates?.[0]?.content?.parts;
+    if (!Array.isArray(parts)) return null;
+    return parts.map((part:{text?:string})=>part.text??'').join('').trim()||null;
+  } catch {
+    return null;
+  }
+}
+
+function geminiBaseUrl() {
+  return (process.env.GEMINI_BASE_URL??'https://generativelanguage.googleapis.com/v1beta').replace(/\/$/,'');
 }
 
 function alemBaseUrl() {
