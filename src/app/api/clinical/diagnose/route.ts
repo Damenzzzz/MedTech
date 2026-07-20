@@ -1,14 +1,10 @@
 import {NextResponse} from 'next/server';
-import {getDemoRagFallback} from '@/lib/demo-rag';
 import {callClinicalJson} from '@/lib/llm';
 
 export const maxDuration=300;
 
 export async function POST(request:Request) {
   const body=await request.json();
-  const demo=getDemoRagFallback(String(body.symptoms??''));
-  if (demo) return NextResponse.json(demo);
-
   const base=process.env.RAG_SERVICE_URL;
   if (base) {
     try {

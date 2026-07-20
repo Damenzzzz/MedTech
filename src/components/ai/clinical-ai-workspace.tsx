@@ -76,9 +76,7 @@ function RagPanel(){
     setLoading(true);setError('');
     try{
       const job=await startDiagnoseJob(symptoms);
-      if(job?.result){
-        setData(job.result);
-      }else if(job?.job_id){
+      if(job?.job_id){
         const result=await waitDiagnoseJob(job.job_id);
         setData(result);
       }else{

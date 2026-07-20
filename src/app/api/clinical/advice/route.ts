@@ -1,5 +1,4 @@
 import {NextResponse} from 'next/server';
-import {getDemoRagFallback} from '@/lib/demo-rag';
 import {callClinicalJson} from '@/lib/llm';
 
 export const maxDuration=300;
@@ -117,13 +116,10 @@ function hasEmergencyRedFlags(scenario:string) {
   return /боль за грудин|давящ.{0,40}грудин|холодн.{0,16}пот|иррадиац|одышк|SpO2\s*(8|9[0-2])|АД\s*8\d|потер.{0,16}созн|судорог|кровотеч|анафилак|инсульт|170\/110|беремен.{0,80}(голов|мушк|подреб|тромбоцит|алт|аст)/i.test(scenario);
 }
 
-async function getRagContext(scenario:string,_resources:string) {
+async function getRagContext(scenario:string,resources:string) {
   const base=process.env.RAG_SERVICE_URL;
   if (!base) return {status:'rag-unavailable',result:null};
-  const symptoms=scenario;
-  const demo=getDemoRagFallback(symptoms);
-  if (demo) return {status:'rag-ready-with-warning',result:demo};
-
+  const symptoms=`${scenario}\n\nУсловия помощи: ${resources}`;
   const viaJob=await getRagContextViaJob(base, symptoms);
   if (viaJob.status !== "rag-job-unavailable") return viaJob;
   if (!isLocalRag(base)) return {status:'rag-limited',result:null};
@@ -196,8 +192,8 @@ async function buildAdvice({scenario,role,resources,rag}:{scenario:string;role:s
   },null,2).slice(0,16000);
   const prompt=`Ты клинический AI-ассистент для врача/медсестры в сельской местности Казахстана.
 Задача: помочь медработнику быстро сориентироваться, что делать сейчас.
-Если rag_status = "rag-ready" или "rag-ready-with-warning", опирайся на RAG-контекст официальных клинических протоколов.
-Если rag_status НЕ "rag-ready" и НЕ "rag-ready-with-warning", RAG не запускался или не успел: дай общий безопасный план, не утверждай, что сверялся с протоколами, и при риске советуй очную маршрутизацию/локальный протокол.
+Если rag_status = "rag-ready", опирайся на RAG-контекст официальных клинических протоколов.
+Если rag_status НЕ "rag-ready", RAG не запускался или не успел: дай общий безопасный план, не утверждай, что сверялся с протоколами, и при риске советуй очную маршрутизацию/локальный протокол.
 
 Критически важные правила:
 - Ты НЕ заменяешь врача. Последнее решение принимает врач или ответственный медработник на месте.
