@@ -56,6 +56,16 @@ JSON only: {"need_rag":true|false,"reason":"short reason"}`;
 }
 
 async function buildFastChat({scenario,role,resources,messages}:{scenario:string;role:string;resources:string;messages:AdviceMessage[]}) {
+  if (hasEmergencyRedFlags(scenario)) {
+    return {
+      mode:'chat',
+      safety_notice:'AI-ассистент помогает, но последнее решение принимает врач/ответственный медработник на месте.',
+      reply:'Похоже на неотложную ситуацию. Не ждите длинный RAG: оцените ABC, сознание, дыхание, АД, пульс, SpO2, снимите ЭКГ при боли в груди и организуйте срочную маршрутизацию/скорую. Конкретные лекарства, дозы и противопоказания лучше сверить через "Дать действия" и локальный протокол.',
+      questions:['Какие АД, пульс, SpO2 и ЧДД сейчас?','Когда начались симптомы и сохраняются ли сейчас?','Есть ли нарушение сознания, выраженная одышка, шок, кровотечение или неврологический дефицит?'],
+      need_rag:true,
+      urgency_hint:'emergency',
+    };
+  }
   const history=messages.slice(-12).map(m=>`${m.role==='clinician'?'Медработник':'AI'}: ${m.content}`).join('\n');
   const prompt=`Ты быстрый клинический AI-ассистент для врача/медсестры в сельской местности.
 Это режим короткого чата ДО тяжелого RAG-поиска. Не запускай RAG мысленно и не ссылайся на протоколы, если их нет в сообщении.
@@ -101,6 +111,10 @@ ${history || 'Пока нет.'}
     need_rag:true,
     urgency_hint:'urgent',
   };
+}
+
+function hasEmergencyRedFlags(scenario:string) {
+  return /боль за грудин|давящ.{0,40}грудин|холодн.{0,16}пот|иррадиац|одышк|SpO2\s*(8|9[0-2])|АД\s*8\d|потер.{0,16}созн|судорог|кровотеч|анафилак|инсульт|170\/110|беремен.{0,80}(голов|мушк|подреб|тромбоцит|алт|аст)/i.test(scenario);
 }
 
 async function getRagContext(scenario:string,_resources:string) {
