@@ -2,39 +2,63 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Stethoscope, CheckCircle2, HeartPulse, Thermometer, Activity, Eye, ChevronDown } from 'lucide-react';
+import { Stethoscope, CheckCircle2, HeartPulse, Thermometer, Activity, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import type { StudentCaseDTO } from '@/domain/schemas';
+import type { StudentCaseDTO, PerformedExamination } from '@/domain/schemas';
 
 interface ExaminationPanelProps {
   patient: StudentCaseDTO;
-  performedExamIds: string[];
-  onPerformExam: (examId: string) => void;
+  performedExaminations: PerformedExamination[];
+  onPerformExam: (examId: string, result: string) => Promise<void>;
   onNextStage: () => void;
   locale: string;
 }
 
 export function ExaminationPanel({
   patient,
-  performedExamIds,
+  performedExaminations,
   onPerformExam,
   onNextStage,
   locale,
 }: ExaminationPanelProps) {
   const t = useTranslations('Training');
+  const c = useTranslations('Common');
   const [loadingExamId, setLoadingExamId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handlePerform = (examId: string) => {
+  const handlePerform = async (examId: string) => {
+    const existing = performedExaminations.find((e) => e.id === examId);
+    if (existing) return;
+
     setLoadingExamId(examId);
-    setTimeout(() => {
-      onPerformExam(examId);
+    setErrorMessage(null);
+
+    try {
+      const res = await fetch('/api/session/examinations/perform', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          caseId: patient.id,
+          examinationId: examId,
+          locale,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('perform_failed');
+      }
+
+      const data = await res.json();
+      await onPerformExam(examId, data.result);
+    } catch {
+      setErrorMessage(`Ошибка выполнения физикального осмотра (${examId}). Попробуйте ещё раз.`);
+    } finally {
       setLoadingExamId(null);
-    }, 400);
+    }
   };
 
   const vitals = patient.vitals;
 
-  // Medical status color coding for vitals
   const getHeartRateColor = (hr: number) => (hr < 60 || hr > 100 ? 'text-amber-600' : 'text-slate-900');
   const getSpo2Color = (spo2: number) => (spo2 < 95 ? 'text-red-600 font-bold' : 'text-slate-900');
   const getTempColor = (temp: number) => (temp >= 38 ? 'text-amber-600 font-bold' : 'text-slate-900');
@@ -55,6 +79,20 @@ export function ExaminationPanel({
           </p>
         </div>
       </div>
+
+      {/* Error Banner */}
+      {errorMessage && (
+        <div className="flex items-center justify-between rounded-2xl border border-red-200 bg-red-50 p-3 text-xs text-red-900">
+          <span>{errorMessage}</span>
+          <button
+            onClick={() => setErrorMessage(null)}
+            className="flex items-center gap-1 font-bold text-red-700 hover:underline"
+          >
+            <RotateCcw size={13} />
+            <span>{c('retry')}</span>
+          </button>
+        </div>
+      )}
 
       {/* Medical Vital Cards */}
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
@@ -127,18 +165,14 @@ export function ExaminationPanel({
         </p>
 
         {patient.examinations.map((exam) => {
-          const isDone = performedExamIds.includes(exam.id);
+          const performedEntry = performedExaminations.find((e) => e.id === exam.id);
+          const isDone = Boolean(performedEntry);
           const isLoading = loadingExamId === exam.id;
 
           const label =
             typeof exam.label === 'object'
               ? exam.label[locale as 'ru' | 'kk' | 'en'] || exam.label.ru
               : exam.label;
-
-          const result =
-            typeof exam.result === 'object'
-              ? exam.result[locale as 'ru' | 'kk' | 'en'] || exam.result.ru
-              : exam.result;
 
           return (
             <div
@@ -190,14 +224,14 @@ export function ExaminationPanel({
                   </motion.div>
                 )}
 
-                {isDone && !isLoading && (
+                {isDone && performedEntry && !isLoading && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     className="mt-3 pt-3 border-t border-emerald-200/80 text-xs font-medium text-slate-800 leading-relaxed"
                   >
                     <p className="font-semibold text-emerald-950">Результат осмотра:</p>
-                    <p className="mt-1">{result}</p>
+                    <p className="mt-1">{performedEntry.result}</p>
                   </motion.div>
                 )}
               </AnimatePresence>

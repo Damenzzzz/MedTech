@@ -9,7 +9,6 @@ import { Link } from '@/i18n/navigation';
 
 export function DebriefView({ caseId }: { caseId: string }) {
   const t = useTranslations('Debrief');
-  const c = useTranslations('Common');
 
   const [data, setData] = useState<DebriefResult | null>(null);
 

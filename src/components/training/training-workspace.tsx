@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import type { PatientVisualState, StudentCaseDTO } from '@/domain/schemas';
 import { PatientMessageResultSchema } from '@/engines/patient-engine';
 import { useTrainingStore } from '@/stores/training-store';
@@ -22,7 +22,6 @@ import { CommandPalette } from './command-palette';
 import { ClipboardList, ArrowRight } from 'lucide-react';
 
 export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
-  const t = useTranslations('Training');
   const locale = useLocale() as 'ru' | 'kk' | 'en';
   const router = useRouter();
 
@@ -35,8 +34,6 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-
-  const [latestPatientAnswer, setLatestPatientAnswer] = useState<string>('');
 
   // Initialize store session
   useEffect(() => {
@@ -70,10 +67,17 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
   const handleAskQuestion = async (question: string) => {
     if (!session || !question.trim()) return;
 
+    store.addStudentMessage(question);
     store.addAction('question', question);
     setIsThinking(true);
     setHasError(false);
     setVisualState('thinking');
+
+    const fullHistory = (session.dialogue || []).map((d) => ({
+      role: d.role,
+      text: d.text,
+    }));
+    fullHistory.push({ role: 'student', text: question });
 
     try {
       const response = await fetch('/api/session/respond', {
@@ -84,16 +88,16 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
           message: question,
           locale,
           revealedFactIds: session.revealedFactIds,
-          dialogue: [{ role: 'student', text: question }],
+          dialogue: fullHistory.slice(-15),
         }),
       });
 
       if (!response.ok) throw new Error('API Error');
 
       const result = PatientMessageResultSchema.parse(await response.json());
+      store.addPatientMessage(result.answer, result.visualState);
       store.reveal(result.newFactIds);
       setVisualState(result.visualState);
-      setLatestPatientAnswer(result.answer);
     } catch {
       setHasError(true);
       setVisualState('neutral');
@@ -102,17 +106,59 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
     }
   };
 
-  // Order investigation
-  const handleOrderTest = (testId: string, delayMs: number) => {
-    if (!session || session.selectedInvestigations.includes(testId)) return;
-    store.orderTest(testId);
-    store.addAction('investigation', testId);
+  const handleRetryQuestion = async () => {
+    const dialogue = session?.dialogue || [];
+    const lastStudentMsg = [...dialogue].reverse().find((m) => m.role === 'student');
+    if (!lastStudentMsg) return;
+
+    setIsThinking(true);
+    setHasError(false);
+    setVisualState('thinking');
+
+    const fullHistory = dialogue.map((d) => ({
+      role: d.role,
+      text: d.text,
+    }));
+
+    try {
+      const response = await fetch('/api/session/respond', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          caseId: patient.id,
+          message: lastStudentMsg.text,
+          locale,
+          revealedFactIds: session?.revealedFactIds || [],
+          dialogue: fullHistory.slice(-15),
+        }),
+      });
+
+      if (!response.ok) throw new Error('API Error');
+
+      const result = PatientMessageResultSchema.parse(await response.json());
+      store.addPatientMessage(result.answer, result.visualState);
+      store.reveal(result.newFactIds);
+      setVisualState(result.visualState);
+    } catch {
+      setHasError(true);
+      setVisualState('neutral');
+    } finally {
+      setIsThinking(false);
+    }
   };
 
   // Perform physical examination
-  const handlePerformExam = (examId: string) => {
+  const handlePerformExam = async (examId: string, result: string) => {
     if (!session) return;
+    store.addPerformedExamination(examId, result);
     store.addAction('examination', examId);
+  };
+
+  // Order investigation
+  const handleOrderTest = async (testId: string, result: string, delayMs: number) => {
+    if (!session) return;
+    store.addOrderedInvestigation(testId, result, delayMs);
+    store.addAction('investigation', testId);
   };
 
   // Append management item
@@ -136,23 +182,47 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
       body: JSON.stringify({ ...session, completedAt: Date.now() }),
     });
 
-    if (response.ok) {
-      const resultData = await response.json();
+    if (!response.ok) {
+      throw new Error('debrief_failed');
+    }
+
+    const resultData = await response.json();
+    try {
       localStorage.setItem(`kms-debrief-${patient.id}`, JSON.stringify(resultData));
 
-      const progress = JSON.parse(localStorage.getItem('kms-progress') ?? '[]') as unknown[];
-      localStorage.setItem(
-        'kms-progress',
-        JSON.stringify([...progress, { caseId: patient.id, date: new Date().toISOString() }].slice(-20))
-      );
+      let progress: Record<string, unknown>[] = [];
+      try {
+        progress = JSON.parse(localStorage.getItem('kms-progress') ?? '[]');
+        if (!Array.isArray(progress)) progress = [];
+      } catch {
+        progress = [];
+      }
 
-      router.push(`/debrief/${patient.id}`);
+      const filtered = progress.filter((p) => p && p.sessionId !== session.id);
+      const newEntry = {
+        caseId: patient.id,
+        sessionId: session.id,
+        completedAt: Date.now(),
+        score: resultData.total ?? 0,
+        categories: resultData.categories ?? {},
+        specialty: patient.specialty,
+      };
+
+      localStorage.setItem('kms-progress', JSON.stringify([...filtered, newEntry].slice(-50)));
+    } catch {
+      // Safe fallback if localStorage fails
     }
+
+    router.push(`/debrief/${patient.id}`);
   };
 
   const handleNextStage = () => {
     store.setStage(Math.min(7, currentStage + 1));
   };
+
+  // Extract latest patient message text for PatientStage bubble
+  const patientDialogue = session?.dialogue || [];
+  const latestPatientMessage = [...patientDialogue].reverse().find((m) => m.role === 'patient');
 
   return (
     <div className="min-h-screen bg-[color:var(--canvas)] flex flex-col font-sans">
@@ -179,7 +249,7 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
           <PatientStage
             patient={patient}
             visualState={visualState}
-            latestAnswer={latestPatientAnswer}
+            latestAnswer={latestPatientMessage?.text}
             isThinking={isThinking}
             locale={locale}
           />
@@ -227,11 +297,12 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
           {currentStage === 1 && (
             <ConversationPanel
               patient={patient}
+              dialogue={session?.dialogue || []}
               revealedFactCount={session?.revealedFactIds.length || 0}
               onAskQuestion={handleAskQuestion}
               isThinking={isThinking}
               hasError={hasError}
-              onRetry={() => handleAskQuestion('Повторите жалоба')}
+              onRetry={handleRetryQuestion}
               onNextStage={handleNextStage}
             />
           )}
@@ -240,11 +311,7 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
           {currentStage === 2 && (
             <ExaminationPanel
               patient={patient}
-              performedExamIds={
-                session?.actions
-                  .filter((a) => a.type === 'examination')
-                  .map((a) => a.value) || []
-              }
+              performedExaminations={session?.performedExaminations || []}
               onPerformExam={handlePerformExam}
               onNextStage={handleNextStage}
               locale={locale}
@@ -255,8 +322,9 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
           {currentStage === 3 && (
             <InvestigationPanel
               patient={patient}
-              orderedIds={session?.selectedInvestigations || []}
+              orderedInvestigations={session?.orderedInvestigations || []}
               onOrderTest={handleOrderTest}
+              onUpdateStatus={(id, status) => store.updateInvestigationStatus(id, status)}
               onNextStage={handleNextStage}
               locale={locale}
             />
@@ -309,7 +377,9 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
           {currentStage === 7 && (
             <FinishPanel
               patient={patient}
+              session={session}
               onFinishSession={handleFinishSession}
+              onSelectStage={(idx) => store.setStage(idx)}
             />
           )}
         </aside>

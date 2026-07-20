@@ -1,9 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { HelpCircle, Send, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { HelpCircle, Send, Sparkles } from 'lucide-react';
 
 export interface FollowUpQuestion {
   question: string;
@@ -22,7 +20,6 @@ export function ClarificationPanel({
   onAnswerQuestion,
   isUpdating,
 }: ClarificationPanelProps) {
-  const t = useTranslations('Ai');
   const [customAnswer, setCustomAnswer] = useState('');
 
   if (!questions || questions.length === 0) return null;

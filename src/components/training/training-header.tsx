@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { ArrowLeft, Clock, ShieldCheck, CheckCircle2, HelpCircle, Command } from 'lucide-react';
+import { ArrowLeft, Clock, ShieldCheck, Command } from 'lucide-react';
 import type { StudentCaseDTO } from '@/domain/schemas';
 
 interface TrainingHeaderProps {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { HeartPulse, Plus, Check } from 'lucide-react';
+import { HeartPulse, Plus } from 'lucide-react';
 import type { StudentCaseDTO } from '@/domain/schemas';
 
 interface DifferentialPanelProps {

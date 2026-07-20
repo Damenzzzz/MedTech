@@ -43,23 +43,13 @@ export function StageNavigation({ currentStage, onSelectStage }: StageNavigation
                   onClick={() => onSelectStage(i)}
                   className={`focus-ring flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-semibold transition-all ${
                     isCurrent
-                      ? 'bg-teal-50 text-teal-900 border border-teal-200 shadow-xs'
+                      ? 'bg-teal-600 text-white shadow-xs'
                       : isCompleted
-                      ? 'text-slate-600 hover:bg-slate-50'
-                      : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+                      ? 'bg-emerald-50/60 text-emerald-950 font-bold hover:bg-emerald-100/60'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
-                  <span
-                    className={`grid size-6 shrink-0 place-items-center rounded-lg text-[11px] font-bold transition-colors ${
-                      isCurrent
-                        ? 'bg-teal-600 text-white'
-                        : isCompleted
-                        ? 'bg-emerald-500 text-white'
-                        : 'border border-slate-300 text-slate-500'
-                    }`}
-                  >
-                    {isCompleted ? <Check size={13} strokeWidth={3} /> : i + 1}
-                  </span>
+                  <Icon size={15} className="shrink-0" />
                   <span className="truncate">{label}</span>
                 </button>
               </li>
