@@ -1,9 +1,8 @@
 import {NextResponse} from 'next/server';
+import {callClinicalText} from '@/lib/llm';
 
 export async function POST(request:Request) {
   const body=await request.json();
-  const apiKey=process.env.OPENAI_API_KEY;
-  if (!apiKey) return NextResponse.json({feedback:localEvaluate(body)});
   const prompt=`Ты оцениваешь учебный клинический симулятор.
 
 Сценарий:
@@ -32,14 +31,12 @@ ${JSON.stringify(body.selectedPlan??[], null, 2)}
 5. Какие опасные ошибки есть.
 
 Верни короткий feedback на русском, 5-8 строк, без markdown-таблиц.`;
-  try {
-    const response=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{authorization:`Bearer ${apiKey}`,'content-type':'application/json'},body:JSON.stringify({model:process.env.OPENAI_SIM_MODEL??'gpt-5.5',messages:[{role:'system',content:'You are a strict but helpful clinical educator. Return concise Russian feedback.'},{role:'user',content:prompt}],reasoning_effort:'low',max_completion_tokens:1200}),cache:'no-store'});
-    if (!response.ok) return NextResponse.json({feedback:localEvaluate(body)});
-    const data=await response.json();
-    return NextResponse.json({feedback:data.choices?.[0]?.message?.content??localEvaluate(body)});
-  } catch {
-    return NextResponse.json({feedback:localEvaluate(body)});
-  }
+  const feedback=await callClinicalText(prompt,{
+    system:'You are a strict but helpful clinical educator. Return concise Russian feedback.',
+    maxTokens:1200,
+    timeoutMs:30000,
+  });
+  return NextResponse.json({feedback:feedback??localEvaluate(body)});
 }
 
 function localEvaluate(body:{caseContext?:{expectedDiagnoses?:string[];expectedPlan?:string[];unsafePlan?:string[];diagnosis?:string};selectedDiagnoses?:string[];selectedPlan?:string[]}) {

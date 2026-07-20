@@ -1,5 +1,6 @@
 import {NextResponse} from 'next/server';
 import {getDemoRagFallback} from '@/lib/demo-rag';
+import {callClinicalJson} from '@/lib/llm';
 
 export const maxDuration=300;
 
@@ -27,8 +28,6 @@ export async function POST(request:Request) {
 }
 
 async function decideRagNeed({scenario,role,resources,messages}:{scenario:string;role:string;resources:string;messages:AdviceMessage[]}):Promise<RagDecision> {
-  const apiKey=process.env.OPENAI_API_KEY;
-  if (!apiKey) return {need_rag:true,reason:'OpenAI router unavailable, using RAG/fallback for safety.'};
   const history=messages.slice(-10).map(m=>`${m.role==='clinician'?'Медработник':'AI'}: ${m.content}`).join('\n');
   const prompt=`Decide whether this rural clinical assistant request needs slow official-protocol RAG before giving an action plan.
 
@@ -49,41 +48,14 @@ Chat:
 ${history || 'none'}
 
 JSON only: {"need_rag":true|false,"reason":"short reason"}`;
-  try {
-    const response=await fetch('https://api.openai.com/v1/chat/completions',{
-      method:'POST',
-      headers:{authorization:`Bearer ${apiKey}`,'content-type':'application/json'},
-      body:JSON.stringify({
-        model:process.env.OPENAI_CLINICAL_MODEL??'gpt-5.5',
-        messages:[{role:'system',content:'Return valid JSON only.'},{role:'user',content:prompt}],
-        response_format:{type:'json_object'},
-        reasoning_effort:'low',
-        max_completion_tokens:300,
-      }),
-      cache:'no-store',
-      signal:AbortSignal.timeout(9000),
-    });
-    if (!response.ok) throw new Error('router_failed');
-    const data=await response.json();
-    const parsed=JSON.parse(data.choices?.[0]?.message?.content??'{}');
+  const parsed=await callClinicalJson<{need_rag?:boolean;reason?:string}>(prompt,{maxTokens:300,timeoutMs:9000});
+  if (parsed) {
     return {need_rag:parsed.need_rag!==false,reason:String(parsed.reason??'LLM router decision')};
-  } catch {
-    return {need_rag:true,reason:'Router failed, using RAG/fallback for safety.'};
   }
+  return {need_rag:true,reason:'Alem router unavailable, using RAG/fallback for safety.'};
 }
 
 async function buildFastChat({scenario,role,resources,messages}:{scenario:string;role:string;resources:string;messages:AdviceMessage[]}) {
-  const apiKey=process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return {
-      mode:'chat',
-      safety_notice:'AI-ассистент помогает, но последнее решение принимает врач/ответственный медработник на месте.',
-      reply:'Уточните витальные показатели, время начала симптомов, красные флаги и что доступно на месте. Если ситуация нестабильная, не ждите AI: действуйте по ABC и вызывайте эвакуацию.',
-      questions:['Какие АД, пульс, SpO2, ЧДД и температура сейчас?','Когда начались симптомы?','Есть ли нарушение сознания, одышка, сильная боль, кровотечение или неврологический дефицит?'],
-      need_rag:false,
-      urgency_hint:'urgent',
-    };
-  }
   const history=messages.slice(-12).map(m=>`${m.role==='clinician'?'Медработник':'AI'}: ${m.content}`).join('\n');
   const prompt=`Ты быстрый клинический AI-ассистент для врача/медсестры в сельской местности.
 Это режим короткого чата ДО тяжелого RAG-поиска. Не запускай RAG мысленно и не ссылайся на протоколы, если их нет в сообщении.
@@ -106,23 +78,12 @@ ${history || 'Пока нет.'}
 
 Верни JSON:
 {"mode":"chat","safety_notice":"...","reply":"короткий ответ","questions":["..."],"need_rag":true|false,"urgency_hint":"emergency|urgent|semi-urgent|routine"}`;
-  try {
-    const response=await fetch('https://api.openai.com/v1/chat/completions',{
-      method:'POST',
-      headers:{authorization:`Bearer ${apiKey}`,'content-type':'application/json'},
-      body:JSON.stringify({
-        model:process.env.OPENAI_CLINICAL_MODEL??'gpt-5.5',
-        messages:[{role:'system',content:'Return valid JSON only. Keep answers short and clinically safe.'},{role:'user',content:prompt}],
-        response_format:{type:'json_object'},
-        reasoning_effort:'low',
-        max_completion_tokens:1200,
-      }),
-      cache:'no-store',
-      signal:AbortSignal.timeout(16000),
-    });
-    if (!response.ok) throw new Error('openai_failed');
-    const data=await response.json();
-    const parsed=JSON.parse(data.choices?.[0]?.message?.content??'{}');
+  const parsed=await callClinicalJson<{safety_notice?:string;reply?:string;questions?:string[];need_rag?:boolean;urgency_hint?:string}>(prompt,{
+    system:'Return valid JSON only. Keep answers short and clinically safe.',
+    maxTokens:1200,
+    timeoutMs:16000,
+  });
+  if (parsed) {
     return {
       mode:'chat',
       safety_notice:parsed.safety_notice??'AI-ассистент помогает, но последнее решение принимает врач/ответственный медработник на месте.',
@@ -131,16 +92,15 @@ ${history || 'Пока нет.'}
       need_rag:Boolean(parsed.need_rag),
       urgency_hint:parsed.urgency_hint??'urgent',
     };
-  } catch {
-    return {
-      mode:'chat',
-      safety_notice:'AI-ассистент помогает, но последнее решение принимает врач/ответственный медработник на месте.',
-      reply:'Если пациент нестабилен, действуйте по ABC, мониторируйте витальные показатели и организуйте эвакуацию. Для точной протокольной тактики нажмите "Дать действия".',
-      questions:['Какие витальные показатели сейчас?','Когда начались симптомы?','Есть ли красные флаги?'],
-      need_rag:true,
-      urgency_hint:'urgent',
-    };
   }
+  return {
+    mode:'chat',
+    safety_notice:'AI-ассистент помогает, но последнее решение принимает врач/ответственный медработник на месте.',
+    reply:'Если пациент нестабилен, действуйте по ABC, мониторируйте витальные показатели и организуйте эвакуацию. Для точной протокольной тактики нажмите "Дать действия".',
+    questions:['Какие витальные показатели сейчас?','Когда начались симптомы?','Есть ли красные флаги?'],
+    need_rag:true,
+    urgency_hint:'urgent',
+  };
 }
 
 async function getRagContext(scenario:string,_resources:string) {
@@ -214,8 +174,6 @@ function sleep(ms:number) {
 }
 
 async function buildAdvice({scenario,role,resources,rag}:{scenario:string;role:string;resources:string;rag:{status:string;result:RagResult|null}}) {
-  const apiKey=process.env.OPENAI_API_KEY;
-  if (!apiKey) return fallbackAdvice(scenario,rag);
   const sources=collectSources(rag.result);
   const protocolContext=JSON.stringify({
     rag_status:rag.status,
@@ -259,23 +217,22 @@ ${protocolContext}
   "sources":[{"title":"...","protocol_id":"...","excerpt":"..."}],
   "rag_status":"${rag.status}"
 }`;
-  try {
-    const response=await fetch('https://api.openai.com/v1/chat/completions',{
-      method:'POST',
-      headers:{authorization:`Bearer ${apiKey}`,'content-type':'application/json'},
-      body:JSON.stringify({
-        model:process.env.OPENAI_CLINICAL_MODEL??'gpt-5.5',
-        messages:[{role:'system',content:'Return valid JSON only. Be conservative and clinically safe.'},{role:'user',content:prompt}],
-        response_format:{type:'json_object'},
-        reasoning_effort:'low',
-        max_completion_tokens:2600,
-      }),
-      cache:'no-store',
-      signal:AbortSignal.timeout(45000),
-    });
-    if (!response.ok) return fallbackAdvice(scenario,rag);
-    const data=await response.json();
-    const parsed=JSON.parse(data.choices?.[0]?.message?.content??'{}');
+  const parsed=await callClinicalJson<{
+    safety_notice?:string;
+    urgency?:string;
+    most_likely_risks?:string[];
+    do_now?:unknown[];
+    ask_or_measure_next?:string[];
+    treatment_options?:unknown[];
+    referral?:unknown;
+    what_not_to_do?:string[];
+    sources?:{title?:string;protocol_id?:string;excerpt?:string}[];
+  }>(prompt,{
+    system:'Return valid JSON only. Be conservative and clinically safe.',
+    maxTokens:2600,
+    timeoutMs:45000,
+  });
+  if (parsed) {
     return {
       safety_notice:parsed.safety_notice??'AI-ассистент помогает по протоколам, но последнее решение принимает врач/ответственный медработник на месте.',
       urgency:parsed.urgency??'urgent',
@@ -288,9 +245,8 @@ ${protocolContext}
       sources:Array.isArray(parsed.sources)&&parsed.sources.length?parsed.sources:sources.slice(0,4).map(source=>({title:source.title,protocol_id:source.protocol_id,excerpt:excerpt(source)})),
       rag_status:rag.status,
     };
-  } catch {
-    return fallbackAdvice(scenario,rag);
   }
+  return fallbackAdvice(scenario,rag);
 }
 
 function collectSources(result:RagResult|null) {

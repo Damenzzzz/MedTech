@@ -1,5 +1,6 @@
 import {NextResponse} from 'next/server';
 import {getDemoRagFallback} from '@/lib/demo-rag';
+import {callClinicalJson} from '@/lib/llm';
 
 export const maxDuration=300;
 
@@ -17,7 +18,7 @@ export async function POST(request:Request) {
       if (response.ok) return NextResponse.json(await response.json());
     } catch {}
   }
-  return NextResponse.json(await openAiClinicalFallback(String(body.symptoms??'')));
+  return NextResponse.json(await alemClinicalFallback(String(body.symptoms??'')));
 }
 
 async function diagnoseViaJob(base:string, body:unknown) {
@@ -54,9 +55,8 @@ function sleep(ms:number) {
   return new Promise(resolve=>setTimeout(resolve,ms));
 }
 
-async function openAiClinicalFallback(symptoms:string) {
-  const apiKey=process.env.OPENAI_API_KEY;
-  if (!apiKey || !symptoms.trim()) return emptyResponse();
+async function alemClinicalFallback(symptoms:string) {
+  if (!symptoms.trim()) return emptyResponse();
   const prompt=`Ты клинический AI-assistant для учебного MVP. Настоящий RAG-сервис сейчас не подключен, поэтому делай осторожный clinical reasoning по введенному тексту.
 
 Строгие правила:
@@ -69,17 +69,10 @@ async function openAiClinicalFallback(symptoms:string) {
 ${symptoms}
 
 Верни JSON строго такого вида:
-{"case_id":"openai-fallback","diagnoses":[{"rank":1,"diagnosis":"...","icd10_code":"...","confidence":"high|medium|low","why_this_diagnosis":"...","supporting_findings":[{"finding":"...","patient_evidence":"..."}],"missing_findings":["..."],"recommended_checks":["..."]}],"follow_up_questions":[{"question":"...","target_diagnoses":["..."],"rationale":"..."}]}`;
-  try {
-    const response=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{authorization:`Bearer ${apiKey}`,'content-type':'application/json'},body:JSON.stringify({model:process.env.OPENAI_CLINICAL_MODEL??'gpt-5.5',messages:[{role:'system',content:'Return valid JSON only.'},{role:'user',content:prompt}],response_format:{type:'json_object'},reasoning_effort:'low',max_completion_tokens:2600}),cache:'no-store'});
-    if (!response.ok) return emptyResponse();
-    const data=await response.json();
-    return JSON.parse(data.choices?.[0]?.message?.content??'{}');
-  } catch {
-    return emptyResponse();
-  }
+{"case_id":"alem-fallback","diagnoses":[{"rank":1,"diagnosis":"...","icd10_code":"...","confidence":"high|medium|low","why_this_diagnosis":"...","supporting_findings":[{"finding":"...","patient_evidence":"..."}],"missing_findings":["..."],"recommended_checks":["..."]}],"follow_up_questions":[{"question":"...","target_diagnoses":["..."],"rationale":"..."}]}`;
+  return await callClinicalJson(prompt,{maxTokens:2600,timeoutMs:45000})??emptyResponse();
 }
 
 function emptyResponse(){
-  return {case_id:'openai-fallback',diagnoses:[],follow_up_questions:[]};
+  return {case_id:'alem-fallback',diagnoses:[],follow_up_questions:[]};
 }
