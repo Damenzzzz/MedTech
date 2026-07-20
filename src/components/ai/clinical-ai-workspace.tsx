@@ -228,7 +228,17 @@ function StepList({title,steps}:{title:string;steps:AdviceStep[]}){return <secti
 
 function OptionList({title,options}:{title:string;options:AdviceOption[]}){return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">{title}</h3><div className="mt-4 grid gap-3">{options.length?options.slice(0,8).map((item,index)=><div key={`${index}-${item.option??item.treatment}`} className="rounded-xl bg-white/5 p-4 text-sm leading-6 text-slate-200"><p className="font-semibold text-teal-100">{item.option??item.treatment}</p>{item.when&&<p className="mt-1 text-slate-400">Когда: {item.when}</p>}{item.avoid_if&&<p className="mt-1 text-amber-100">Осторожно/не применять: {item.avoid_if}</p>}</div>):<p className="rounded-xl bg-white/5 p-4 text-sm text-slate-500">Нет безопасных вариантов без уточнения данных.</p>}</div></section>}
 
-function SourcesList({sources,status}:{sources:{title?:string;protocol_id?:string;excerpt?:string}[];status?:string}){return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold">Источники RAG</h3>{status&&<span className="rounded-full bg-white/5 px-3 py-1 text-xs text-slate-400">{status}</span>}</div><div className="mt-4 grid gap-3">{sources.length?sources.slice(0,5).map((source,index)=><div key={`${index}-${source.title??source.protocol_id}`} className="rounded-xl bg-white/5 p-4 text-sm leading-6"><p className="font-semibold text-slate-200">{source.title??source.protocol_id??`Источник ${index+1}`}</p>{source.excerpt&&<p className="mt-2 text-slate-400">{source.excerpt}</p>}</div>):<p className="rounded-xl bg-white/5 p-4 text-sm text-slate-500">RAG-источники не вернулись, совет помечен как ограниченный.</p>}</div></section>}
+function SourcesList({sources,status}:{sources:{title?:string;protocol_id?:string;excerpt?:string}[];status?:string}){const label=ragStatusLabel(status);return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold">Источники RAG</h3>{label&&<span className="rounded-full bg-white/5 px-3 py-1 text-xs text-slate-400">{label}</span>}</div><div className="mt-4 grid gap-3">{sources.length?sources.slice(0,5).map((source,index)=><div key={`${index}-${source.title??source.protocol_id}`} className="rounded-xl bg-white/5 p-4 text-sm leading-6"><p className="font-semibold text-slate-200">{source.title??source.protocol_id??`Источник ${index+1}`}</p>{source.excerpt&&<p className="mt-2 text-slate-400">{source.excerpt}</p>}</div>):<p className="rounded-xl bg-white/5 p-4 text-sm text-slate-500">{status==='llm-direct-no-rag'?'LLM решил, что для этого лёгкого вопроса RAG не нужен.':'RAG сейчас недоступен или не успел вернуть источники. Совет помечен как ограниченный.'}</p>}</div></section>}
+
+function ragStatusLabel(status?:string){
+  if(!status)return '';
+  if(status==='rag-ready')return 'RAG подключён';
+  if(status==='rag-ready-with-warning')return 'RAG подключён с предупреждением';
+  if(status==='llm-direct-no-rag')return 'Без RAG';
+  if(status.startsWith('rag-job'))return 'RAG ещё не готов';
+  if(status.startsWith('rag-error')||status==='rag-limited'||status==='rag-timeout-or-unavailable'||status==='rag-unavailable')return 'RAG временно недоступен';
+  return status;
+}
 
 function SimulatorPanel(){
   const [scenario,setScenario]=useState<SimCase>(SIM_CASES[0]);

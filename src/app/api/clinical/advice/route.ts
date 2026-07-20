@@ -148,6 +148,7 @@ async function getRagContext(scenario:string,resources:string) {
   const symptoms=`${scenario}\n\nУсловия помощи: ${resources}`;
   const viaJob=await getRagContextViaJob(base, symptoms);
   if (viaJob.status !== "rag-job-unavailable") return viaJob;
+  if (!isLocalRag(base)) return {status:'rag-limited',result:null};
   try {
     const response=await fetch(`${base.replace(/\/$/,'')}/diagnose`,{
       method:'POST',
@@ -161,6 +162,10 @@ async function getRagContext(scenario:string,resources:string) {
   } catch {
     return {status:'rag-timeout-or-unavailable',result:null};
   }
+}
+
+function isLocalRag(base:string) {
+  return /localhost|127\.0\.0\.1|0\.0\.0\.0/.test(base);
 }
 
 async function getRagContextViaJob(base:string,symptoms:string) {
