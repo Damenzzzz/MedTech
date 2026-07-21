@@ -1,0 +1,15 @@
+{
+  "caseId": "anemia",
+  "name": "Zhanar Abdrakhman",
+  "age": 39,
+  "sex": "female",
+  "specialty": "therapy",
+  "portrait": "/patients/anemia/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

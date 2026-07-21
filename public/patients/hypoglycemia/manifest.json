@@ -1,0 +1,15 @@
+{
+  "caseId": "hypoglycemia",
+  "name": "Nurlan Tleuov",
+  "age": 61,
+  "sex": "male",
+  "specialty": "endocrinology",
+  "portrait": "/patients/hypoglycemia/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

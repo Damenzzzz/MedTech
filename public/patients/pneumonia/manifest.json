@@ -1,0 +1,15 @@
+{
+  "caseId": "pneumonia",
+  "name": "Sergey Akhmetov",
+  "age": 45,
+  "sex": "male",
+  "specialty": "pulmonology",
+  "portrait": "/patients/pneumonia/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

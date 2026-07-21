@@ -1,0 +1,15 @@
+{
+  "caseId": "anaphylaxis",
+  "name": "Aisha Nurbek",
+  "age": 31,
+  "sex": "female",
+  "specialty": "emergency",
+  "portrait": "/patients/anaphylaxis/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

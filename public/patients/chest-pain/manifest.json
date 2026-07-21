@@ -1,0 +1,15 @@
+{
+  "caseId": "chest-pain",
+  "name": "Arman Saginov",
+  "age": 46,
+  "sex": "male",
+  "specialty": "cardiology",
+  "portrait": "/patients/chest-pain/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

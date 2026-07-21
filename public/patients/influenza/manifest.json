@@ -1,0 +1,15 @@
+{
+  "caseId": "influenza",
+  "name": "Marat Yestemessov",
+  "age": 35,
+  "sex": "male",
+  "specialty": "infectious",
+  "portrait": "/patients/influenza/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

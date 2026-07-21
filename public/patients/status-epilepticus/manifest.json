@@ -1,0 +1,15 @@
+{
+  "caseId": "status-epilepticus",
+  "name": "Zhanibek Moldakhmetov",
+  "age": 20,
+  "sex": "male",
+  "specialty": "emergency",
+  "portrait": "/patients/status-epilepticus/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

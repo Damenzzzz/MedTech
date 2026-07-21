@@ -1,0 +1,15 @@
+{
+  "caseId": "covid-like",
+  "name": "Dinara Kaliyeva",
+  "age": 44,
+  "sex": "female",
+  "specialty": "infectious",
+  "portrait": "/patients/covid-like/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

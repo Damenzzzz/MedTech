@@ -1,0 +1,15 @@
+{
+  "caseId": "thyrotoxicosis",
+  "name": "Assem Toktaganova",
+  "age": 33,
+  "sex": "female",
+  "specialty": "endocrinology",
+  "portrait": "/patients/thyrotoxicosis/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

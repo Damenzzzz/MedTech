@@ -1,0 +1,15 @@
+{
+  "caseId": "asthma",
+  "name": "Aliya Seidakhmet",
+  "age": 23,
+  "sex": "female",
+  "specialty": "pulmonology",
+  "portrait": "/patients/asthma/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}
