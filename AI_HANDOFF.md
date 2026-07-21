@@ -99,6 +99,43 @@ Synchronous/legacy diagnose route. It first tries async job internally, then dir
 
 `src/app/api/clinical/advice/route.ts`
 
+This is the "what should we do right now?" feature for rural/under-resourced settings.
+
+Product idea:
+
+- A nurse, general doctor, feldsher, or rural medical worker may not have a narrow specialist nearby.
+- Example: a patient arrives in a village clinic with chest pain, but there is no cardiologist on site.
+- The assistant should help the clinician decide immediate safe actions while waiting for ambulance/specialist/transfer.
+- It is **not** meant to replace the doctor.
+- It is **not** meant to give a final diagnosis.
+- It is **not** meant to give a definitive specialist treatment plan.
+- It should give a practical bridge plan: what to assess, what to monitor, what red flags matter, how urgently to route, what not to miss, and what to prepare before professional help arrives.
+
+Required safety wording:
+
+- Final clinical decision belongs to the doctor/medical worker on site.
+- AI is only an assistant.
+- If the patient is unstable, do not wait for long RAG: start ABC/vitals/monitoring/urgent evacuation according to local emergency process.
+- Use official protocol/RAG for deeper action guidance when time allows.
+
+Expected output style for this feature:
+
+- Clear immediate actions.
+- Short explanation why each action matters.
+- What to ask/check next.
+- Red flags that require urgent escalation.
+- What not to do.
+- RAG/protocol sources when available.
+
+For rural cardiology example, the assistant should think like:
+
+- Chest pain can be time-sensitive.
+- Do not promise a final diagnosis.
+- Recommend immediate vital signs, ABC assessment, ECG if available, SpO2, BP, pulse, consciousness, pain onset/time, radiation, sweating, dyspnea, risk factors.
+- Prepare transfer/ambulance if red flags are present.
+- Avoid exact dosing or risky medication instructions unless protocol-backed and clinician can verify contraindications.
+- Make the plan useful until cardiologist/emergency team arrives.
+
 Important logic:
 
 - `mode: "chat"` gives fast chat.
@@ -106,6 +143,23 @@ Important logic:
 - Emergency fast chat has a guard:
   - No medication doses in quick emergency reply.
   - It tells user to do ABC/vitals/ECG/referral and use "Дать действия" for protocol-level plan.
+
+Runtime behavior:
+
+- Chat mode should be fast and should not call slow RAG for every small question.
+- Action mode may use RAG when the LLM judges that protocol guidance is needed.
+- User explicitly wanted the LLM to decide whether RAG is necessary:
+  - if the question is simple and low-risk, answer directly;
+  - if the case is risky or protocol-sensitive, use RAG or recommend pressing "Дать действия";
+  - if the user presses "Дать действия", produce practical actions and use RAG when needed.
+- RAG can take 2-3 minutes, so avoid blocking routine chat unless needed.
+
+Important UX:
+
+- This mode should feel like a clinical support chat, not a diagnosis page.
+- Button text currently used: "Дать действия".
+- The user wants this feature because rural clinics may need help before the right specialist arrives or while patient transfer is being arranged.
+- The assistant should be decisive enough to be useful, but conservative enough to avoid unsafe over-treatment.
 
 ### Simulator
 
