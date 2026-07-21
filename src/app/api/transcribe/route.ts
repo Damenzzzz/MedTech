@@ -9,15 +9,30 @@ export async function POST(request:Request) {
   const audio=input.get('audio');
   if (!(audio instanceof File)) return NextResponse.json({error:'audio file is required'}, {status:400});
 
-  const form=new FormData();
-  form.append('model',process.env.OPENAI_STT_MODEL??'gpt-4o-transcribe-diarize');
-  form.append('file',audio,audio.name||'audio.webm');
-  form.append('response_format','diarized_json');
-  const transcription=await fetch('https://api.openai.com/v1/audio/transcriptions',{method:'POST',headers:{authorization:`Bearer ${apiKey}`},body:form,cache:'no-store'});
-  if (!transcription.ok) return NextResponse.json({error:await transcription.text()},{status:502});
-  const raw=await transcription.json();
+  const result=await transcribeWithFallback(apiKey,audio);
+  if (!result.ok) return NextResponse.json({error:result.error},{status:502});
+  const raw=result.data;
   const turns=normalizeDiarized(raw);
   return NextResponse.json({text:raw.text??turns.map(x=>x.text).join(' '),turns,raw});
+}
+
+async function transcribeWithFallback(apiKey:string,audio:File) {
+  const diarized=await transcribe(apiKey,audio,process.env.OPENAI_STT_MODEL??'gpt-4o-transcribe-diarize','diarized_json',true);
+  if (diarized.ok) return diarized;
+  const plain=await transcribe(apiKey,audio,'gpt-4o-transcribe','json',false);
+  if (plain.ok) return plain;
+  return {ok:false as const,error:plain.error||diarized.error||'Transcription failed'};
+}
+
+async function transcribe(apiKey:string,audio:File,model:string,responseFormat:string,diarized:boolean) {
+  const form=new FormData();
+  form.append('model',model);
+  form.append('file',audio,audio.name||'audio.webm');
+  form.append('response_format',responseFormat);
+  if (diarized) form.append('chunking_strategy','auto');
+  const response=await fetch('https://api.openai.com/v1/audio/transcriptions',{method:'POST',headers:{authorization:`Bearer ${apiKey}`},body:form,cache:'no-store'});
+  if (!response.ok) return {ok:false as const,error:await response.text()};
+  return {ok:true as const,data:await response.json() as Record<string,unknown>};
 }
 
 function normalizeDiarized(raw:Record<string,unknown>):Turn[] {

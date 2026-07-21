@@ -6,6 +6,7 @@ Serves POST /diagnose endpoint and a web UI at GET /.
 import os
 import time
 import uuid
+import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -44,7 +45,9 @@ _protocols = {}
 _few_shot_examples = []
 _llm_client = None
 _case_cache: dict[str, dict] = {}
+_diagnosis_jobs: dict[str, dict] = {}
 _CASE_TTL_SECONDS = 60 * 60
+_JOB_TTL_SECONDS = 30 * 60
 
 
 # ---------------------------------------------------------------------------
@@ -172,6 +175,11 @@ class DiagnoseResponse(BaseModel):
     context_candidates: int = 0
 
 
+class DiagnoseJobResponse(BaseModel):
+    job_id: str
+    status: str
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
@@ -190,6 +198,31 @@ async def diagnose(request: DiagnoseRequest):
     except Exception as e:
         print(f"Pipeline error: {e}")
         return _fallback_response(query)
+
+
+@app.post("/api/diagnose-jobs", response_model=DiagnoseJobResponse)
+async def start_diagnose_job(request: DiagnoseRequest):
+    """Start long RAG work in the background so tunnels/proxies do not time out."""
+    query = request.symptoms or ""
+    if not query.strip():
+        job_id = _create_job(query)
+        _diagnosis_jobs[job_id].update(status="completed", result=DiagnoseResponse(diagnoses=[]).model_dump())
+        return DiagnoseJobResponse(job_id=job_id, status="completed")
+
+    job_id = _create_job(query)
+    asyncio.create_task(_run_diagnosis_job(job_id, query))
+    return DiagnoseJobResponse(job_id=job_id, status="running")
+
+
+@app.get("/api/diagnose-jobs/{job_id}")
+async def get_diagnose_job(job_id: str):
+    _cleanup_jobs()
+    job = _diagnosis_jobs.get(job_id)
+    if not job:
+        return {"job_id": job_id, "status": "not_found"}
+    payload = {k: v for k, v in job.items() if k != "query"}
+    payload["job_id"] = job_id
+    return payload
 
 
 @app.post("/api/refine", response_model=DiagnoseResponse)
@@ -428,6 +461,47 @@ def _remember_case(
         "updated_at": now,
     }
     return case_id
+
+
+def _create_job(query: str) -> str:
+    _cleanup_jobs()
+    job_id = str(uuid.uuid4())
+    _diagnosis_jobs[job_id] = {
+        "status": "queued",
+        "query": query,
+        "created_at": time.time(),
+        "updated_at": time.time(),
+    }
+    return job_id
+
+
+async def _run_diagnosis_job(job_id: str, query: str) -> None:
+    job = _diagnosis_jobs.get(job_id)
+    if not job:
+        return
+    job.update(status="running", updated_at=time.time())
+    try:
+        result = await _run_full_diagnosis(query)
+        job.update(status="completed", result=result.model_dump(), updated_at=time.time())
+    except Exception as exc:
+        print(f"Diagnosis job error: {exc}")
+        fallback = _fallback_response(query)
+        job.update(
+            status="completed",
+            result=fallback.model_dump(),
+            warning=str(exc),
+            updated_at=time.time(),
+        )
+
+
+def _cleanup_jobs() -> None:
+    now = time.time()
+    expired = [
+        job_id for job_id, item in _diagnosis_jobs.items()
+        if now - item["created_at"] > _JOB_TTL_SECONDS
+    ]
+    for job_id in expired:
+        _diagnosis_jobs.pop(job_id, None)
 
 
 @app.get("/", response_class=HTMLResponse)
