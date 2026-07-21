@@ -63,6 +63,7 @@ describe('Localization & Cyrillic Text Inspection', () => {
     'differential-results.tsx',
     'clinical-ai-workspace.tsx',
     'clarification-panel.tsx',
+    'rag-side-panel.tsx',
   ]);
 
   it('scans UI components for hardcoded un-localized Cyrillic text nodes', () => {

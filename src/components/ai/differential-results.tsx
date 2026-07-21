@@ -9,7 +9,9 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  ClipboardPlus,
   Copy,
+  FilePlus2,
   HelpCircle,
   ShieldAlert,
   Sparkles,
@@ -27,6 +29,9 @@ interface DifferentialResultsProps {
   ragStatus?: RagStatus;
   generationProvider?: string;
   onRequestRetry?: () => void;
+  canInsert?: boolean;
+  onInsertDiagnosis?: (item: DiagnosisItem) => void;
+  onInsertSource?: (source: ProtocolSource) => void;
 }
 
 export function DifferentialResults({
@@ -34,12 +39,27 @@ export function DifferentialResults({
   sources = [],
   ragStatus = 'rag-ready',
   generationProvider = 'alem',
+  canInsert = false,
+  onInsertDiagnosis,
+  onInsertSource,
 }: DifferentialResultsProps) {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [expandedSourceIdx, setExpandedSourceIdx] = useState<number | null>(null);
   const [expandedDiagnosisIdxs, setExpandedDiagnosisIdxs] = useState<Set<number>>(new Set());
+  const [insertedDiagnosisIdxs, setInsertedDiagnosisIdxs] = useState<Set<number>>(new Set());
+  const [insertedSourceIdxs, setInsertedSourceIdxs] = useState<Set<number>>(new Set());
 
   if (!diagnoses || diagnoses.length === 0) return null;
+
+  const handleInsertDiagnosis = (item: DiagnosisItem, idx: number) => {
+    onInsertDiagnosis?.(item);
+    setInsertedDiagnosisIdxs((prev) => new Set(prev).add(idx));
+  };
+
+  const handleInsertSource = (source: ProtocolSource, idx: number) => {
+    onInsertSource?.(source);
+    setInsertedSourceIdxs((prev) => new Set(prev).add(idx));
+  };
 
   const toggleExpandDiagnosis = (idx: number) => {
     setExpandedDiagnosisIdxs((prev) => {
@@ -150,9 +170,22 @@ export function DifferentialResults({
                     </div>
                   </div>
 
-                  <span className={`rounded-xl border px-3 py-1 text-xs font-bold ${confBg}`}>
-                    {confLabel}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`rounded-xl border px-3 py-1 text-xs font-bold ${confBg}`}>
+                      {confLabel}
+                    </span>
+                    {onInsertDiagnosis && (
+                      <button
+                        type="button"
+                        onClick={() => handleInsertDiagnosis(item, idx)}
+                        disabled={!canInsert}
+                        className="focus-ring flex items-center gap-1 rounded-lg border border-teal-300 bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-800 hover:bg-teal-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                      >
+                        {insertedDiagnosisIdxs.has(idx) ? <Check size={13} /> : <ClipboardPlus size={13} />}
+                        <span>{insertedDiagnosisIdxs.has(idx) ? 'В протоколе' : 'В протокол'}</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Structured Rationale Card: «Почему выбран этот вариант» */}
@@ -321,14 +354,27 @@ export function DifferentialResults({
                       )}
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleCopyCitation(src, idx)}
-                      className="focus-ring flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-100"
-                    >
-                      {copiedIdx === idx ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-                      <span>{copiedIdx === idx ? 'Скопировано' : 'Цитата'}</span>
-                    </button>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleCopyCitation(src, idx)}
+                        className="focus-ring flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-100"
+                      >
+                        {copiedIdx === idx ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                        <span>{copiedIdx === idx ? 'Скопировано' : 'Цитата'}</span>
+                      </button>
+                      {onInsertSource && (
+                        <button
+                          type="button"
+                          onClick={() => handleInsertSource(src, idx)}
+                          disabled={!canInsert}
+                          className="focus-ring flex items-center gap-1 rounded-lg border border-teal-300 bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-800 hover:bg-teal-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                        >
+                          {insertedSourceIdxs.has(idx) ? <Check size={13} /> : <FilePlus2 size={13} />}
+                          <span>{insertedSourceIdxs.has(idx) ? 'В протоколе' : 'В протокол'}</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {src.excerpt && (

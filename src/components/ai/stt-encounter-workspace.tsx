@@ -17,12 +17,16 @@ import {
   ShieldAlert,
   Sparkles,
   Square,
+  Stethoscope,
   Trash2,
   UserCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { RagSidePanel } from '@/components/ai/rag-side-panel';
 import type {
+  DiagnosisItem,
   EncounterProtocol,
+  ProtocolSource,
   SttResponse,
   SttSpeaker,
   SttTurn,
@@ -70,6 +74,9 @@ export function SttEncounterWorkspace() {
 
   // Patient consent
   const [hasConsent, setHasConsent] = useState(false);
+
+  // RAG side panel
+  const [ragOpen, setRagOpen] = useState(false);
 
   // Recording Timer
   function startTimer() {
@@ -274,6 +281,42 @@ export function SttEncounterWorkspace() {
     setProtocol({
       ...protocol,
       status: 'reviewed',
+    });
+  }
+
+  // Insert RAG findings into the protocol draft
+  function insertDiagnosisIntoProtocol(item: DiagnosisItem) {
+    setProtocol((prev) => {
+      if (!prev) return prev;
+      const alreadyPresent = prev.sections.assessment.differentialDiagnoses.some(
+        (d) => d.diagnosis === item.diagnosis && d.icd10Code === item.icd10_code,
+      );
+      if (alreadyPresent) return prev;
+      const updated: EncounterProtocol = JSON.parse(JSON.stringify(prev));
+      updated.status = 'edited';
+      updated.sections.assessment.differentialDiagnoses = [
+        ...updated.sections.assessment.differentialDiagnoses,
+        {
+          diagnosis: item.diagnosis,
+          icd10Code: item.icd10_code,
+          supportingEvidence: (item.supporting_findings ?? []).map((f) => f.finding),
+          missingEvidence: item.missing_findings ?? [],
+        },
+      ];
+      return updated;
+    });
+  }
+
+  function insertSourceIntoProtocol(source: ProtocolSource) {
+    setProtocol((prev) => {
+      if (!prev) return prev;
+      const citation = `[RAG] ${source.title}${source.protocolId ? ` (${source.protocolId})` : ''}${source.excerpt ? `: ${source.excerpt}` : ''}`;
+      const updated: EncounterProtocol = JSON.parse(JSON.stringify(prev));
+      updated.status = 'edited';
+      updated.sections.assessment.clinicalSummary = updated.sections.assessment.clinicalSummary
+        ? `${updated.sections.assessment.clinicalSummary}\n${citation}`
+        : citation;
+      return updated;
     });
   }
 
@@ -601,18 +644,23 @@ export function SttEncounterWorkspace() {
             </div>
 
             {/* Protocol Control Buttons */}
-            {protocol && (
-              <div className="flex flex-wrap items-center gap-2">
-                <Button onClick={saveManualEdits} size="sm" variant="secondary" className="h-8 text-xs gap-1">
-                  <Save size={13} /> Сохранить
-                </Button>
-                {protocol.status !== 'reviewed' && (
-                  <Button onClick={approveProtocol} size="sm" className="h-8 text-xs gap-1 bg-emerald-600 hover:bg-emerald-500 text-white">
-                    <UserCheck size={13} /> Утвердить
+            <div className="flex flex-wrap items-center gap-2">
+              <Button onClick={() => setRagOpen(true)} size="sm" variant="secondary" className="h-8 text-xs gap-1">
+                <Stethoscope size={13} /> Спросить у RAG
+              </Button>
+              {protocol && (
+                <>
+                  <Button onClick={saveManualEdits} size="sm" variant="secondary" className="h-8 text-xs gap-1">
+                    <Save size={13} /> Сохранить
                   </Button>
-                )}
-              </div>
-            )}
+                  {protocol.status !== 'reviewed' && (
+                    <Button onClick={approveProtocol} size="sm" className="h-8 text-xs gap-1 bg-emerald-600 hover:bg-emerald-500 text-white">
+                      <UserCheck size={13} /> Утвердить
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
           </div>
 
           {!protocol && (
@@ -819,6 +867,15 @@ export function SttEncounterWorkspace() {
           )}
         </section>
       </div>
+
+      <RagSidePanel
+        open={ragOpen}
+        onClose={() => setRagOpen(false)}
+        initialSymptoms={transcriptText}
+        canInsert={!!protocol}
+        onInsertDiagnosis={insertDiagnosisIntoProtocol}
+        onInsertSource={insertSourceIntoProtocol}
+      />
     </div>
   );
 }
