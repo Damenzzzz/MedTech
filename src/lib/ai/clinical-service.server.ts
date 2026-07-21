@@ -210,6 +210,17 @@ export async function generateAlemClinicalFallback(
     return generateMockDiagnoseResponse(symptoms, requestId);
   }
 
+  // Temporary debug marker: this path has NO real RAG retrieval behind it
+  // (see rule 5 in systemPrompt above) -- tag it so it's visually
+  // distinguishable on the deployed site from a genuine protocol-grounded
+  // askhat_rag response.
+  for (const d of rawResult.diagnoses as Array<Record<string, unknown>>) {
+    const rationale = d.clinical_rationale as Record<string, unknown> | undefined;
+    if (rationale && typeof rationale.summary === 'string' && !rationale.summary.includes('[NO-RAG-FALLBACK]')) {
+      rationale.summary = `${rationale.summary} [NO-RAG-FALLBACK]`.trim();
+    }
+  }
+
   return normalizeDiagnoseResponse(
     {
       ...rawResult,
