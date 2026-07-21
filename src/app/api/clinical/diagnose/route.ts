@@ -66,9 +66,20 @@ export async function POST(request: Request) {
       } catch (err) {
         console.error('[clinical diagnose route]', { requestId, msg: 'Python RAG service unreachable or timed out', err: err instanceof Error ? err.message : String(err) });
       }
+
+      return NextResponse.json(
+        {
+          error: 'RAG-сервис не вернул результат. Ответ без протоколов отключён, чтобы не маскировать проблему.',
+          code: 'RAG_UNAVAILABLE',
+          rag_status: 'unavailable',
+          sources: [],
+          request_id: requestId,
+        },
+        { status: 504, headers },
+      );
     }
 
-    // Explicit Fallback via AlemLLM or Mock (NO OpenAI!)
+    // Explicit fallback only when no RAG service is configured at all.
     const fallbackResponse = await generateAlemClinicalFallback(symptoms, requestId);
     return NextResponse.json(fallbackResponse, { headers });
   } catch (error) {
