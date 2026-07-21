@@ -3,7 +3,7 @@ import {z} from 'zod';
 import {getCaseRepository} from '@/repositories/index.server';
 import {PatientMessageInputSchema,PatientMessageResultSchema,type PatientEngine} from './patient-engine';
 import {PatientVisualStateSchema} from '@/domain/schemas';
-import {callClinicalJson} from '@/lib/llm';
+import {callClinicalJson} from '@/lib/ai/text-llm.server';
 
 const OutputSchema=z.object({
   answer:z.string().min(1).max(900),
@@ -58,14 +58,27 @@ export class LlmPatientEngine implements PatientEngine{
 
 function fallbackPatientResponse(question:string,facts:{id:string;intent:string;value:string;alreadyRevealed:boolean;critical:boolean}[]) {
   const lower=question.toLowerCase();
-  const selected=facts.find(f=>!f.alreadyRevealed && (
+
+  // Only reveal a fact if the question specifically matches its intent or keywords
+  const matched=facts.find(f=>!f.alreadyRevealed && (
    lower.includes(f.intent.toLowerCase()) ||
    f.value.toLowerCase().split(/\s+/).some(word=>word.length>5 && lower.includes(word.slice(0,5)))
-  ))??facts.find(f=>!f.alreadyRevealed)??facts[0];
+  ));
+
+  if (matched) {
+    return OutputSchema.parse({
+      answer: matched.value,
+      intent: matched.intent,
+      newFactIds: [matched.id],
+      visualState: matched.critical ? 'pain' : 'speaking',
+    });
+  }
+
+  // No keyword match — ask for clarification WITHOUT revealing any hidden fact
   return OutputSchema.parse({
-   answer:selected?.value??'Мне трудно ответить. Уточните, пожалуйста, вопрос.',
-   intent:selected?.intent??'fallback-response',
-   newFactIds:selected&&!selected.alreadyRevealed?[selected.id]:[],
-   visualState:selected?.critical?'pain':'speaking',
+    answer: 'Мне трудно ответить на этот вопрос. Уточните, пожалуйста, что именно вас интересует.',
+    intent: 'fallback-clarification',
+    newFactIds: [],
+    visualState: 'thinking',
   });
 }

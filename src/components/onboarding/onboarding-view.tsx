@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -45,11 +45,11 @@ export function OnboardingView() {
     setOnboardingStepStore(step);
   }, [step, setOnboardingStepStore]);
 
-  const finishOnboarding = () => {
+  const finishOnboarding = useCallback(() => {
     setOnboardingCompleted(true);
     setOnboardingStepStore(3);
     router.push('/patients');
-  };
+  }, [setOnboardingCompleted, setOnboardingStepStore, router]);
 
   // Keyboard navigation (ArrowLeft, ArrowRight, Escape)
   useEffect(() => {
@@ -64,7 +64,7 @@ export function OnboardingView() {
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [step]);
+  }, [step, finishOnboarding]);
 
   const userName = (hydrated && profile?.name) ? profile.name : 'Коллега';
 

@@ -64,6 +64,7 @@ export const cases: MedicalCase[] = allSeeds.map((s) => {
   return {
     id: s.id,
     synthetic: true as const,
+    validationTier: 'beta' as const,
     medicalReviewStatus: 'unreviewed' as const,
     title: t(...s.title),
     specialty: s.specialty,

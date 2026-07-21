@@ -10,32 +10,38 @@ import { Link } from '@/i18n/navigation';
 export function DebriefView({ caseId }: { caseId: string }) {
   const t = useTranslations('Debrief');
 
-  const [data, setData] = useState<DebriefResult | null>(null);
+  const [data, setData] = useState<DebriefResult | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem(`kms-debrief-${caseId}`);
+      if (!raw) return null;
+      return DebriefResultSchema.parse(JSON.parse(raw));
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
-    const raw = localStorage.getItem(`kms-debrief-${caseId}`);
-    if (!raw) return;
+    if (!data || !data.referencePlaceholders.some((x) => x.status === 'rag-pending')) return;
+    let cancelled = false;
 
-    try {
-      const parsed = DebriefResultSchema.parse(JSON.parse(raw));
-      setData(parsed);
+    fetch(`/api/session/references?caseId=${encodeURIComponent(caseId)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((payload) => {
+        if (cancelled || !payload?.references?.length) return;
+        const next = DebriefResultSchema.parse({
+          ...data,
+          referencePlaceholders: payload.references,
+        });
+        localStorage.setItem(`kms-debrief-${caseId}`, JSON.stringify(next));
+        setData(next);
+      })
+      .catch(() => {});
 
-      if (parsed.referencePlaceholders.some((x) => x.status === 'rag-pending')) {
-        fetch(`/api/session/references?caseId=${encodeURIComponent(caseId)}`)
-          .then((r) => (r.ok ? r.json() : null))
-          .then((payload) => {
-            if (!payload?.references?.length) return;
-            const next = DebriefResultSchema.parse({
-              ...parsed,
-              referencePlaceholders: payload.references,
-            });
-            localStorage.setItem(`kms-debrief-${caseId}`, JSON.stringify(next));
-            setData(next);
-          })
-          .catch(() => {});
-      }
-    } catch {}
-  }, [caseId]);
+    return () => {
+      cancelled = true;
+    };
+  }, [caseId, data]);
 
   if (!data) {
     return (
@@ -68,7 +74,10 @@ export function DebriefView({ caseId }: { caseId: string }) {
     critical: t('critical'),
   };
 
-  const isHighScore = data.total >= 80;
+  const isHighScore =
+    data.total >= 80 &&
+    (data.missedRedFlags ?? []).length === 0 &&
+    (data.criticalErrors ?? []).length === 0;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-8">
@@ -178,7 +187,8 @@ export function DebriefView({ caseId }: { caseId: string }) {
       {/* Detailed Feedback Cards */}
       <div className="grid gap-6 lg:grid-cols-2">
         <FeedbackCard icon={AlertTriangle} title={t('missed')} items={data.missedQuestions} warning />
-        <FeedbackCard icon={Target} title={t('redFlags')} items={[...data.foundRedFlags, ...data.missedRedFlags]} />
+        <FeedbackCard icon={CheckCircle2} title="Раскрытые красные флаги" items={data.foundRedFlags} success />
+        <FeedbackCard icon={Target} title="Пропущенные красные флаги" items={data.missedRedFlags} warning />
         <FeedbackCard icon={BookOpen} title={t('investigationFeedback')} items={data.investigationFeedback} />
         <FeedbackCard icon={ShieldAlert} title={t('criticalErrors')} items={data.criticalErrors} warning />
         <FeedbackCard icon={CheckCircle2} title={t('strengths')} items={data.strengths} success />

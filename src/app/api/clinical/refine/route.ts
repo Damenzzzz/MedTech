@@ -1,24 +1,33 @@
+import 'server-only';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
+import { RefineInputSchema } from '@/domain/schemas';
+import {
+  generateAlemClinicalFallback,
+  normalizeDiagnoseResponse,
+} from '@/lib/ai/clinical-service.server';
 
 export const dynamic = 'force-dynamic';
 
-const RefineInputSchema = z.object({
-  case_id: z.string().trim().optional(),
-  additional_info: z.string().trim().default(''),
-  symptoms: z.string().trim().default(''),
-  locale: z.enum(['ru', 'kk', 'en']).optional().default('ru'),
-});
-
 export async function POST(request: Request) {
+  const requestId = `refine-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const headers = {
+    'Cache-Control': 'no-store, max-age=0',
+    'x-request-id': requestId,
+  };
+
   try {
-    const json = await request.json();
+    const json = await request.json().catch(() => ({}));
     const parseResult = RefineInputSchema.safeParse(json);
 
     if (!parseResult.success) {
       return NextResponse.json(
-        { error: 'invalid_request', details: parseResult.error.issues },
-        { status: 400, headers: { 'Cache-Control': 'no-store' } }
+        {
+          error: 'Некорректные данные запроса уточнения.',
+          code: 'INVALID_INPUT',
+          details: parseResult.error.issues,
+          request_id: requestId,
+        },
+        { status: 400, headers },
       );
     }
 
@@ -26,82 +35,77 @@ export async function POST(request: Request) {
 
     if (!symptoms && !additional_info) {
       return NextResponse.json(
-        { error: 'symptoms_or_additional_info_required' },
-        { status: 400, headers: { 'Cache-Control': 'no-store' } }
+        {
+          error: 'Потребуются либо симптомы, либо дополнительная информация.',
+          code: 'EMPTY_REFINE_INPUT',
+          request_id: requestId,
+        },
+        { status: 400, headers },
       );
     }
 
     const base = process.env.RAG_SERVICE_URL;
+    const targetCaseId = case_id || `case-${Date.now()}`;
 
-    if (base && case_id && case_id !== 'fallback-session') {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
-
+    if (base && case_id && case_id !== 'fallback-session' && !case_id.startsWith('alem-') && !case_id.startsWith('mock-')) {
       try {
-        const response = await fetch(`${base.replace(/\/$/, '')}/api/refine`, {
+        const rootUrl = base.replace(/\/$/, '');
+        const response = await fetch(`${rootUrl}/api/refine`, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
-            case_id,
+            case_id: targetCaseId,
             additional_info,
             symptoms,
           }),
-          signal: controller.signal,
           cache: 'no-store',
+          signal: AbortSignal.timeout(45000), // Adequate timeout for rerank + reasoning
         });
-        clearTimeout(timeoutId);
 
         if (response.ok) {
-          const ragData = await response.json();
+          const ragData = (await response.json()) as Record<string, unknown>;
           const hasSources = Array.isArray(ragData.sources) && ragData.sources.length > 0;
-          return NextResponse.json(
+          const status = hasSources ? 'rag-ready' : 'rag-empty';
+          const normalized = normalizeDiagnoseResponse(
             {
               ...ragData,
-              sources: ragData.sources || [],
-              rag_status: hasSources ? 'rag-ready' : 'rag-empty',
+              case_id: targetCaseId,
             },
-            { headers: { 'Cache-Control': 'no-store' } }
+            requestId,
+            status,
           );
-        } else {
-          console.error(`[Clinical Refine] RAG service returned status ${response.status}`);
+
+          return NextResponse.json(normalized, { headers });
         }
+
+        console.error('[clinical refine route]', { requestId, status: response.status, msg: 'Python RAG refine returned non-200' });
       } catch (err) {
-        clearTimeout(timeoutId);
-        console.error('[Clinical Refine] RAG fetch failed or timed out:', err instanceof Error ? err.name : 'UnknownError');
+        console.error('[clinical refine route]', { requestId, msg: 'Python RAG refine fetch failed or timed out', err: err instanceof Error ? err.message : String(err) });
       }
     }
 
-    // Explicit Fallback mode when case_id not cached in RAG or RAG unavailable
-    const fallbackQuery = [symptoms, additional_info].filter(Boolean).join('\nДополнительно: ');
-    const fallbackDiagnose = (await import('../diagnose/route')).POST;
+    // Fallback mode via AlemLLM or Mock (NO OpenAI!)
+    const combinedQuery = [symptoms, additional_info].filter(Boolean).join('\nДополнительно: ');
+    const fallbackData = await generateAlemClinicalFallback(combinedQuery, requestId);
 
-    const fallbackReq = new Request(request.url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ symptoms: fallbackQuery }),
-    });
+    const result = {
+      ...fallbackData,
+      case_id: targetCaseId,
+      cached_context: false, // Fallback must never mask itself as cached RAG
+      rag_status: 'fallback' as const,
+    };
 
-    const fallbackRes = await fallbackDiagnose(fallbackReq);
-    if (!fallbackRes.ok) {
-      return NextResponse.json(
-        { error: 'refine_failed', rag_status: 'unavailable' },
-        { status: 500, headers: { 'Cache-Control': 'no-store' } }
-      );
-    }
-
-    const data = await fallbackRes.json();
+    return NextResponse.json(result, { headers });
+  } catch (error) {
+    console.error('[clinical refine fatal error]', { requestId, error });
     return NextResponse.json(
       {
-        ...data,
-        sources: [],
-        rag_status: 'fallback',
+        error: error instanceof Error ? error.message : 'Ошибка выполнения уточнения диагноза',
+        code: 'REFINE_FAILED',
+        rag_status: 'unavailable',
+        request_id: requestId,
       },
-      { headers: { 'Cache-Control': 'no-store' } }
-    );
-  } catch {
-    return NextResponse.json(
-      { error: 'internal_error', rag_status: 'unavailable' },
-      { status: 500, headers: { 'Cache-Control': 'no-store' } }
+      { status: 500, headers },
     );
   }
 }

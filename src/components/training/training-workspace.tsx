@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import type { PatientVisualState, StudentCaseDTO } from '@/domain/schemas';
 import { PatientMessageResultSchema } from '@/engines/patient-engine';
 import { useTrainingStore } from '@/stores/training-store';
@@ -23,10 +23,25 @@ import { ClipboardList, ArrowRight } from 'lucide-react';
 
 export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
   const locale = useLocale() as 'ru' | 'kk' | 'en';
+  const t = useTranslations('Training');
   const router = useRouter();
 
-  const store = useTrainingStore();
-  const session = store.session;
+  // Use stable selectors to avoid re-renders on unrelated state changes
+  const session = useTrainingStore((s) => s.session);
+  const init = useTrainingStore((s) => s.init);
+  const addStudentMessage = useTrainingStore((s) => s.addStudentMessage);
+  const addPatientMessage = useTrainingStore((s) => s.addPatientMessage);
+  const addAction = useTrainingStore((s) => s.addAction);
+  const reveal = useTrainingStore((s) => s.reveal);
+  const setStage = useTrainingStore((s) => s.setStage);
+  const addPerformedExamination = useTrainingStore((s) => s.addPerformedExamination);
+  const addOrderedInvestigation = useTrainingStore((s) => s.addOrderedInvestigation);
+  const updateInvestigationStatus = useTrainingStore((s) => s.updateInvestigationStatus);
+  const setManagement = useTrainingStore((s) => s.setManagement);
+  const selectManagementOption = useTrainingStore((s) => s.selectManagementOption);
+  const toggleDifferential = useTrainingStore((s) => s.toggleDifferential);
+  const setFinal = useTrainingStore((s) => s.setFinal);
+  const setReasoning = useTrainingStore((s) => s.setReasoning);
 
   const [visualState, setVisualState] = useState<PatientVisualState>('neutral');
   const [isThinking, setIsThinking] = useState(false);
@@ -35,10 +50,10 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [elapsed, setElapsed] = useState(0);
 
-  // Initialize store session
+  // Initialize store session — init is a stable reference from Zustand
   useEffect(() => {
-    store.init(patient.id);
-  }, [patient.id, store]);
+    init(patient.id);
+  }, [patient.id, init]);
 
   // Timer countdown / elapsed
   useEffect(() => {
@@ -65,10 +80,10 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
 
   // Ask question logic calling /api/session/respond
   const handleAskQuestion = async (question: string) => {
-    if (!session || !question.trim()) return;
+    if (!session || !question.trim() || isThinking) return;
 
-    store.addStudentMessage(question);
-    store.addAction('question', question);
+    addStudentMessage(question);
+    addAction('question', question);
     setIsThinking(true);
     setHasError(false);
     setVisualState('thinking');
@@ -78,6 +93,8 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
       text: d.text,
     }));
     fullHistory.push({ role: 'student', text: question });
+
+    const controller = new AbortController();
 
     try {
       const response = await fetch('/api/session/respond', {
@@ -90,13 +107,17 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
           revealedFactIds: session.revealedFactIds,
           dialogue: fullHistory.slice(-15),
         }),
+        signal: controller.signal,
       });
 
-      if (!response.ok) throw new Error('API Error');
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`API Error ${response.status}: ${errorText}`);
+      }
 
       const result = PatientMessageResultSchema.parse(await response.json());
-      store.addPatientMessage(result.answer, result.visualState);
-      store.reveal(result.newFactIds);
+      addPatientMessage(result.answer, result.visualState);
+      reveal(result.newFactIds);
       setVisualState(result.visualState);
     } catch {
       setHasError(true);
@@ -109,7 +130,7 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
   const handleRetryQuestion = async () => {
     const dialogue = session?.dialogue || [];
     const lastStudentMsg = [...dialogue].reverse().find((m) => m.role === 'student');
-    if (!lastStudentMsg) return;
+    if (!lastStudentMsg || isThinking) return;
 
     setIsThinking(true);
     setHasError(false);
@@ -133,11 +154,14 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
         }),
       });
 
-      if (!response.ok) throw new Error('API Error');
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`API Error ${response.status}: ${errorText}`);
+      }
 
       const result = PatientMessageResultSchema.parse(await response.json());
-      store.addPatientMessage(result.answer, result.visualState);
-      store.reveal(result.newFactIds);
+      addPatientMessage(result.answer, result.visualState);
+      reveal(result.newFactIds);
       setVisualState(result.visualState);
     } catch {
       setHasError(true);
@@ -150,31 +174,34 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
   // Perform physical examination
   const handlePerformExam = async (examId: string, result: string) => {
     if (!session) return;
-    store.addPerformedExamination(examId, result);
-    store.addAction('examination', examId);
+    addPerformedExamination(examId, result);
+    addAction('examination', examId);
   };
 
   // Order investigation
   const handleOrderTest = async (testId: string, result: string, delayMs: number) => {
     if (!session) return;
-    store.addOrderedInvestigation(testId, result, delayMs);
-    store.addAction('investigation', testId);
+    addOrderedInvestigation(testId, result, delayMs);
+    addAction('investigation', testId);
   };
 
   // Append management item
-  const handleAppendManagementItem = (val: string) => {
+  const handleAppendManagementItem = (val: string, optionId?: string) => {
     if (!session) return;
+    if (optionId) {
+      selectManagementOption(optionId);
+    }
     const next = session.managementNotes
       ? `${session.managementNotes}\n• ${val}`
       : `• ${val}`;
-    store.setManagement(next);
-    store.addAction('management', val);
+    setManagement(next);
+    addAction('management', val);
   };
 
   // Finish session & trigger /api/session/debrief
   const handleFinishSession = async () => {
     if (!session) return;
-    store.addAction('management', session.managementNotes);
+    addAction('management', session.managementNotes);
 
     const response = await fetch('/api/session/debrief', {
       method: 'POST',
@@ -206,6 +233,9 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
         score: resultData.total ?? 0,
         categories: resultData.categories ?? {},
         specialty: patient.specialty,
+        validationTier: patient.validationTier,
+        missedRedFlags: resultData.missedRedFlags ?? [],
+        criticalErrors: resultData.criticalErrors ?? [],
       };
 
       localStorage.setItem('kms-progress', JSON.stringify([...filtered, newEntry].slice(-50)));
@@ -217,7 +247,7 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
   };
 
   const handleNextStage = () => {
-    store.setStage(Math.min(7, currentStage + 1));
+    setStage(Math.min(7, currentStage + 1));
   };
 
   // Extract latest patient message text for PatientStage bubble
@@ -241,7 +271,7 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
         {/* Stage Navigation */}
         <StageNavigation
           currentStage={currentStage}
-          onSelectStage={(idx) => store.setStage(idx)}
+          onSelectStage={(idx) => setStage(idx)}
         />
 
         {/* Center: Patient Visual Stage */}
@@ -266,17 +296,17 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">
-                    Карта пациента
+                    {t('stages.0')}
                   </h3>
                   <p className="text-[11px] font-medium text-slate-500">
-                    Первичный клинический обзор
+                    {t('patientState')}
                   </p>
                 </div>
               </div>
 
               <div className="rounded-2xl border border-teal-200 bg-teal-50/70 p-4 space-y-2">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-teal-800">
-                  Первичная жалоба:
+                  {t('queue')}:
                 </p>
                 <p className="text-xs font-semibold text-teal-950 leading-relaxed">
                   {typeof patient.complaint === 'object' ? patient.complaint.ru : patient.complaint}
@@ -287,7 +317,7 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
                 onClick={handleNextStage}
                 className="focus-ring mt-auto w-full rounded-xl bg-teal-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all flex items-center justify-center gap-1.5"
               >
-                <span>Начать беседу с пациентом</span>
+                <span>{t('start')}</span>
                 <ArrowRight size={16} />
               </button>
             </div>
@@ -324,7 +354,7 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
               patient={patient}
               orderedInvestigations={session?.orderedInvestigations || []}
               onOrderTest={handleOrderTest}
-              onUpdateStatus={(id, status) => store.updateInvestigationStatus(id, status)}
+              onUpdateStatus={(id, status) => updateInvestigationStatus(id, status)}
               onNextStage={handleNextStage}
               locale={locale}
             />
@@ -336,8 +366,8 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
               patient={patient}
               selectedDifferentials={session?.differentials || []}
               onToggleDifferential={(code) => {
-                store.toggleDifferential(code);
-                store.addAction('differential', code);
+                toggleDifferential(code);
+                addAction('differential', code);
               }}
               onNextStage={handleNextStage}
               locale={locale}
@@ -350,11 +380,11 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
               patient={patient}
               finalDiagnosis={session?.finalDiagnosis}
               onSetFinalDiagnosis={(code) => {
-                store.setFinal(code);
-                store.addAction('diagnosis', code);
+                setFinal(code);
+                addAction('diagnosis', code);
               }}
               reasoning={session?.clinicalReasoning || ''}
-              onSetReasoning={(val) => store.setReasoning(val)}
+              onSetReasoning={(val) => setReasoning(val)}
               selectedDifferentials={session?.differentials || []}
               onNextStage={handleNextStage}
               locale={locale}
@@ -366,7 +396,7 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
             <ManagementPanel
               patient={patient}
               managementNotes={session?.managementNotes || ''}
-              onSetManagementNotes={(notes) => store.setManagement(notes)}
+              onSetManagementNotes={(notes) => setManagement(notes)}
               onAppendNoteItem={handleAppendManagementItem}
               onNextStage={handleNextStage}
               locale={locale}
@@ -379,7 +409,7 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
               patient={patient}
               session={session}
               onFinishSession={handleFinishSession}
-              onSelectStage={(idx) => store.setStage(idx)}
+              onSelectStage={(idx) => setStage(idx)}
             />
           )}
         </aside>
@@ -391,7 +421,7 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
         isOpen={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
         currentStage={currentStage}
-        onSelectStage={(idx) => store.setStage(idx)}
+        onSelectStage={(idx) => setStage(idx)}
       />
     </div>
   );

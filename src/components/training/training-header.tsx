@@ -55,9 +55,12 @@ export function TrainingHeader({
                 <ShieldCheck size={12} />
                 {c('synthetic')}
               </span>
+              <span className={`hidden sm:inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold border ${patient.validationTier === 'core' ? 'bg-emerald-50 text-emerald-900 border-emerald-300' : 'bg-amber-50 text-amber-900 border-amber-300'}`}>
+                {patient.validationTier === 'core' ? 'Core (Verified)' : 'Beta (Unreviewed)'}
+              </span>
             </div>
             <p className="text-[11px] font-medium text-slate-500 truncate">
-              {patient.patient.age} лет · {patient.specialty}
+              {patient.patient.age} ({patient.specialty})
             </p>
           </div>
         </div>
@@ -66,7 +69,7 @@ export function TrainingHeader({
         <div className="hidden md:flex items-center gap-3">
           <div className="flex flex-col items-center">
             <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-              <span>Этап {currentStage + 1} из {totalStages}</span>
+              <span>{t('stage')} {currentStage + 1} / {totalStages}</span>
               <span className="text-teal-600 font-extrabold">({progressPercent}%)</span>
             </div>
             <div className="mt-1 h-1.5 w-40 overflow-hidden rounded-full bg-slate-100">
@@ -84,7 +87,7 @@ export function TrainingHeader({
           <button
             onClick={onOpenCommandPalette}
             className="focus-ring hidden sm:flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100"
-            title="Быстрый переход между этапами (Ctrl+K)"
+            title={t('quick')}
           >
             <Command size={14} />
             <span className="text-[10px] font-bold">Cmd+K</span>
@@ -93,7 +96,7 @@ export function TrainingHeader({
           {/* Autosave pulse indicator */}
           <div className="hidden lg:flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-xl">
             <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Автосохранение</span>
+            <span>Auto</span>
           </div>
 
           {/* Timer */}

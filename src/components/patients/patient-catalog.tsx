@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { StudentCaseDTO } from '@/domain/schemas';
 import { useRouter, usePathname } from '@/i18n/navigation';
@@ -25,20 +25,16 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
   const trainingSession = useTrainingStore((s) => s.session);
 
   // Favorites state (persisted in localStorage)
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-
-  // Initialize favorites from localStorage
-  useEffect(() => {
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
     try {
       const saved = localStorage.getItem('kms-favorites');
-      if (saved) {
-        setFavorites(JSON.parse(saved));
-      }
+      return saved ? (JSON.parse(saved) as string[]) : [];
     } catch {
-      // Fallback if localStorage unavailable
+      return [];
     }
-  }, []);
+  });
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   const toggleFavorite = (id: string) => {
     const next = favorites.includes(id)

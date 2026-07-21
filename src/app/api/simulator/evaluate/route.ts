@@ -1,5 +1,5 @@
 import {NextResponse} from 'next/server';
-import {callClinicalText} from '@/lib/llm';
+import {callClinicalText} from '@/lib/ai/text-llm.server';
 
 export async function POST(request:Request) {
   const body=await request.json();
