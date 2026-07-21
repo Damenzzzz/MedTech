@@ -1,0 +1,15 @@
+{
+  "caseId": "sepsis",
+  "name": "Nurgul Beketova",
+  "age": 68,
+  "sex": "female",
+  "specialty": "infectious",
+  "portrait": "/patients/sepsis/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

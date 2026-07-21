@@ -1,0 +1,15 @@
+{
+  "caseId": "pyelonephritis",
+  "name": "Madina Kasymova",
+  "age": 34,
+  "sex": "female",
+  "specialty": "therapy",
+  "portrait": "/patients/pyelonephritis/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

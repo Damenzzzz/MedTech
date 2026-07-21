@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg-heart-failure" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#64748b" />
+    </linearGradient>
+    <filter id="shadow-heart-failure" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.15" />
+    </filter>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="240" height="240" fill="url(#bg-heart-failure)" />
+  
+  <!-- Decorative Grid Lines -->
+  <path d="M0 40 H240 M0 80 H240 M0 120 H240 M0 160 H240 M0 200 H240" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <path d="M40 0 V240 M80 0 V240 M120 0 V240 M160 0 V240 M200 0 V240" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+  <!-- Avatar Group -->
+  <g filter="url(#shadow-heart-failure)">
+    <!-- Body / Shoulders -->
+    <path d="M40 240 C40 180 80 165 120 165 C160 165 200 180 200 240 Z" fill="#334155" />
+    <!-- Collar / Shirt Neck -->
+    <path d="M95 165 L120 195 L145 165 Z" fill="#ffffff" opacity="0.9" />
+
+    <!-- Neck -->
+    <rect x="104" y="130" width="32" height="40" rx="6" fill="#cfa27c" />
+
+    <!-- Head / Face -->
+    <ellipse cx="120" cy="105" rx="42" ry="48" fill="#cfa27c" />
+
+    <!-- Ears -->
+    <circle cx="75" cy="108" r="9" fill="#cfa27c" />
+    <circle cx="165" cy="108" r="9" fill="#cfa27c" />
+
+    <!-- Eyes -->
+    <ellipse cx="102" cy="100" rx="5" ry="4" fill="#1e293b" />
+    <ellipse cx="138" cy="100" rx="5" ry="4" fill="#1e293b" />
+    <circle cx="104" cy="99" r="1.5" fill="#ffffff" />
+    <circle cx="140" cy="99" r="1.5" fill="#ffffff" />
+
+    <!-- Eyebrows -->
+    <path d="M94 91 Q102 87 110 91" stroke="#e2e8f0" stroke-width="3" fill="none" stroke-linecap="round" />
+    <path d="M130 91 Q138 87 146 91" stroke="#e2e8f0" stroke-width="3" fill="none" stroke-linecap="round" />
+
+    <!-- Nose -->
+    <path d="M120 98 Q116 112 120 115 H124" stroke="rgba(0,0,0,0.15)" stroke-width="2.5" fill="none" stroke-linecap="round" />
+
+    <!-- Mouth -->
+    <path d="M108 126 Q120 133 132 126" stroke="#991b1b" stroke-width="2.5" fill="none" stroke-linecap="round" />
+
+    <!-- Hair Overlay -->
+    <path d="M74 100 C72 70 90 52 120 52 C150 52 168 70 166 100 C160 78 145 64 120 64 C95 64 80 78 74 100 Z" fill="#e2e8f0" />
+  </g>
+
+  <!-- Patient Initials & Specialty Badge -->
+  <g transform="translate(12, 12)">
+    <rect width="36" height="24" rx="6" fill="rgba(0,0,0,0.35)" />
+    <text x="18" y="16" fill="#ffffff" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">BK</text>
+  </g>
+</svg>

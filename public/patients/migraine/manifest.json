@@ -1,0 +1,15 @@
+{
+  "caseId": "migraine",
+  "name": "Assel Toktarova",
+  "age": 29,
+  "sex": "female",
+  "specialty": "neurology",
+  "portrait": "/patients/migraine/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

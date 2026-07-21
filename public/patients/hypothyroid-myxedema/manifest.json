@@ -1,0 +1,15 @@
+{
+  "caseId": "hypothyroid-myxedema",
+  "name": "Yerlan Mukhamedzhanov",
+  "age": 55,
+  "sex": "male",
+  "specialty": "endocrinology",
+  "portrait": "/patients/hypothyroid-myxedema/portrait.svg",
+  "visualStates": [
+    "neutral",
+    "thinking",
+    "speaking",
+    "pain",
+    "relieved"
+  ]
+}

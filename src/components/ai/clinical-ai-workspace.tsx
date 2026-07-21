@@ -203,22 +203,6 @@ function AdvicePanel(){
         <div className="mt-5 flex gap-2"><input className="input border-white/10 bg-white/5 text-white" value={message} placeholder="Спросите, что уточнить или что делать..." onChange={e=>setMessage(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')sendAdviceMessage()}}/><Button onClick={sendAdviceMessage} disabled={chatLoading}><Send size={17}/></Button></div>
         <p className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/8 p-3 text-xs leading-5 text-amber-100">Если нужна конкретная тактика, нажмите “Дать действия”: лёгкий вопрос вернётся быстро, а глубокий RAG по протоколам может занять до 2-3 минут.</p>
       </div>
-      {!data&&<div className="grid min-h-60 place-items-center rounded-2xl border border-white/10 bg-white/[.03] p-8 text-center"><div>{loading?<Loader2 className="mx-auto animate-spin text-teal-300" size={38}/>:<ShieldAlert className="mx-auto text-teal-300" size={42}/>}<h2 className="mt-5 text-xl font-semibold">{loading?'Формирую план действий':'План действий появится здесь'}</h2><p className="mt-2 max-w-md text-sm leading-6 text-slate-400">LLM сначала решит, нужен ли RAG. Если нужен глубокий протокольный анализ, ожидание может быть до 2-3 минут.</p></div></div>}
-      {data&&<><div className="rounded-2xl border border-amber-400/20 bg-amber-400/8 p-4 text-sm leading-6 text-amber-100">{data.safety_notice}</div><div className="rounded-2xl border border-white/10 bg-[#162320] p-5"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-2xl font-semibold">Тактика сейчас</h2>{data.urgency&&<span className="rounded-full bg-red-500/15 px-3 py-1 text-sm font-semibold text-red-100">{data.urgency}</span>}</div>{data.rag_decision&&<p className="mt-3 rounded-xl bg-white/5 p-3 text-xs leading-5 text-slate-400">Решение LLM-router: {data.rag_decision}</p>}<AdviceList title="Главные риски" items={data.most_likely_risks??[]}/><StepList title="Что сделать сразу" steps={data.do_now??[]}/><AdviceList title="Что уточнить или измерить" items={data.ask_or_measure_next??[]}/></div><div className="grid gap-5 xl:grid-cols-2"><OptionList title="Варианты лечения" options={data.treatment_options??[]}/><section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">Маршрутизация</h3><p className="mt-3 rounded-xl bg-white/5 p-4 text-sm leading-6 text-slate-200">{data.referral?.decision??'Уточнить по тяжести и доступности помощи.'}</p>{data.referral?.reason&&<p className="mt-3 text-sm leading-6 text-slate-400">{data.referral.reason}</p>}<AdviceList title="Чего не делать" items={data.what_not_to_do??[]}/></section></div><SourcesList sources={data.sources??[]} status={data.rag_status}/></>}
-    </section>
-  </div>;
-}
-
-function DiagnosisCard({item}:{item:Diagnosis}){return <article className="rounded-2xl border border-white/10 bg-[#162320] p-5">
-  <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="text-sm font-bold text-teal-300">#{item.rank} · {item.icd10_code}{item.confidence?` · ${item.confidence}`:''}</div><h3 className="mt-2 text-xl font-semibold">{item.diagnosis}</h3></div><ClipboardCheck className="text-teal-300"/></div>
-  {item.why_this_diagnosis&&<p className="mt-4 rounded-xl bg-white/5 p-4 text-sm leading-6 text-slate-200">{item.why_this_diagnosis}</p>}
-  <div className="mt-4 grid gap-4 lg:grid-cols-2">
-    <FactList title="Поддерживает" items={(item.supporting_findings??[]).slice(0,6).map(x=>x.patient_evidence?`${x.finding} — ${x.patient_evidence}`:x.finding)}/>
-    <FactList title="Нужно уточнить" items={(item.missing_findings??item.recommended_checks??[]).slice(0,6)}/>
-  </div>
-</article>}
-
-function FactList({title,items}:{title:string;items:string[]}){return <div><h4 className="text-sm font-semibold text-slate-300">{title}</h4><ul className="mt-2 space-y-2">{items.length?items.map(x=><li key={x} className="rounded-lg bg-white/5 px-3 py-2 text-sm leading-5 text-slate-300">{x}</li>):<li className="text-sm text-slate-500">Нет данных</li>}</ul></div>}
 
 function Questions({questions}:{questions:Question[]}){return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">Что уточнить врачу</h3><div className="mt-4 grid gap-3">{questions.slice(0,5).map(q=><div key={q.question} className="rounded-xl bg-white/5 p-4"><p className="font-medium">{q.question}</p>{q.rationale&&<p className="mt-2 text-sm leading-5 text-slate-400">{q.rationale}</p>}</div>)}</div></section>}
 
@@ -377,5 +361,3 @@ function VoicePanel(){
     <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h2 className="text-2xl font-semibold">Диалог с ролями</h2><div className="mt-5 space-y-3">{turns.length?turns.map((t,i)=><div key={`${i}-${t.text}`} className="rounded-xl bg-white/5 p-4"><div className="text-xs font-bold uppercase text-teal-300">{roleLabel(t.speaker)} {typeof t.start==='number'?`· ${t.start.toFixed(1)}s`:''}</div><p className="mt-2 leading-6 text-slate-200">{t.text}</p></div>):<div className="grid min-h-80 place-items-center rounded-xl border border-dashed border-white/10 text-slate-500">Запишите или загрузите аудио приёма</div>}</div></section>
   </div>;
 }
-
-function roleLabel(role:DialogueTurn['speaker']){return {doctor:'Врач',patient:'Пациент',relative:'Родственник',nurse:'Медсестра',unknown:'Спикер'}[role];}

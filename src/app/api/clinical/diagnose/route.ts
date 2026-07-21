@@ -55,11 +55,11 @@ async function alemClinicalFallback(symptoms:string) {
   if (!symptoms.trim()) return emptyResponse();
   const prompt=`Ты клинический AI-assistant для учебного MVP. Настоящий RAG-сервис сейчас не подключен, поэтому делай осторожный clinical reasoning по введенному тексту.
 
-Строгие правила:
-- Не выдумывай факты пациента. Supporting findings должны иметь patient_evidence из входного текста.
-- Критерии, которых нет во входном тексте, помещай только в missing_findings/recommended_checks.
-- Верни 3 разных возможных диагноза, если это клинически возможно.
-- Это не финальный диагноз и не замена врача.
+  const prompt = `Ты клинический AI-assistant. Сформируй осторожный дифференциально-диагностический ряд по тексту.
+Правила:
+- Supporting findings должны содержать подтверждающие слова пациента (patient_evidence).
+- Не выдумывай источники протоколов.
+- Качество confidence: "high" | "medium" | "low".
 
 Симптомы:
 ${symptoms}
