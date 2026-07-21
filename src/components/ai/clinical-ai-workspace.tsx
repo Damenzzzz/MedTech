@@ -123,18 +123,10 @@ function RagPanel() {
       if (job?.job_id) {
         const result = (await waitDiagnoseJob(job.job_id)) as DiagnoseResponse;
         setData(result);
+      } else if (job?.result) {
+        setData(job.result as DiagnoseResponse);
       } else {
-        const response = await fetch('/api/clinical/diagnose', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ symptoms }),
-        });
-        if (!response.ok) {
-          const errJson = await response.json().catch(() => ({ error: 'Ошибка анализа' }));
-          throw new Error(errJson.error || `Ошибка сервера ${response.status}`);
-        }
-        const result: DiagnoseResponse = await response.json();
-        setData(result);
+        throw new Error('RAG-сервис не стартовал. Проверьте tunnel/RAG_SERVICE_URL и запущенный Python backend.');
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка анализа');
@@ -244,15 +236,14 @@ function RagPanel() {
 }
 
 async function startDiagnoseJob(symptoms: string) {
-  try {
-    const response = await fetch('/api/clinical/diagnose/jobs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ symptoms }) });
-    if (!response.ok) return null;
-    return await response.json() as DiagnoseJobStatus;
-  } catch { return null; }
+  const response = await fetch('/api/clinical/diagnose/jobs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ symptoms }) });
+  const payload = await response.json().catch(() => ({})) as DiagnoseJobStatus & {error?: string};
+  if (!response.ok) throw new Error(payload.error || `RAG job start failed: ${response.status}`);
+  return payload;
 }
 
 async function waitDiagnoseJob(jobId: string) {
-  const deadline = Date.now() + 300000;
+  const deadline = Date.now() + 480000;
   let lastError = '';
   while (Date.now() < deadline) {
     await new Promise(resolve => setTimeout(resolve, 3500));
@@ -264,7 +255,7 @@ async function waitDiagnoseJob(jobId: string) {
       if (data.status === 'failed' || data.status === 'not_found') throw new Error(`RAG job ${data.status}`);
     } catch (e) { lastError = e instanceof Error ? e.message : lastError; }
   }
-  throw new Error(lastError || 'RAG анализ занял больше 5 минут');
+  throw new Error(lastError || 'RAG анализ занял больше 8 минут');
 }
 
 function EmptyState({ loading }: { loading: boolean }) {
