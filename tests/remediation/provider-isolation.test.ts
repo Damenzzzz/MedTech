@@ -99,6 +99,10 @@ describe('Provider architecture', () => {
   });
 
   describe('OPENAI_API_KEY presence does NOT enable OpenAI for text', () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
     it('only OPENAI_API_KEY present, no LLM_PROVIDER → defaults to mock', async () => {
       delete process.env.LLM_PROVIDER;
       process.env.OPENAI_API_KEY = 'sk-test-openai-key';
@@ -113,6 +117,65 @@ describe('Provider architecture', () => {
       // Should use mock (default), NOT OpenAI
       expect(result).toBeTruthy();
       expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it('missing LLM_PROVIDER stays silent under NODE_ENV=test', async () => {
+      vi.stubEnv('NODE_ENV', 'test');
+      delete process.env.LLM_PROVIDER;
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const { getLlmProvider } = await import('@/lib/ai/provider-config.server');
+      const provider = getLlmProvider();
+
+      expect(provider).toBe('mock');
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it('missing LLM_PROVIDER warns explicitly outside NODE_ENV=test', async () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      delete process.env.LLM_PROVIDER;
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const { getLlmProvider } = await import('@/lib/ai/provider-config.server');
+      const provider = getLlmProvider();
+
+      expect(provider).toBe('mock');
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('LLM_PROVIDER не задан');
+      warnSpy.mockRestore();
+    });
+
+    it('missing STT_PROVIDER warns explicitly outside NODE_ENV=test', async () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      delete process.env.STT_PROVIDER;
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const { getSttProvider } = await import('@/lib/ai/provider-config.server');
+      const provider = getSttProvider();
+
+      expect(provider).toBe('mock');
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0][0]).toContain('STT_PROVIDER не задан');
+      warnSpy.mockRestore();
+    });
+
+    it('warns only once per process even when called repeatedly', async () => {
+      vi.stubEnv('NODE_ENV', 'production');
+      delete process.env.LLM_PROVIDER;
+
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const { getLlmProvider } = await import('@/lib/ai/provider-config.server');
+      getLlmProvider();
+      getLlmProvider();
+      getLlmProvider();
+
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      warnSpy.mockRestore();
     });
   });
 

@@ -106,11 +106,48 @@ pnpm test:e2e
 ```
 
 ### 5. Run Python RAG Service (Optional)
+
+`rag_service/` contains two independent FastAPI servers — run the one that
+matches what you need:
+
+**Primary: Askhat RAG engine (`askhat_rag/`, port 8080)** — hybrid BM25+FAISS
+retrieval, reranking, LLM-grounded generation. This is what
+`src/app/api/clinical/diagnose/route.ts`, `.../diagnose/jobs/route.ts` and
+`.../refine/route.ts` actually call (`/diagnose`, `/api/diagnose-jobs`,
+`/api/diagnose-jobs/{job_id}`, `/api/refine`, `/api/retrieve`).
+
 ```bash
 cd rag_service
-pip install -r requirements.txt
-uvicorn app.main:app --reload --port 8000
+python3 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+
+cp .env.example .env             # fill in LLM_API_KEY / EMBED_API_KEY, see rag_service/README.md
+
+python scripts/merge_protocol_corpus.py
+python scripts/askhat_build_index.py --corpus data/corpus/merged_protocols.jsonl --force
+
+./scripts/run_askhat_rag.sh      # serves on http://127.0.0.1:8080
 ```
+
+Set `RAG_SERVICE_URL=http://127.0.0.1:8080` in `.env.local` to match.
+
+**Fallback: offline lightweight server (`app/api/`, port 8000)** — only
+`/diagnose`, `/api/analyze`, `/api/health`. No job polling, no refine. Useful
+without LLM credentials, but the Next.js clinical routes above will not work
+against it.
+
+```bash
+cd rag_service
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+python -m app.rag.ingest --corpus data/corpus --index data/index.json
+uvicorn app.api.server:app --host 127.0.0.1 --port 8000
+```
+
+If unconfigured or unreachable, the Next.js API falls back to AlemLLM
+directly. See `rag_service/README.md` for full details on both servers.
 
 ---
 

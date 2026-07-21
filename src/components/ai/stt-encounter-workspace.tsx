@@ -476,6 +476,13 @@ export function SttEncounterWorkspace() {
             )}
           </div>
 
+          {sttData?.provider === 'mock' && (
+            <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 text-sm font-semibold text-amber-200">
+              <ShieldAlert size={18} className="mt-0.5 shrink-0" />
+              <span>Это демо-текст (mock STT), не настоящая транскрибация записи.</span>
+            </div>
+          )}
+
           {/* Full Transcript Text Area */}
           <div className="mt-4 space-y-3">
             <label className="block text-xs font-semibold text-slate-300">Полный текст транскрипта (можно редактировать)</label>

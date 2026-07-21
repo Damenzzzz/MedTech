@@ -1,17 +1,38 @@
 import 'server-only';
 import { z } from 'zod';
 
-const LlmProviderSchema = z.enum(['alem', 'mock']).default('mock');
-const SttProviderSchema = z.enum(['openai', 'mock']).default('mock');
+const LlmProviderSchema = z.enum(['alem', 'mock']);
+const SttProviderSchema = z.enum(['openai', 'mock']);
 
 export type LlmProvider = z.infer<typeof LlmProviderSchema>;
 export type SttProvider = z.infer<typeof SttProviderSchema>;
 
+let warnedLlmProviderMissing = false;
+let warnedSttProviderMissing = false;
+
 export function getLlmProvider(): LlmProvider {
+  if (process.env.LLM_PROVIDER === undefined) {
+    if (process.env.NODE_ENV !== 'test' && !warnedLlmProviderMissing) {
+      warnedLlmProviderMissing = true;
+      console.warn(
+        '[provider-config] LLM_PROVIDER не задан — используется mock, реальные ответы LLM генерироваться не будут. Добавь LLM_PROVIDER=alem в .env.local',
+      );
+    }
+    return 'mock';
+  }
   return LlmProviderSchema.parse(process.env.LLM_PROVIDER);
 }
 
 export function getSttProvider(): SttProvider {
+  if (process.env.STT_PROVIDER === undefined) {
+    if (process.env.NODE_ENV !== 'test' && !warnedSttProviderMissing) {
+      warnedSttProviderMissing = true;
+      console.warn(
+        '[provider-config] STT_PROVIDER не задан — используется mock, реальная транскрибация выполняться не будет. Добавь STT_PROVIDER=openai в .env.local',
+      );
+    }
+    return 'mock';
+  }
   return SttProviderSchema.parse(process.env.STT_PROVIDER);
 }
 
