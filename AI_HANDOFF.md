@@ -1,6 +1,6 @@
 # AI Handoff: MedTech Clinical AI Platform
 
-Last updated: 2026-07-21
+Last updated: 2026-07-22 (Gemini-related sections corrected — see inline "Correction" notes; Gemini was removed from the codebase in commit `381376f` and is no longer accurate anywhere it's mentioned as "current")
 
 This file is for another AI/engineer who needs to understand the project quickly without reading the whole chat history.
 
@@ -240,10 +240,7 @@ Current simulator API used by this tab:
 
 `src/app/api/simulator/respond/route.ts`
 
-This route calls `callClinicalText()` from `src/lib/llm.ts`, so it uses the current shared provider order:
-
-1. Gemini
-2. Alem fallback
+This route no longer calls `src/lib/llm.ts` directly. It resolves `getLlmProvider()` and dispatches to `LlmPatientEngine` (which calls `callClinicalJson()` from `src/lib/ai/text-llm.server.ts`) or `MockPatientEngine`. There is no Gemini step — see the corrected "LLM Provider Wrapper" section below (fixed in commit `381376f Fix simulator LLM fallback and main build`, after this doc's Gemini-era sections were written).
 
 Important prompt behavior in this route:
 
@@ -308,10 +305,8 @@ Important:
   - expected actions
   - dangerous actions
   - scoring rubric
-- The older `LlmPatientEngine` currently calls OpenAI directly.
-- Since OpenAI quota is exhausted, `/api/session/respond` may fall back to `MockPatientEngine`.
-- This is one reason some simulator behavior may feel less intelligent in the older training pages.
-- The AI assistant tab simulator was changed to use shared LLM wrapper (`src/lib/llm.ts`) and therefore Gemini/Alem.
+- **Correction:** `LlmPatientEngine` no longer calls OpenAI directly — it calls `callClinicalJson()` from `src/lib/ai/text-llm.server.ts` (alem/mock only), same as everywhere else. Both `/api/session/respond` (older training flow) and `/api/simulator/respond` (AI assistant tab) now resolve `getLlmProvider()` and dispatch to the same `LlmPatientEngine`/`MockPatientEngine` pair, so they no longer differ in provider behavior.
+- If `LLM_PROVIDER=mock` (or the alem call throws), both routes fall back to `MockPatientEngine`, which is why simulator answers can feel less intelligent — not an OpenAI-quota issue.
 
 Recommended future cleanup:
 
@@ -408,8 +403,8 @@ User wants this to remain broad so the student has room to make mistakes.
 
 - The AI assistant simulator cases currently live inside `clinical-ai-workspace.tsx`; this is convenient for demo but not ideal long-term.
 - The older training flow and the AI assistant simulator are separate; behavior can differ.
-- OpenAI quota is exhausted, so any route still directly using OpenAI may degrade to fallback/mock behavior.
-- Alem is weaker than GPT/Gemini for natural patient role-play; if Gemini credits are depleted, patient answers can feel less smart.
+- No route uses OpenAI for text anymore (see corrected notes above); "degraded" behavior now means `LLM_PROVIDER=mock` or an Alem call failing, not an OpenAI-quota issue.
+- Alem is weaker than GPT for natural patient role-play, so patient answers can feel less smart than they would with GPT — Gemini is no longer part of this app and isn't a lever to pull here.
 - The simulator currently does not deeply use RAG for every patient answer. That is okay: role-play should be fast. RAG is more important for protocol-backed clinical assistant/advice and for future evidence-backed evaluation.
 - If RAG is added to simulator evaluation later, use it selectively. Do not make every chat question wait 2-3 minutes.
 
@@ -432,14 +427,15 @@ Best next simulator improvement:
 
 ### LLM Provider Wrapper
 
-`src/lib/llm.ts`
+**Correction (see git history below for why this section changed):** Gemini was briefly wired in as primary (`65e03ec Use Gemini before Alem for LLM calls`), but commit `381376f Fix simulator LLM fallback and main build` removed it. As of now there is no Gemini (or OpenAI) code path for text generation anywhere in the app — this matches the policy already stated in `README.md` and `.env.example` (`LLM_PROVIDER: alem | mock` only; OpenAI/Gemini strictly prohibited for text).
 
-Current provider order:
+The canonical entry point is `src/lib/ai/text-llm.server.ts`:
 
-1. Gemini primary
-2. Alem fallback
+- `callClinicalText(prompt, options?)` — plain text response
+- `callClinicalJson<T>(prompt, options?)` — structured JSON response
+- Both switch on `getLlmProvider()` (from `src/lib/ai/provider-config.server.ts`, `z.enum(['alem', 'mock'])`) with an exhaustive `never` check, so a third provider can't silently slip in without a compile error.
 
-Important: The Gemini key was tested and returned `429 RESOURCE_EXHAUSTED`, meaning credits are depleted. Code still tries Gemini first. Until billing/credits are fixed, it falls back to Alem.
+`src/lib/llm.ts` still exists but is now only a deprecated re-export shim over the file above, kept for backward compatibility. **Import from `@/lib/ai/text-llm.server` directly for any new code** — do not add new imports of `src/lib/llm.ts`.
 
 ### STT
 
@@ -455,24 +451,23 @@ Known current situation:
 
 ## Environment Variables
 
-Vercel Production currently has:
+**Correction:** `GEMINI_API_KEY`/`GEMINI_MODEL`/`GEMINI_BASE_URL` are listed below as they appeared when this doc was written, but nothing in `src/` reads those env vars anymore (grep confirms zero matches) — Vercel may still have `GEMINI_API_KEY` set, but it's inert. Treat this list as historical; the real, current set is in `.env.example`.
+
+Vercel Production had (as of writing):
 
 - `RAG_SERVICE_URL`
 - `OPENAI_API_KEY`
 - `ALEM_API_KEY`
-- `GEMINI_API_KEY`
+- `GEMINI_API_KEY` (no longer read by any code)
 
-Expected meanings:
+Expected meanings (current):
 
 - `RAG_SERVICE_URL`: public tunnel URL to local Python RAG backend.
-- `GEMINI_API_KEY`: preferred LLM, but currently depleted.
-- `ALEM_API_KEY`: fallback LLM.
-- `OPENAI_API_KEY`: currently only needed for STT.
+- `ALEM_API_KEY`: the only text LLM provider besides `mock`.
+- `OPENAI_API_KEY`: only needed for STT (`/api/transcribe`), never for text generation.
 
 Optional model/env knobs:
 
-- `GEMINI_MODEL`, default `gemini-2.5-flash`
-- `GEMINI_BASE_URL`, default `https://generativelanguage.googleapis.com/v1beta`
 - `ALEM_CHAT_MODEL`, default `alemllm`
 - `ALEM_BASE_URL`, default `https://llm.alem.ai/v1`
 
@@ -592,7 +587,7 @@ Current behavior:
 
 ### 3. Alem LLM quality is weaker than GPT
 
-OpenAI quota ran out, so main LLM was moved to Alem, then Gemini was added as primary.
+OpenAI quota ran out, so main LLM was moved to Alem. Gemini was briefly tried as primary (`65e03ec`) but was removed in `381376f` to comply with the README/`.env.example` policy (no OpenAI/Gemini for text). Alem (or `mock` in CI/tests) is now the only text LLM path — see the corrected "LLM Provider Wrapper" section above.
 
 Observed:
 
@@ -600,24 +595,9 @@ Observed:
 - Alem is weaker for strict clinical JSON and nuanced medical guardrails.
 - Simulator may feel worse than GPT.
 
-Current LLM order:
+### 4. ~~Gemini key is valid but depleted~~ (obsolete — Gemini removed)
 
-1. Gemini
-2. Alem
-
-But Gemini currently has depleted credits, so Alem is effectively active.
-
-### 4. Gemini key is valid but depleted
-
-Gemini API test returned:
-
-`429 RESOURCE_EXHAUSTED`
-
-Meaning:
-
-- key exists / API responds
-- billing or prepaid credits are depleted
-- once user refills Gemini credits, code should automatically use Gemini first
+This issue no longer applies: Gemini isn't wired into the app at all anymore (no code reads `GEMINI_API_KEY`/`GEMINI_MODEL`/`GEMINI_BASE_URL`). Left here only so the numbering in this doc doesn't shift and confuse cross-references. If Alem quality is still a concern, the fix is to improve Alem prompts/guardrails or add a new provider properly (updating `LlmProviderSchema` in `provider-config.server.ts`, `.env.example`, and README together) — not to reintroduce Gemini informally.
 
 ### 5. STT is currently not reliable
 
@@ -778,8 +758,8 @@ Important:
 ## Recommended Next Steps
 
 1. Keep live RAG behavior; do not re-add instant cached diagnosis shortcut unless behind a visible toggle.
-2. Fix/renew Gemini credits if Gemini should really be primary.
-3. Use GPT again for simulator and clinical final generation if OpenAI credits are restored; quality was better.
+2. ~~Fix/renew Gemini credits if Gemini should really be primary.~~ Superseded — Gemini was intentionally removed (`381376f`) to comply with the alem/mock-only policy in README/`.env.example`. Don't reintroduce it without updating that policy first.
+3. Use GPT again for simulator and clinical final generation if OpenAI credits are restored and the no-OpenAI-for-text policy is deliberately revisited; quality was better.
 4. Deploy Python RAG backend to real hosting instead of tunnel.
 5. Add proper STT only after API/quota is available.
 6. Improve title cleaning and table-aware extraction for custom RAG practice.

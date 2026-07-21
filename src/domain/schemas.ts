@@ -399,6 +399,77 @@ export const EncounterProtocolRequestSchema = z.object({
 });
 export type EncounterProtocolRequest = z.infer<typeof EncounterProtocolRequestSchema>;
 
+// Dialogue Structuring & Speaker Role Assignment Schemas (between /api/transcribe and /api/encounter/protocol)
+// Prompt A output: strict structure only, no role assigned yet.
+export const StructuredTurnSchema = z.object({
+  turn_index: z.number().int().nonnegative(),
+  speaker_label: z.string().min(1),
+  text: z.string(),
+  start_time: z.number().optional(),
+});
+export type StructuredTurn = z.infer<typeof StructuredTurnSchema>;
+
+export const StructureDialogueLlmOutputSchema = z.object({
+  turns: z.array(StructuredTurnSchema),
+});
+export type StructureDialogueLlmOutput = z.infer<typeof StructureDialogueLlmOutputSchema>;
+
+// Prompt B output: same turns, each labeled with a clinical role.
+export const DialogueRoleSchema = z.enum(['doctor', 'patient']);
+export type DialogueRole = z.infer<typeof DialogueRoleSchema>;
+
+export const RoledTurnSchema = StructuredTurnSchema.extend({
+  role: DialogueRoleSchema,
+});
+export type RoledTurn = z.infer<typeof RoledTurnSchema>;
+
+export const AssignDialogueRolesLlmOutputSchema = z.object({
+  turns: z.array(RoledTurnSchema),
+});
+export type AssignDialogueRolesLlmOutput = z.infer<typeof AssignDialogueRolesLlmOutputSchema>;
+
+export const StructuredDialogueProvenanceSchema = z.object({
+  generationProvider: z.string(),
+  structureModel: z.string(),
+  roleAssignmentModel: z.string(),
+  generatedAt: z.string(),
+});
+export type StructuredDialogueProvenance = z.infer<typeof StructuredDialogueProvenanceSchema>;
+
+export const StructuredDialogueHistoryEntrySchema = z.object({
+  version: z.number(),
+  createdAt: z.string(),
+  source: z.enum(['ai', 'physician-edit']),
+});
+export type StructuredDialogueHistoryEntry = z.infer<typeof StructuredDialogueHistoryEntrySchema>;
+
+export const StructuredDialogueSchema = z.object({
+  dialogueId: z.string(),
+  transcriptId: z.string(),
+  status: z.enum(['draft', 'edited']).default('draft'),
+  locale: LocaleSchema.default('ru'),
+  turns: z.array(RoledTurnSchema),
+  provenance: StructuredDialogueProvenanceSchema,
+  warning: z.string().default('Черновик структурирован AI и требует проверки врачом перед формированием протокола.'),
+  version: z.number().default(1),
+  history: z.array(StructuredDialogueHistoryEntrySchema).default([]),
+});
+export type StructuredDialogue = z.infer<typeof StructuredDialogueSchema>;
+
+export const StructureDialogueRequestSchema = z.object({
+  transcriptId: z.string().min(1),
+  transcriptText: z.string(),
+  turns: z.array(z.object({
+    speaker: z.enum(['doctor', 'patient', 'relative', 'nurse', 'unknown']),
+    text: z.string(),
+    start: z.number().optional(),
+    end: z.number().optional(),
+  })).default([]),
+  locale: LocaleSchema.default('ru'),
+  regenerate: z.boolean().default(false),
+});
+export type StructureDialogueRequest = z.infer<typeof StructureDialogueRequestSchema>;
+
 // Stage 3 RAG & Clinical Rationale Schemas
 export const ClinicalRationaleFactSchema = z.object({
   fact: z.string(),
@@ -468,5 +539,18 @@ export const RefineInputSchema = z.object({
   locale: LocaleSchema.optional().default('ru'),
 });
 export type RefineInput = z.infer<typeof RefineInputSchema>;
+
+// Lightweight doctor/patient identification (not password-based auth)
+export const IIN_REGEX = /^\d{12}$/;
+
+export const DoctorEntrySchema = z.object({
+  fullName: z.string().trim().min(2).max(80),
+});
+export type DoctorEntryInput = z.infer<typeof DoctorEntrySchema>;
+
+export const PatientEntrySchema = z.object({
+  iin: z.string().trim().regex(IIN_REGEX),
+});
+export type PatientEntryInput = z.infer<typeof PatientEntrySchema>;
 
 

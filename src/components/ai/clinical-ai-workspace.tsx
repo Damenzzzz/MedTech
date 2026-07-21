@@ -1,23 +1,17 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Bot, Brain, ClipboardCheck, Loader2, Mic, RefreshCw, Search, Send, ShieldAlert, Stethoscope, UserRound } from 'lucide-react';
+import { Brain, ClipboardCheck, Loader2, Mic, Search, Send, ShieldAlert, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SttEncounterWorkspace } from '@/components/ai/stt-encounter-workspace';
-import { DifferentialResults } from '@/components/ai/differential-results';
-import type { DiagnoseResponse, StudentCaseDTO } from '@/domain/schemas';
+import type { StudentCaseDTO } from '@/domain/schemas';
 
-type Question = { question: string; target_diagnoses?: string[]; rationale?: string };
-type DiagnoseJobStatus = { job_id?: string; status?: string; result?: DiagnoseResponse; error?: string };
 type AdviceStep = { step?: string; action?: string; why?: string };
 type AdviceOption = { option?: string; treatment?: string; when?: string; avoid_if?: string };
 type AdviceResponse = { safety_notice: string; urgency?: string; most_likely_risks?: string[]; do_now?: AdviceStep[]; ask_or_measure_next?: string[]; treatment_options?: AdviceOption[]; referral?: { decision?: string; reason?: string }; what_not_to_do?: string[]; sources?: { title?: string; protocol_id?: string; excerpt?: string }[]; rag_status?: string; rag_decision?: string };
 type AdviceChatTurn = { role: 'clinician' | 'assistant'; content: string };
 type AdviceChatResponse = { reply: string; questions?: string[]; need_rag?: boolean; urgency_hint?: string; safety_notice?: string };
 type DialogueTurn = { speaker: 'doctor' | 'patient' | 'relative' | 'nurse' | 'unknown'; text: string; start?: number; end?: number };
-
-const sampleCase = 'Беременная женщина, 34 неделя беременности. Сильная головная боль, мелькание мушек перед глазами, боль в правом подреберье, выраженные отеки ног. Артериальное давление 170/110 мм рт. ст. В анализах повышены АЛТ и АСТ, снижены тромбоциты.';
-const refineSample = 'Общий билирубин 36 мкмоль/л, преимущественно непрямой. В мазке периферической крови обнаружены шистоциты, признаки гемолиза подтверждаются. Гаптоглобин 18 мг/дл, снижен.';
 
 const GENERIC_DIAGNOSES = [
   'R69 Неуточнённое состояние',
@@ -79,7 +73,7 @@ function getLevel(c: StudentCaseDTO): string {
 
 export function ClinicalAIWorkspace(props: { cases?: StudentCaseDTO[]; locale?: string } = {}) {
   const cases = props.cases || [];
-  const [tab, setTab] = useState<'rag' | 'advice' | 'sim' | 'voice'>('rag');
+  const [tab, setTab] = useState<'advice' | 'sim' | 'voice'>('voice');
   return <main className="noise min-h-[calc(100vh-4rem)] bg-[#0f1917] text-slate-100">
     <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
       <div className="flex flex-col gap-5 border-b border-white/10 pb-5 lg:flex-row lg:items-end lg:justify-between">
@@ -87,14 +81,12 @@ export function ClinicalAIWorkspace(props: { cases?: StudentCaseDTO[]; locale?: 
           <p className="label text-teal-300">AI Clinical Platform</p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Клинический AI-ассистент</h1>
         </div>
-        <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-white/5 p-1 sm:grid-cols-4">
-          <Tab active={tab === 'rag'} onClick={() => setTab('rag')} icon={Stethoscope} label="RAG" />
+        <div className="grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-white/5 p-1">
+          <Tab active={tab === 'voice'} onClick={() => setTab('voice')} icon={Mic} label="STT" />
           <Tab active={tab === 'advice'} onClick={() => setTab('advice')} icon={ShieldAlert} label="Срочный совет" />
           <Tab active={tab === 'sim'} onClick={() => setTab('sim')} icon={Brain} label="Симулятор" />
-          <Tab active={tab === 'voice'} onClick={() => setTab('voice')} icon={Mic} label="STT" />
         </div>
       </div>
-      {tab === 'rag' && <RagPanel />}
       {tab === 'advice' && <AdvicePanel />}
       {tab === 'sim' && <SimulatorPanel cases={cases} />}
       {tab === 'voice' && <VoicePanel />}
@@ -102,7 +94,7 @@ export function ClinicalAIWorkspace(props: { cases?: StudentCaseDTO[]; locale?: 
   </main>;
 }
 
-function Tab({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: typeof Stethoscope; label: string }) {
+function Tab({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: typeof Mic; label: string }) {
   return <button onClick={onClick} className={`focus-ring flex h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold ${active ? 'bg-teal-500 text-slate-950' : 'text-slate-300 hover:bg-white/8'}`}>
     <Icon size={16} />{label}
   </button>;
@@ -123,10 +115,18 @@ function RagPanel() {
       if (job?.job_id) {
         const result = (await waitDiagnoseJob(job.job_id)) as DiagnoseResponse;
         setData(result);
-      } else if (job?.result) {
-        setData(job.result as DiagnoseResponse);
       } else {
-        throw new Error('RAG-сервис не стартовал. Проверьте tunnel/RAG_SERVICE_URL и запущенный Python backend.');
+        const response = await fetch('/api/clinical/diagnose', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ symptoms }),
+        });
+        if (!response.ok) {
+          const errJson = await response.json().catch(() => ({ error: 'Ошибка анализа' }));
+          throw new Error(errJson.error || `Ошибка сервера ${response.status}`);
+        }
+        const result: DiagnoseResponse = await response.json();
+        setData(result);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка анализа');
@@ -236,14 +236,15 @@ function RagPanel() {
 }
 
 async function startDiagnoseJob(symptoms: string) {
-  const response = await fetch('/api/clinical/diagnose/jobs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ symptoms }) });
-  const payload = await response.json().catch(() => ({})) as DiagnoseJobStatus & {error?: string};
-  if (!response.ok) throw new Error(payload.error || `RAG job start failed: ${response.status}`);
-  return payload;
+  try {
+    const response = await fetch('/api/clinical/diagnose/jobs', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ symptoms }) });
+    if (!response.ok) return null;
+    return await response.json() as DiagnoseJobStatus;
+  } catch { return null; }
 }
 
 async function waitDiagnoseJob(jobId: string) {
-  const deadline = Date.now() + 480000;
+  const deadline = Date.now() + 300000;
   let lastError = '';
   while (Date.now() < deadline) {
     await new Promise(resolve => setTimeout(resolve, 3500));
@@ -255,7 +256,7 @@ async function waitDiagnoseJob(jobId: string) {
       if (data.status === 'failed' || data.status === 'not_found') throw new Error(`RAG job ${data.status}`);
     } catch (e) { lastError = e instanceof Error ? e.message : lastError; }
   }
-  throw new Error(lastError || 'RAG анализ занял больше 8 минут');
+  throw new Error(lastError || 'RAG анализ занял больше 5 минут');
 }
 
 function EmptyState({ loading }: { loading: boolean }) {
@@ -324,8 +325,6 @@ function AdvicePanel() {
     </section>
   </div>;
 }
-
-function Questions({ questions }: { questions: Question[] }) { return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">Что уточнить врачу</h3><div className="mt-4 grid gap-3">{questions.slice(0, 5).map(q => <div key={q.question} className="rounded-xl bg-white/5 p-4"><p className="font-medium">{q.question}</p>{q.rationale && <p className="mt-2 text-sm leading-5 text-slate-400">{q.rationale}</p>}</div>)}</div></section> }
 
 function AdviceList({ title, items }: { title: string; items: string[] }) { return <section className="mt-5"><h3 className="text-sm font-semibold text-slate-300">{title}</h3><div className="mt-3 grid gap-2">{items.length ? items.slice(0, 8).map(item => <div key={item} className="rounded-xl bg-white/5 p-3 text-sm leading-5 text-slate-200">{item}</div>) : <div className="rounded-xl bg-white/5 p-3 text-sm text-slate-500">Недостаточно данных</div>}</div></section> }
 
