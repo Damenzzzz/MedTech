@@ -3,6 +3,7 @@ import {z} from 'zod';
 import {getCaseRepository} from '@/repositories/index.server';
 import {PatientMessageInputSchema,PatientMessageResultSchema,type PatientEngine} from './patient-engine';
 import {PatientVisualStateSchema} from '@/domain/schemas';
+import {callClinicalJson} from '@/lib/llm';
 
 const OutputSchema=z.object({
   answer:z.string().min(1).max(900),
@@ -13,18 +14,9 @@ const OutputSchema=z.object({
 
 const local=(v:{ru:string;kk?:string;en?:string},locale:'ru'|'kk'|'en')=>v[locale]??v.ru;
 
-function extractJson(text:string){
-  const trimmed=text.trim();
-  if(trimmed.startsWith('{'))return trimmed;
-  const match=trimmed.match(/\{[\s\S]*\}/);
-  return match?.[0]??trimmed;
-}
-
 export class LlmPatientEngine implements PatientEngine{
  async respond(raw:Parameters<PatientEngine['respond']>[0]){
   const input=PatientMessageInputSchema.parse(raw);
-  const apiKey=process.env.OPENAI_API_KEY;
-  if(!apiKey)throw new Error('OPENAI_API_KEY is not configured');
   const item=await getCaseRepository().getGroundTruth(input.caseId);
   if(!item)throw new Error('Case not found');
   const validFactIds=new Set(item.hiddenFacts.map(f=>f.id));
@@ -41,7 +33,7 @@ export class LlmPatientEngine implements PatientEngine{
    'Поле answer должно быть строго на русском языке.',
    'visualState должен быть одним из: neutral, thinking, speaking, coughing, pain, distressed, relieved.'
   ].join('\n');
-  const user={
+  const prompt=JSON.stringify({
    locale:input.locale,
    studentQuestion:input.message,
    patient:{
@@ -56,14 +48,24 @@ export class LlmPatientEngine implements PatientEngine{
     correctDiagnosis:`${item.correctDiagnosis.code} ${local(item.correctDiagnosis.name,input.locale)}`,
     hiddenFacts:facts
    }
-  };
-  const response=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{authorization:`Bearer ${apiKey}`,'content-type':'application/json'},body:JSON.stringify({model:process.env.OPENAI_PATIENT_MODEL??process.env.OPENAI_SIM_MODEL??'gpt-5.5',messages:[{role:'system',content:system},{role:'user',content:JSON.stringify(user)}],response_format:{type:'json_object'},reasoning_effort:'low',max_completion_tokens:900}),cache:'no-store'});
-  if(!response.ok)throw new Error(`OpenAI patient engine failed: ${response.status}`);
-  const data=await response.json() as {choices?:{message?:{content?:string}}[]};
-  const content=data.choices?.[0]?.message?.content;
-  if(!content)throw new Error('OpenAI patient engine returned empty content');
-  const parsed=OutputSchema.parse(JSON.parse(extractJson(content)));
+  },null,2);
+  const response=await callClinicalJson<z.infer<typeof OutputSchema>>(prompt,{system,maxTokens:900,timeoutMs:30000});
+  const parsed=response?OutputSchema.parse(response):fallbackPatientResponse(input.message,facts);
   const newFactIds=parsed.newFactIds.filter(id=>validFactIds.has(id)&&!already.has(id));
   return PatientMessageResultSchema.parse({answer:parsed.answer,intent:parsed.intent,revealedFactIds:[...new Set([...input.revealedFactIds,...newFactIds])],newFactIds,visualState:parsed.visualState});
  }
+}
+
+function fallbackPatientResponse(question:string,facts:{id:string;intent:string;value:string;alreadyRevealed:boolean;critical:boolean}[]) {
+  const lower=question.toLowerCase();
+  const selected=facts.find(f=>!f.alreadyRevealed && (
+   lower.includes(f.intent.toLowerCase()) ||
+   f.value.toLowerCase().split(/\s+/).some(word=>word.length>5 && lower.includes(word.slice(0,5)))
+  ))??facts.find(f=>!f.alreadyRevealed)??facts[0];
+  return OutputSchema.parse({
+   answer:selected?.value??'Мне трудно ответить. Уточните, пожалуйста, вопрос.',
+   intent:selected?.intent??'fallback-response',
+   newFactIds:selected&&!selected.alreadyRevealed?[selected.id]:[],
+   visualState:selected?.critical?'pain':'speaking',
+  });
 }

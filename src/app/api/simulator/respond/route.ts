@@ -31,5 +31,25 @@ ${JSON.stringify(dialogue, null, 2)}
 
 Ответь на последний вопрос врача строго как пациент.`;
   const answer=await callClinicalText(prompt,{system,maxTokens:700,timeoutMs:30000});
-  return NextResponse.json({answer:answer??'Повторите, пожалуйста, вопрос.'});
+  return NextResponse.json({answer:answer??fallbackPatientAnswer({hiddenContext:hiddenContext??caseContext?.hiddenContext??casePrompt??'',dialogue})});
+}
+
+function fallbackPatientAnswer({hiddenContext,dialogue}:{hiddenContext:string;dialogue?:{speaker?:string;text?:string}[]}) {
+  const question=String((dialogue??[]).filter(turn=>turn.speaker==='doctor').at(-1)?.text??'').toLowerCase();
+  const sentences=String(hiddenContext).split(/(?<=[.!?])\s+|;\s+|\n+/).map(x=>x.trim()).filter(Boolean);
+  const keywordGroups=[
+    ['когда','начал','длитель','сколько','минут','час','день'],
+    ['куда','отда','ирради','рук','челюст','спин'],
+    ['температур','жар','озноб'],
+    ['одыш','дыш','сатурац','spo2'],
+    ['тошн','рвот','живот','аппетит'],
+    ['давлен','пульс','сердц','грудин','боль'],
+    ['моч','дизур','поясниц'],
+    ['аллерг','лекар','инсулин','антибиот'],
+    ['беремен','менстру','отеки','зрен','мушк'],
+  ];
+  const group=keywordGroups.find(words=>words.some(word=>question.includes(word)));
+  const matched=group?sentences.find(sentence=>group.some(word=>sentence.toLowerCase().includes(word))):undefined;
+  const answer=matched??sentences.find(sentence=>!/(диагноз|мкб|протокол|expected|unsafe|scoring)/i.test(sentence))??'Мне трудно объяснить, уточните, пожалуйста, что именно вас интересует.';
+  return answer.replace(/^(пациент(ка)?\s*\d*\s*(лет|года)?\.?\s*)/i,'').trim();
 }
