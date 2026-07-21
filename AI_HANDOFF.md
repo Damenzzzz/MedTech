@@ -109,13 +109,272 @@ Important logic:
 
 ### Simulator
 
+The simulator has two related implementations. Do not confuse them.
+
+#### AI Assistant Simulator Tab
+
+Main demo simulator used on:
+
+`https://medtech-ai-rag.vercel.app/ru/ai-assistant`
+
+Main UI and case data:
+
+`src/components/ai/clinical-ai-workspace.tsx`
+
+Important symbols:
+
+- `type SimCase`
+- `const SIM_CASES`
+- `function SimulatorPanel()`
+
+This is the simulator the user has been testing most recently.
+
+Core idea:
+
+- Every simulation scenario has a hidden clinical truth.
+- Under the hood, an LLM plays the patient.
+- The LLM receives:
+  - scenario title
+  - public brief visible to student
+  - hidden patient context
+  - correct diagnosis
+  - expected symptoms/key findings
+  - expected diagnoses
+  - distractor diagnoses
+  - expected management/treatment plan
+  - unsafe plan options
+  - current dialogue history
+- The student only sees the public brief and the chat.
+- The LLM must answer as the patient, not as an assistant.
+- The patient must not reveal the diagnosis, ICD code, protocol, scoring rubric, or treatment plan.
+- The patient should reveal symptoms only when the doctor/student asks relevant questions.
+
+Current scenario shape:
+
+```ts
+type SimCase = {
+  id: string;
+  title: string;
+  level: 'Базовый' | 'Средний' | 'Сложный';
+  specialty: string;
+  opening: string;
+  publicBrief: string;
+  hiddenContext: string;
+  diagnosis: string;
+  keyFindings: string[];
+  expectedQuestions: string[];
+  expectedDiagnoses: string[];
+  distractorDiagnoses: string[];
+  expectedPlan: string[];
+  unsafePlan: string[];
+};
+```
+
+The user specifically wants:
+
+- At least 10-15 good scenarios.
+- Start with basic cases, later cases should be harder.
+- Scenarios should cover different specialties and not all feel the same.
+- Student must be able to ask any free-text question.
+- LLM patient must have enough hidden context to answer natural follow-up questions.
+- Diagnosis choices should be broad with distractors so student can make mistakes.
+- Treatment/management choices should also be broad, with at least 5 options and realistic wrong options.
+- Student should be able to add their own diagnosis/plan option if the UI supports it later.
+- Evaluation should compare student questions, diagnosis, and treatment against hidden ground truth.
+
+Current simulator API used by this tab:
+
 `src/app/api/simulator/respond/route.ts`
 
-LLM plays patient role.
+This route calls `callClinicalText()` from `src/lib/llm.ts`, so it uses the current shared provider order:
+
+1. Gemini
+2. Alem fallback
+
+Important prompt behavior in this route:
+
+- "Ты медицинский симулятор."
+- "Твоя единственная роль: играть пациента."
+- Answer in first person.
+- Do not reveal diagnosis, ICD, protocol, criteria, or plan.
+- Do not dump all hidden context at once.
+- If the question is closed, answer shortly.
+- If the question is open, answer 1-3 sentences.
 
 `src/app/api/simulator/evaluate/route.ts`
 
-LLM evaluates student.
+This route evaluates the student.
+
+It receives:
+
+- `caseContext`
+- `publicBrief`
+- `hiddenContext`
+- dialogue
+- selected diagnoses
+- selected treatment/management plan
+
+It asks the LLM to return short Russian feedback:
+
+1. what questions were good
+2. what questions/symptoms/red flags were missed
+3. whether diagnosis was correct
+4. whether treatment/routing was correct
+5. dangerous mistakes
+
+It has a local fallback evaluator if the LLM call fails.
+
+#### Older Training Simulator
+
+There is also an older patient training flow:
+
+- `src/app/[locale]/patients/page.tsx`
+- `src/app/[locale]/training/[caseId]/page.tsx`
+- `src/components/training/training-workspace.tsx`
+- `src/data/cases.server.ts`
+- `src/app/api/session/respond/route.ts`
+- `src/engines/llm-patient-engine.server.ts`
+- `src/engines/mock-patient-engine.server.ts`
+
+This flow uses structured `MedicalCase` data from `src/data/cases.server.ts`.
+
+Important:
+
+- `src/data/cases.server.ts` has richer structured cases with:
+  - patient demographics
+  - localized complaint
+  - urgency/difficulty
+  - vitals
+  - hidden facts
+  - examinations
+  - investigations
+  - differential diagnoses
+  - correct diagnosis
+  - management plan
+  - expected actions
+  - dangerous actions
+  - scoring rubric
+- The older `LlmPatientEngine` currently calls OpenAI directly.
+- Since OpenAI quota is exhausted, `/api/session/respond` may fall back to `MockPatientEngine`.
+- This is one reason some simulator behavior may feel less intelligent in the older training pages.
+- The AI assistant tab simulator was changed to use shared LLM wrapper (`src/lib/llm.ts`) and therefore Gemini/Alem.
+
+Recommended future cleanup:
+
+- Unify both simulator paths on the same LLM wrapper.
+- Use `src/data/cases.server.ts` as the source of truth for cases.
+- Generate `SIM_CASES` from structured case data, or move `SIM_CASES` out of the component into a server/shared data file.
+- Keep the role-play prompt strict: patient role only, no diagnosis disclosure.
+- Keep local fallback for demo safety, but make it obvious when LLM fallback is used.
+
+#### Simulator Runtime Flow
+
+Expected student experience:
+
+1. Student chooses a case.
+2. Student sees only a short public brief, for example: "34-week pregnancy, severe headache and edema."
+3. The system keeps hidden case context under the hood.
+4. Student asks any question in free text.
+5. Frontend sends the full case context and dialogue history to `/api/simulator/respond`.
+6. LLM answers as the patient only.
+7. Student continues history taking, then chooses:
+   - differential diagnoses
+   - main diagnosis
+   - investigations
+   - management/treatment options
+8. `/api/simulator/evaluate` compares student decisions with hidden truth and returns feedback.
+
+The hidden context is not a "nice-to-have"; it is the core of the simulator. The LLM must know the diagnosis and symptoms internally so it can imitate a consistent patient, but the student must not see that hidden truth until feedback.
+
+Useful mental model:
+
+```mermaid
+flowchart LR
+  A["SimCase hidden truth"] --> B["LLM patient prompt"]
+  C["Student question"] --> B
+  D["Dialogue history"] --> B
+  B --> E["Patient answer only"]
+  E --> F["Student diagnosis and plan"]
+  A --> G["Evaluation prompt"]
+  F --> G
+  D --> G
+  G --> H["Feedback for student"]
+```
+
+#### Simulator Prompt Contract
+
+When improving the simulator, preserve these rules:
+
+- Patient LLM is not a doctor assistant.
+- Patient LLM should not say "you may have myocardial infarction" or "this is preeclampsia."
+- Patient LLM should answer like a real person with that disease would answer.
+- Patient LLM should be consistent across turns.
+- If asked about a symptom present in hidden context, reveal it naturally.
+- If asked about a symptom absent in hidden context, deny it or say it is not noticed.
+- If asked a vague question, ask for clarification as the patient.
+- If asked an impossible medical/protocol question, answer from patient knowledge, not clinician knowledge.
+- Do not reveal scoring rubric, expectedPlan, unsafePlan, or expectedDiagnoses.
+
+Good patient answer:
+
+`Боль началась около сорока минут назад, давит за грудиной и отдаёт в левую руку. Мне страшно, я вспотел.`
+
+Bad patient answer:
+
+`Это похоже на I20.0 нестабильную стенокардию, нужно ЭКГ и тропонин.`
+
+#### Simulator Evaluation Contract
+
+Evaluation should be strict but educational.
+
+It should check:
+
+- Did the student ask the key history questions?
+- Did the student identify red flags?
+- Did the student choose the right diagnosis or at least a safe differential?
+- Did the student choose relevant investigations?
+- Did the student choose appropriate management/treatment?
+- Did the student make unsafe choices?
+- Did the student communicate clearly?
+
+For hard cases, feedback should explain why the correct diagnosis fits and why distractors are less likely. It should not only say "wrong"; it should teach.
+
+Current UI has broad diagnosis and treatment options assembled from:
+
+- `scenario.expectedDiagnoses`
+- `scenario.distractorDiagnoses`
+- several global distractors
+- `scenario.expectedPlan`
+- `scenario.unsafePlan`
+- several global generic plan options
+
+User wants this to remain broad so the student has room to make mistakes.
+
+#### Simulator Known Weak Points
+
+- The AI assistant simulator cases currently live inside `clinical-ai-workspace.tsx`; this is convenient for demo but not ideal long-term.
+- The older training flow and the AI assistant simulator are separate; behavior can differ.
+- OpenAI quota is exhausted, so any route still directly using OpenAI may degrade to fallback/mock behavior.
+- Alem is weaker than GPT/Gemini for natural patient role-play; if Gemini credits are depleted, patient answers can feel less smart.
+- The simulator currently does not deeply use RAG for every patient answer. That is okay: role-play should be fast. RAG is more important for protocol-backed clinical assistant/advice and for future evidence-backed evaluation.
+- If RAG is added to simulator evaluation later, use it selectively. Do not make every chat question wait 2-3 minutes.
+
+Best next simulator improvement:
+
+1. Move case definitions into a dedicated data file.
+2. Ensure 10-15 polished cases across cardiology, pregnancy/emergency, pulmonology, endocrinology, gastroenterology, infection/sepsis, neurology.
+3. Give each case:
+   - public brief
+   - hidden patient backstory
+   - correct diagnosis
+   - key symptoms
+   - expected questions
+   - differential options
+   - treatment options
+   - unsafe options
+   - feedback rubric
+4. Make all patient responses go through shared `callClinicalText()`.
+5. Keep a visible warning/fallback if the LLM provider is down.
 
 ### LLM Provider Wrapper
 
@@ -470,4 +729,3 @@ Important:
 4. Deploy Python RAG backend to real hosting instead of tunnel.
 5. Add proper STT only after API/quota is available.
 6. Improve title cleaning and table-aware extraction for custom RAG practice.
-
