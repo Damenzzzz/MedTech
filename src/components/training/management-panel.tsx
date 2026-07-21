@@ -8,7 +8,7 @@ interface ManagementPanelProps {
   patient: StudentCaseDTO;
   managementNotes: string;
   onSetManagementNotes: (notes: string) => void;
-  onAppendNoteItem: (item: string) => void;
+  onAppendNoteItem: (item: string, id?: string) => void;
   onNextStage: () => void;
   locale: string;
 }
@@ -37,7 +37,7 @@ export function ManagementPanel({
             {t('management')}
           </h3>
           <p className="text-[11px] font-medium text-slate-500">
-            Маршрутизация, терапия и красные флаги
+            {t('managementPlaceholder')}
           </p>
         </div>
       </div>
@@ -46,7 +46,7 @@ export function ManagementPanel({
         {/* Quick Checklist Suggestions */}
         <div>
           <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-            Нажмите, чтобы добавить в план ведения:
+            {t('management')}
           </p>
           <div className="space-y-1.5">
             {options.map((opt) => {
@@ -59,7 +59,7 @@ export function ManagementPanel({
                 <button
                   key={opt.id}
                   type="button"
-                  onClick={() => onAppendNoteItem(val)}
+                  onClick={() => onAppendNoteItem(val, opt.id)}
                   className="focus-ring flex w-full items-start gap-2 rounded-xl border border-slate-200 bg-white p-2.5 text-left text-xs font-medium text-slate-700 hover:border-teal-300 hover:bg-teal-50 hover:text-teal-900 transition-all"
                 >
                   <Plus size={14} className="text-teal-600 shrink-0 mt-0.5" />
@@ -73,7 +73,7 @@ export function ManagementPanel({
         {/* Free Text Management Plan Notes */}
         <div className="space-y-1.5">
           <label className="block text-xs font-bold text-slate-700">
-            Детализированный план ведения:
+            {t('management')}
           </label>
           <textarea
             value={managementNotes}
@@ -87,7 +87,7 @@ export function ManagementPanel({
         <div className="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50/80 p-3.5 text-xs text-amber-900 font-medium leading-relaxed">
           <ShieldAlert size={18} className="text-amber-600 shrink-0 mt-0.5" />
           <div>
-            <p className="font-bold">Учебный дисклеймер по препаратам</p>
+            <p className="font-bold">{t('management')}</p>
             <p className="mt-0.5 text-amber-800">{t('medicationWarning')}</p>
           </div>
         </div>
@@ -98,7 +98,7 @@ export function ManagementPanel({
         onClick={onNextStage}
         className="focus-ring mt-auto w-full rounded-xl bg-teal-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all"
       >
-        Перейти к завершению приёма →
+        {t('next')}
       </button>
     </div>
   );

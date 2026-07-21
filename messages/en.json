@@ -130,7 +130,8 @@
     "hard": "Hard"
   },
   "Training": {
-    "queue": "Back to queue",
+    "start": "Start conversation with patient",
+    "queue": "To Queue",
     "leaveTitle": "Leave this consultation?",
     "leaveText": "Unsaved progress will be lost.",
     "patientState": "Patient condition",

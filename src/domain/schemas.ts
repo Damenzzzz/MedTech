@@ -90,6 +90,12 @@ export const StudentDifferentialDTOSchema = DifferentialDiagnosisSchema.pick({
 });
 export type StudentDifferentialDTO = z.infer<typeof StudentDifferentialDTOSchema>;
 
+export const ValidationTierSchema = z.enum(['core', 'beta']);
+export type ValidationTier = z.infer<typeof ValidationTierSchema>;
+
+export const MedicalReviewStatusSchema = z.enum(['unreviewed', 'reviewed']);
+export type MedicalReviewStatus = z.infer<typeof MedicalReviewStatusSchema>;
+
 export const ManagementPlanSchema = z.object({
   recommendations: z.array(LocalizedTextSchema),
   medications: z.array(LocalizedTextSchema),
@@ -122,7 +128,8 @@ export type ScoringRubric = z.infer<typeof ScoringRubricSchema>;
 export const MedicalCaseSchema = z.object({
   id: z.string(),
   synthetic: z.literal(true),
-  medicalReviewStatus: z.literal('unreviewed'),
+  validationTier: ValidationTierSchema.default('beta'),
+  medicalReviewStatus: MedicalReviewStatusSchema.default('unreviewed'),
   title: LocalizedTextSchema,
   specialty: z.string(),
   patient: z.object({
@@ -166,7 +173,8 @@ export type LocalizedMedicalCase = z.infer<typeof LocalizedMedicalCaseSchema>;
 export const StudentCaseDTOSchema = z.object({
   id: z.string(),
   synthetic: z.literal(true),
-  medicalReviewStatus: z.literal('unreviewed'),
+  validationTier: ValidationTierSchema.default('beta'),
+  medicalReviewStatus: MedicalReviewStatusSchema.default('unreviewed'),
   title: LocalizedTextSchema,
   specialty: z.string(),
   patient: z.object({
@@ -237,6 +245,7 @@ export const TrainingSessionSchema = z.object({
   finalDiagnosis: z.string().optional(),
   clinicalReasoning: z.string(),
   managementNotes: z.string(),
+  selectedManagementOptionIds: z.array(z.string()).default([]),
 });
 export type TrainingSession = z.infer<typeof TrainingSessionSchema>;
 
@@ -264,3 +273,200 @@ export const DebriefResultSchema = z.object({
   correctDiagnosis: z.string(),
 });
 export type DebriefResult = z.infer<typeof DebriefResultSchema>;
+
+// STT Response Schemas
+export const SttSpeakerSchema = z.enum(['doctor', 'patient', 'relative', 'nurse', 'unknown']);
+export type SttSpeaker = z.infer<typeof SttSpeakerSchema>;
+
+export const SttTurnSchema = z.object({
+  speaker: SttSpeakerSchema,
+  text: z.string(),
+  start: z.number().optional(),
+  end: z.number().optional(),
+});
+export type SttTurn = z.infer<typeof SttTurnSchema>;
+
+export const SttResponseSchema = z.object({
+  transcriptId: z.string(),
+  text: z.string(),
+  turns: z.array(SttTurnSchema),
+  language: z.enum(['ru', 'kk', 'en', 'unknown']),
+  durationSeconds: z.number(),
+  provider: z.enum(['openai', 'mock']),
+  model: z.string(),
+  requestId: z.string(),
+});
+export type SttResponse = z.infer<typeof SttResponseSchema>;
+
+// Encounter Protocol Schemas for Medical STT -> AlemLLM Workflow
+export const ProtocolSourceItemSchema = z.object({
+  text: z.string(),
+  sourceQuotes: z.array(z.string()).default([]),
+});
+export type ProtocolSourceItem = z.infer<typeof ProtocolSourceItemSchema>;
+
+export const VitalSignItemSchema = z.object({
+  name: z.string(),
+  value: z.string(),
+  sourceQuote: z.string().optional(),
+});
+export type VitalSignItem = z.infer<typeof VitalSignItemSchema>;
+
+export const PreliminaryDiagnosisSchema = z.object({
+  diagnosis: z.string().nullable().default(null),
+  icd10Code: z.string().nullable().default(null),
+  sourceQuotes: z.array(z.string()).default([]),
+  uncertainties: z.array(z.string()).default([]),
+});
+
+export const DifferentialDiagnosisItemSchema = z.object({
+  diagnosis: z.string(),
+  icd10Code: z.string().nullable().default(null),
+  supportingEvidence: z.array(z.string()).default([]),
+  missingEvidence: z.array(z.string()).default([]),
+});
+
+export const ProtocolAssessmentSchema = z.object({
+  clinicalSummary: z.string().default(''),
+  preliminaryDiagnosis: PreliminaryDiagnosisSchema.default({ diagnosis: null, icd10Code: null, sourceQuotes: [], uncertainties: [] }),
+  differentialDiagnoses: z.array(DifferentialDiagnosisItemSchema).default([]),
+});
+
+export const ProtocolPlanSchema = z.object({
+  investigations: z.array(z.string()).default([]),
+  treatmentDraft: z.array(z.string()).default([]),
+  referrals: z.array(z.string()).default([]),
+  followUp: z.array(z.string()).default([]),
+  safetyNetting: z.array(z.string()).default([]),
+});
+
+export const ProtocolSectionsSchema = z.object({
+  chiefComplaints: z.array(ProtocolSourceItemSchema).default([]),
+  historyOfPresentIllness: ProtocolSourceItemSchema.default({ text: '', sourceQuotes: [] }),
+  pastMedicalHistory: z.array(ProtocolSourceItemSchema).default([]),
+  medications: z.array(ProtocolSourceItemSchema).default([]),
+  allergies: z.array(ProtocolSourceItemSchema).default([]),
+  objectiveFindings: z.array(ProtocolSourceItemSchema).default([]),
+  vitalSigns: z.array(VitalSignItemSchema).default([]),
+  redFlags: z.array(ProtocolSourceItemSchema).default([]),
+  assessment: ProtocolAssessmentSchema.default({ clinicalSummary: '', preliminaryDiagnosis: { diagnosis: null, icd10Code: null, sourceQuotes: [], uncertainties: [] }, differentialDiagnoses: [] }),
+  plan: ProtocolPlanSchema.default({ investigations: [], treatmentDraft: [], referrals: [], followUp: [], safetyNetting: [] }),
+  unresolvedQuestions: z.array(z.string()).default([]),
+});
+
+export const ProtocolProvenanceSchema = z.object({
+  transcriptionProvider: z.string(),
+  transcriptionModel: z.string(),
+  generationProvider: z.string(),
+  generationModel: z.string(),
+  generatedAt: z.string(),
+});
+
+export const ProtocolHistoryEntrySchema = z.object({
+  version: z.number(),
+  createdAt: z.string(),
+  source: z.enum(['ai', 'physician-edit']),
+});
+
+export const EncounterProtocolSchema = z.object({
+  protocolId: z.string(),
+  status: z.enum(['draft', 'edited', 'reviewed']).default('draft'),
+  locale: LocaleSchema.default('ru'),
+  sections: ProtocolSectionsSchema,
+  provenance: ProtocolProvenanceSchema,
+  warning: z.string().default('Черновик создан AI и требует проверки и утверждения врачом.'),
+  version: z.number().default(1),
+  history: z.array(ProtocolHistoryEntrySchema).default([]),
+});
+export type EncounterProtocol = z.infer<typeof EncounterProtocolSchema>;
+
+export const EncounterProtocolRequestSchema = z.object({
+  transcriptId: z.string().min(1),
+  transcriptText: z.string(),
+  turns: z.array(z.object({
+    speaker: z.enum(['doctor', 'patient', 'relative', 'nurse', 'unknown']),
+    text: z.string(),
+    start: z.number().optional(),
+    end: z.number().optional(),
+  })).default([]),
+  locale: LocaleSchema.default('ru'),
+  encounterContext: z.object({
+    patientAge: z.number().nullable().optional(),
+    patientSex: z.enum(['male', 'female']).nullable().optional(),
+    department: z.string().nullable().optional(),
+  }).optional(),
+  regenerate: z.boolean().default(false),
+});
+export type EncounterProtocolRequest = z.infer<typeof EncounterProtocolRequestSchema>;
+
+// Stage 3 RAG & Clinical Rationale Schemas
+export const ClinicalRationaleFactSchema = z.object({
+  fact: z.string(),
+  patient_evidence: z.string(),
+});
+export type ClinicalRationaleFact = z.infer<typeof ClinicalRationaleFactSchema>;
+
+export const ClinicalRationaleSchema = z.object({
+  summary: z.string(),
+  supporting_patient_facts: z.array(ClinicalRationaleFactSchema).default([]),
+  missing_or_conflicting_facts: z.array(z.string()).default([]),
+  why_this_rank: z.string().default(''),
+  next_discriminator: z.string().default(''),
+  source_ids: z.array(z.string()).default([]),
+});
+export type ClinicalRationale = z.infer<typeof ClinicalRationaleSchema>;
+
+export const DiagnosisItemSchema = z.object({
+  rank: z.number(),
+  diagnosis: z.string(),
+  icd10_code: z.string(),
+  confidence: z.enum(['high', 'medium', 'low']).default('medium'),
+  why_this_diagnosis: z.string().optional(),
+  clinical_rationale: ClinicalRationaleSchema.optional(),
+  supporting_findings: z.array(z.object({
+    finding: z.string(),
+    patient_evidence: z.string().optional(),
+  })).optional(),
+  missing_findings: z.array(z.string()).optional(),
+  recommended_checks: z.array(z.string()).optional(),
+});
+export type DiagnosisItem = z.infer<typeof DiagnosisItemSchema>;
+
+export const ProtocolSourceSchema = z.object({
+  id: z.string().optional(),
+  title: z.string(),
+  protocolId: z.string().optional(),
+  excerpt: z.string().optional(),
+  url: z.string().optional(),
+});
+export type ProtocolSource = z.infer<typeof ProtocolSourceSchema>;
+
+export const RagStatusSchema = z.enum(['rag-ready', 'rag-empty', 'fallback', 'unavailable']);
+export type RagStatus = z.infer<typeof RagStatusSchema>;
+
+export const DiagnoseResponseSchema = z.object({
+  case_id: z.string(),
+  diagnoses: z.array(DiagnosisItemSchema).default([]),
+  sources: z.array(ProtocolSourceSchema).default([]),
+  follow_up_questions: z.array(z.object({
+    question: z.string(),
+    target_diagnoses: z.array(z.string()).optional(),
+    rationale: z.string().optional(),
+  })).default([]),
+  rag_status: RagStatusSchema.default('fallback'),
+  cached_context: z.boolean().default(false),
+  interaction_count: z.number().default(1),
+  generation_provider: z.enum(['alem', 'mock']).default('alem'),
+  request_id: z.string().optional(),
+});
+export type DiagnoseResponse = z.infer<typeof DiagnoseResponseSchema>;
+
+export const RefineInputSchema = z.object({
+  case_id: z.string().trim().optional(),
+  additional_info: z.string().trim().max(3000).default(''),
+  symptoms: z.string().trim().max(5000).default(''),
+  locale: LocaleSchema.optional().default('ru'),
+});
+export type RefineInput = z.infer<typeof RefineInputSchema>;
+
+

@@ -1,5 +1,5 @@
 import {NextResponse} from 'next/server';
-import {callClinicalJson} from '@/lib/llm';
+import {callClinicalJson} from '@/lib/ai/text-llm.server';
 
 export const maxDuration=300;
 

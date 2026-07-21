@@ -24,6 +24,7 @@ export function InvestigationPanel({
   locale,
 }: InvestigationPanelProps) {
   const c = useTranslations('Common');
+  const t = useTranslations('Training');
 
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<'all' | 'laboratory' | 'functional' | 'imaging'>('all');
@@ -116,10 +117,10 @@ export function InvestigationPanel({
         </div>
         <div>
           <h3 className="text-sm font-bold text-slate-900">
-            Лабораторная & Инструментальная диагностика
+            {t('tests')}
           </h3>
           <p className="text-[11px] font-medium text-slate-500">
-            Назначение обоснованных исследований
+            {t('ordered')}
           </p>
         </div>
       </div>
@@ -132,7 +133,7 @@ export function InvestigationPanel({
             onClick={() => setErrorMessage(null)}
             className="font-bold text-red-700 hover:underline"
           >
-            Закрыть
+            {c('cancel')}
           </button>
         </div>
       )}
@@ -145,17 +146,17 @@ export function InvestigationPanel({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Поиск исследования (ЭКГ, ОАК, КТ...)"
+            placeholder={t('tests')}
             className="input pl-9 text-xs border-slate-200 focus:border-teal-600 h-10"
           />
         </div>
 
         <div className="flex gap-1.5 overflow-x-auto pb-1 text-xs font-semibold">
           {[
-            { id: 'all', label: 'Все' },
-            { id: 'laboratory', label: 'Лаборатория' },
-            { id: 'functional', label: 'Функциональные' },
-            { id: 'imaging', label: 'Визуализация' },
+            { id: 'all', label: t('tests') },
+            { id: 'laboratory', label: 'Lab' },
+            { id: 'functional', label: 'Func' },
+            { id: 'imaging', label: 'Img' },
           ].map((cat) => (
             <button
               key={cat.id}
@@ -202,10 +203,10 @@ export function InvestigationPanel({
                   <h4 className="text-xs font-bold text-slate-900">{name}</h4>
                   <div className="flex items-center gap-2 mt-1 text-[11px] font-semibold text-slate-500">
                     <span className="flex items-center gap-0.5 text-amber-700">
-                      Учебная стоимость: {invItem.cost} {c('points')}
+                      {t('cost')}: {invItem.cost} {c('points')}
                     </span>
                     {invItem.delayMs > 0 && (
-                      <span className="text-slate-400">• Время выполнения: {Math.round(invItem.delayMs / 1000)}с</span>
+                      <span className="text-slate-400">• {t('time')}: {Math.round(invItem.delayMs / 1000)}s</span>
                     )}
                   </div>
                 </div>
@@ -226,17 +227,17 @@ export function InvestigationPanel({
                   {isReady ? (
                     <>
                       <CheckCircle2 size={14} />
-                      <span>Готово</span>
+                      <span>{t('resultReady')}</span>
                     </>
                   ) : isPending ? (
                     <>
                       <Clock size={14} className="animate-spin" />
-                      <span>В обработке...</span>
+                      <span>{t('resultPending')}</span>
                     </>
                   ) : isOrderingThis ? (
-                    <span>Назначение...</span>
+                    <span>{t('ordered')}</span>
                   ) : (
-                    <span>Назначить</span>
+                    <span>{t('perform')}</span>
                   )}
                 </button>
               </div>
@@ -245,14 +246,14 @@ export function InvestigationPanel({
               {isPending && (
                 <div className="mt-3 pt-2 border-t border-amber-200/60 text-xs font-medium text-amber-900 flex items-center gap-2">
                   <Clock size={14} className="animate-spin text-amber-600" />
-                  <span>Лаборатория проводит анализ. Результат появится через несколько секунд...</span>
+                  <span>{t('resultPending')}</span>
                 </div>
               )}
 
               {/* Ready Result View */}
               {isReady && orderedEntry && (
                 <div className="mt-3 pt-3 border-t border-emerald-200/80 text-xs font-medium text-slate-800 leading-relaxed">
-                  <p className="font-bold text-emerald-950">Результат исследования:</p>
+                  <p className="font-bold text-emerald-950">{t('resultReady')}:</p>
                   <p className="mt-0.5 text-slate-900">{orderedEntry.result}</p>
                 </div>
               )}
@@ -274,16 +275,16 @@ export function InvestigationPanel({
               <div className="flex items-center gap-2.5 text-amber-600">
                 <AlertCircle size={22} />
                 <h4 className="text-base font-bold text-slate-900">
-                  Подтверждение назначения
+                  {t('ordered')}
                 </h4>
               </div>
 
               <p className="text-xs leading-relaxed font-medium text-slate-600">
-                Вы назначаете исследование{' '}
+                {t('ordered')}:{' '}
                 <strong className="text-slate-900">
                   {typeof confirmTest.name === 'object' ? confirmTest.name.ru : confirmTest.name}
                 </strong>{' '}
-                (Стоимость: {confirmTest.cost} баллов). Убедитесь, что оно клинически обосновано!
+                ({t('cost')}: {confirmTest.cost} {c('points')}).
               </p>
 
               <div className="flex justify-end gap-2 pt-2">
@@ -297,7 +298,7 @@ export function InvestigationPanel({
                   onClick={() => executeOrder(confirmTest)}
                   className="rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-700"
                 >
-                  Подтвердить назначение
+                  {t('ordered')}
                 </button>
               </div>
             </div>
@@ -310,7 +311,7 @@ export function InvestigationPanel({
         onClick={onNextStage}
         className="focus-ring mt-auto w-full rounded-xl bg-teal-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all"
       >
-        Перейти к дифференциальному диагнозу →
+        {t('next')}
       </button>
     </div>
   );

@@ -117,7 +117,7 @@ export function PatientStage({
               </div>
               {isThinking ? (
                 <div className="flex items-center gap-1 text-slate-400 font-medium">
-                  <span>Обдумывает ответ</span>
+                  <span>Обдумывает</span>
                   <span className="animate-pulse">...</span>
                 </div>
               ) : (
@@ -151,7 +151,7 @@ export function PatientStage({
               {patientName}
             </h3>
             <p className="text-xs font-medium text-slate-200 line-clamp-1 mt-0.5">
-              Жалоба: {complaint}
+              {complaint}
             </p>
           </div>
         </motion.div>

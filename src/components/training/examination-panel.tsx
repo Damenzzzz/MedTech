@@ -132,13 +132,13 @@ export function ExaminationPanel({
             <Activity size={14} className="text-cyan-600" />
           </div>
           <div className="mt-1 text-lg font-black text-slate-900">
-            {vitals.respiratoryRate} <span className="text-[10px] font-normal text-slate-500">в мин</span>
+            {vitals.respiratoryRate} <span className="text-[10px] font-normal text-slate-500">min⁻¹</span>
           </div>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-xs">
           <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-            <span>Темп.</span>
+            <span>t°</span>
             <Thermometer size={14} className="text-amber-600" />
           </div>
           <div className={`mt-1 text-lg font-black ${getTempColor(vitals.temperature)}`}>
@@ -149,10 +149,10 @@ export function ExaminationPanel({
         {vitals.glucose !== undefined && (
           <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-xs">
             <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              <span>Глюкоза</span>
+              <span>Glu</span>
             </div>
             <div className="mt-1 text-lg font-black text-slate-900">
-              {vitals.glucose} <span className="text-[10px] font-normal text-slate-500">ммоль/л</span>
+              {vitals.glucose} <span className="text-[10px] font-normal text-slate-500">mmol/L</span>
             </div>
           </div>
         )}
@@ -203,7 +203,7 @@ export function ExaminationPanel({
                       <span>{t('performed')}</span>
                     </>
                   ) : isLoading ? (
-                    <span>Выполняется...</span>
+                    <span>{t('resultPending')}</span>
                   ) : (
                     <span>{t('perform')}</span>
                   )}
@@ -230,7 +230,7 @@ export function ExaminationPanel({
                     animate={{ opacity: 1, height: 'auto' }}
                     className="mt-3 pt-3 border-t border-emerald-200/80 text-xs font-medium text-slate-800 leading-relaxed"
                   >
-                    <p className="font-semibold text-emerald-950">Результат осмотра:</p>
+                    <p className="font-semibold text-emerald-950">{t('resultReady')}:</p>
                     <p className="mt-1">{performedEntry.result}</p>
                   </motion.div>
                 )}

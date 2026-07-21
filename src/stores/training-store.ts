@@ -25,6 +25,7 @@ const freshSession = (caseId: string): TrainingSession => ({
   differentials: [],
   clinicalReasoning: '',
   managementNotes: '',
+  selectedManagementOptionIds: [],
 });
 
 interface TrainingStore {
@@ -55,6 +56,7 @@ interface TrainingStore {
   setFinal: (code: string) => void;
   setReasoning: (value: string) => void;
   setManagement: (value: string) => void;
+  selectManagementOption: (id: string) => void;
   reset: (caseId: string) => void;
 }
 
@@ -268,6 +270,20 @@ export const useTrainingStore = create<TrainingStore>()(
 
       setManagement: (managementNotes) =>
         set((s) => (s.session ? { session: { ...s.session, managementNotes } } : s)),
+
+      selectManagementOption: (id) =>
+        set((s) =>
+          s.session
+            ? {
+                session: {
+                  ...s.session,
+                  selectedManagementOptionIds: Array.from(
+                    new Set([...(s.session.selectedManagementOptionIds || []), id]),
+                  ),
+                },
+              }
+            : s,
+        ),
 
       reset: (caseId) => set({ session: freshSession(caseId) }),
     }),

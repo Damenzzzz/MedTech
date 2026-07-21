@@ -32,15 +32,15 @@ export function FinishPanel({
   const missingSections: { label: string; stageIdx: number }[] = [];
 
   if (!hasFinal) {
-    missingSections.push({ label: 'Основной диагноз не выбран', stageIdx: 4 });
+    missingSections.push({ label: t('final'), stageIdx: 4 });
   }
   if (!hasReasoning) {
-    missingSections.push({ label: 'Клиническое обоснование < 20 символов', stageIdx: 4 });
+    missingSections.push({ label: t('reasoning'), stageIdx: 4 });
   }
 
   const handleFinish = async () => {
     if (missingSections.length > 0) {
-      setErrorMessage('Не заполнены обязательные разделы диагноза. Перейдите к этапу «Диагноз» и завершите оформление.');
+      setErrorMessage(t('leaveText'));
       return;
     }
 
@@ -51,7 +51,7 @@ export function FinishPanel({
       await onFinishSession();
     } catch {
       setIsFinishing(false);
-      setErrorMessage('Не удалось сформировать клинический разбор (Debrief). Попробуйте ещё раз.');
+      setErrorMessage(t('leaveText'));
     }
   };
 
@@ -64,10 +64,10 @@ export function FinishPanel({
         </div>
         <div>
           <h3 className="text-sm font-bold text-slate-900">
-            Завершение клинического приёма
+            {t('finish')}
           </h3>
           <p className="text-[11px] font-medium text-slate-500">
-            Подведение итогов и экспертный разбор
+            {t('finishHint')}
           </p>
         </div>
       </div>
@@ -78,7 +78,7 @@ export function FinishPanel({
           <div className="flex items-start gap-2.5 rounded-2xl border border-red-200 bg-red-50 p-3.5 text-xs text-red-900 font-medium leading-relaxed">
             <AlertTriangle size={18} className="text-red-600 shrink-0 mt-0.5" />
             <div>
-              <p className="font-bold">Ошибка завершения</p>
+              <p className="font-bold">{t('finish')}</p>
               <p className="mt-0.5 text-red-800">{errorMessage}</p>
             </div>
           </div>
@@ -89,7 +89,7 @@ export function FinishPanel({
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-2 text-xs">
             <div className="flex items-center gap-2 text-amber-900 font-bold">
               <AlertCircle size={16} className="text-amber-600" />
-              <span>Пропущены обязательные разделы:</span>
+              <span>{t('leaveTitle')}</span>
             </div>
             <ul className="space-y-1.5 pl-6 list-disc text-amber-950 font-medium">
               {missingSections.map((sec) => (
@@ -98,7 +98,7 @@ export function FinishPanel({
                     onClick={() => onSelectStage(sec.stageIdx)}
                     className="underline text-amber-900 hover:text-amber-950 font-bold text-left"
                   >
-                    {sec.label} (Заполнить →)
+                    {sec.label} (→)
                   </button>
                 </li>
               ))}
@@ -109,31 +109,31 @@ export function FinishPanel({
         {/* Stages Readiness Checklist */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-2.5 shadow-xs">
           <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-            Готовность разделов приёма:
+            {t('stage')}:
           </p>
           <div className="grid grid-cols-1 gap-2 text-xs font-semibold">
             <div className={`flex items-center justify-between p-2 rounded-xl border ${hasDialogue ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
-              <span>1. Сбор анамнеза ({session?.dialogue?.length || 0} сообщ.)</span>
-              {hasDialogue ? <CheckCircle2 size={16} className="text-emerald-600" /> : <span className="text-[11px]">Пропущено</span>}
+              <span>1. {t('stages.1')} ({session?.dialogue?.length || 0})</span>
+              {hasDialogue ? <CheckCircle2 size={16} className="text-emerald-600" /> : <span className="text-[11px]">0</span>}
             </div>
 
             <div className={`flex items-center justify-between p-2 rounded-xl border ${hasExams ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
-              <span>2. Осмотр ({session?.performedExaminations?.length || 0} выполн.)</span>
-              {hasExams ? <CheckCircle2 size={16} className="text-emerald-600" /> : <span className="text-[11px]">Пропущено</span>}
+              <span>2. {t('stages.2')} ({session?.performedExaminations?.length || 0})</span>
+              {hasExams ? <CheckCircle2 size={16} className="text-emerald-600" /> : <span className="text-[11px]">0</span>}
             </div>
 
             <div className={`flex items-center justify-between p-2 rounded-xl border ${hasTests ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
-              <span>3. Исследования ({session?.selectedInvestigations?.length || 0} назн.)</span>
-              {hasTests ? <CheckCircle2 size={16} className="text-emerald-600" /> : <span className="text-[11px]">Пропущено</span>}
+              <span>3. {t('stages.3')} ({session?.selectedInvestigations?.length || 0})</span>
+              {hasTests ? <CheckCircle2 size={16} className="text-emerald-600" /> : <span className="text-[11px]">0</span>}
             </div>
 
             <div className={`flex items-center justify-between p-2 rounded-xl border ${hasDiffs ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
-              <span>4. Дифференциальный ряд ({session?.differentials?.length || 0} подтв.)</span>
-              {hasDiffs ? <CheckCircle2 size={16} className="text-emerald-600" /> : <span className="text-[11px]">Пропущено</span>}
+              <span>4. {t('stages.4')} ({session?.differentials?.length || 0})</span>
+              {hasDiffs ? <CheckCircle2 size={16} className="text-emerald-600" /> : <span className="text-[11px]">0</span>}
             </div>
 
             <div className={`flex items-center justify-between p-2 rounded-xl border ${hasFinal && hasReasoning ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-amber-50 border-amber-200 text-amber-900'}`}>
-              <span>5. Основной диагноз и обоснование</span>
+              <span>5. {t('final')}</span>
               {hasFinal && hasReasoning ? <CheckCircle2 size={16} className="text-emerald-600" /> : <AlertTriangle size={16} className="text-amber-600" />}
             </div>
           </div>
@@ -143,10 +143,10 @@ export function FinishPanel({
         <div className="rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50 to-emerald-50 p-4 space-y-2">
           <div className="flex items-center gap-2 text-teal-900 font-bold text-xs">
             <ShieldCheck size={16} className="text-teal-600" />
-            <span>Автоматический экспертный разбор</span>
+            <span>{t('finish')}</span>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed font-medium">
-            После нажатия кнопки система сформирует оценку клиника-диагностических решений и откроет интерактивный Debrief.
+            {t('finishHint')}
           </p>
         </div>
       </div>
@@ -158,7 +158,7 @@ export function FinishPanel({
         className="focus-ring w-full rounded-2xl bg-emerald-600 py-3.5 text-xs font-bold text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-auto"
       >
         {isFinishing ? (
-          <span>Формирование разбора...</span>
+          <span>...</span>
         ) : (
           <>
             <span>{t('finish')}</span>

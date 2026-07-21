@@ -1,265 +1,122 @@
-# KazMedSim / MedTech AI
+# KazMedSim (MedTech) — AI Medical Training & Clinical Protocol Simulator
 
-Educational medical AI platform for Kazakhstan hackathon demo. The MVP combines:
+KazMedSim is an advanced medical education and clinical protocol simulation platform. It enables medical students and physicians to practice diagnostic reasoning, conduct synthetic patient encounters, receive automated debriefs, and generate editable clinical protocol drafts.
 
-- a student clinical simulator with synthetic patients;
-- an AI clinical assistant backed by RAG over Kazakhstan clinical protocols;
-- speech-to-text endpoint for doctor/patient conversations;
-- Vercel-hosted Next.js frontend with a separate Python RAG service.
+---
 
-The product is for education and physician decision support only. It is not a replacement for a licensed clinician, official protocol review, emergency care, or local clinical governance.
+## 🏛️ Provider Architecture & LLM Isolation
 
-## Live Demo
+| Function | Active Provider | Endpoint / Model | Environment Variable |
+|---|---|---|---|
+| **Patient Simulation** | **AlemLLM** | `POST https://llm.alem.ai/v1/chat/completions` (`alemllm`) | `LLM_PROVIDER=alem` |
+| **Clinical Reasoning & RAG Fallback** | **AlemLLM** | `POST https://llm.alem.ai/v1/chat/completions` (`alemllm`) | `LLM_PROVIDER=alem` |
+| **Protocol Draft Generation** | **AlemLLM** | `POST https://llm.alem.ai/v1/chat/completions` (`alemllm`) | `LLM_PROVIDER=alem` |
+| **Speech-to-Text (Audio STT)** | **OpenAI STT** | `POST https://api.openai.com/v1/audio/transcriptions` (`gpt-4o-transcribe-diarize`) | `STT_PROVIDER=openai` |
 
-Production frontend:
+> [!IMPORTANT]
+> **Strict Provider Isolation Rules:**
+> - **AlemLLM (`alemllm`)** is the SOLE text LLM used for text generation, clinical rationale, patient role-play, and protocol drafting.
+> - **OpenAI** is used **ONLY** for audio Speech-to-Text (`POST /v1/audio/transcriptions`).
+> - `OPENAI_API_KEY` is **NEVER** read by text LLM adapters or RAG endpoints.
+> - OpenAI Chat Completions and Responses APIs are strictly prohibited for text generation.
 
-```text
-https://medtech-ai-rag.vercel.app
-```
+---
 
-Useful routes:
+## ⚡ Features
 
-- `/ru/ai-assistant` - RAG clinical assistant, clarification flow, student simulator, speech-to-text upload.
-- `/ru/patients` - synthetic patient catalogue.
-- `/ru/training/gerd` - example training case with case-specific investigations and differential choices.
+### 1. Patient Simulator & Training Workspace
+- 32 synthetic medical cases across 8 specialties (Cardiology, Pulmonology, Endocrinology, Gastroenterology, Neurology, Emergency, Therapy, Infectious).
+- Role-play patient dialogue driven by `PatientEngine` with hidden fact unlocking.
+- Structured physical examination findings, laboratory & imaging ordering, differential diagnosis, and management planning.
+- **Server-Side Option Bank**: Management options include plausible distractors and dangerous actions. DTO contains no correctness markers (`correct`, `dangerous`, `score`).
 
-Important: Vercel hosts the Next.js app. The full RAG engine is a Python/FastAPI backend and must be running separately. In the current demo, `RAG_SERVICE_URL` can point to a tunnel or deployed backend.
+### 2. Clinical Rationale & RAG Refinement
+- Queries Python RAG service or falls back to AlemLLM.
+- **Card: «Почему выбран этот вариант»**: Provides mandatory 1-2 sentence `summary`, confidence badge, supporting patient evidence quotes, missing/conflicting criteria, rank rationale, and discriminator tests.
+- **Refine Flow**: Refines differential diagnosis without losing previous results on network error.
+- **Honest RAG Status**: Distinguishes `rag-ready`, `rag-empty`, `fallback`, and `unavailable`. When no RAG sources exist, displays: *"Ответ сформирован без подтверждённых RAG-источников"*.
 
-## What Works
+### 3. Speech-to-Text (STT) & Editable Protocol Workflow
+- Audio recording upload to `/api/transcribe` calling `POST /v1/audio/transcriptions`.
+- Supports speaker diarization (`OPENAI_STT_DIARIZATION=true`).
+- **AlemLLM Protocol Generation**: Generates structured medical protocol draft (`/api/encounter/protocol`) with SHA-256 caching.
+- **Local Physician Edits**: Physician can manually edit protocol sections without making LLM calls. Protocol tracks version history (`v1`, `v2`, status: `draft` -> `edited`).
+- **Export**: JSON and print view exports.
 
-- **Clinical RAG assistant**
-  - proxies from Next.js API routes to the Python RAG backend when `RAG_SERVICE_URL` is configured;
-  - falls back to GPT-5.5 clinical JSON generation when no backend is available;
-  - returns ranked diagnoses, supporting findings, missing information, recommendations, protocol criteria, and sources;
-  - includes faithfulness rules so protocol criteria are not shown as patient facts unless present in the input.
+### 4. Debrief & Dashboard
+- **Fair Debrief Scoring**: Absence of indicated tests reduces score (0 ordered tests = 0 score). Dangerous actions create critical error penalties and set management score to 0.
+- **Celebration Banner**: Displays only when `total >= 80 AND missedRedFlags.length === 0 AND criticalErrors.length === 0`.
+- **Dashboard**: Calculates real missed red flags from saved progress (`kms-progress`). Dynamically recommends cases based on uncompleted cases and weakest specialty.
 
-- **Clarification flow**
-  - first request runs retrieval;
-  - follow-up answers can refine the same differential without a new heavy retrieval;
-  - weak or irrelevant clarification should not erase the existing differential list.
+---
 
-- **Student simulator**
-  - multiple synthetic cases with easy/medium/hard progression;
-  - LLM patient role-play based on hidden case context;
-  - student can ask custom questions;
-  - diagnosis and management assessment endpoint returns feedback.
+## 🛡️ Case Catalog & Core/Beta Tiers
 
-- **Training workspace**
-  - synthetic patients in `/training/[caseId]`;
-  - patient replies are generated by an LLM with case context and recent dialogue history;
-  - case-specific investigations instead of one generic list for all cases;
-  - broader differential lists plus custom diagnosis entry;
-  - management options plus free-text plan.
+- **Total Cases**: 32
+- **Core (Verified)**: 0
+- **Beta (Unreviewed)**: 32
 
-- **Speech-to-text**
-  - browser uploads audio to `/api/transcribe`;
-  - backend calls OpenAI transcription model;
-  - diarized output is supported when the configured model/provider returns it.
+To maintain medical safety, cases without a signed clinician review audit trail are categorized as `validationTier: "beta"` and `medicalReviewStatus: "unreviewed"`. See `docs/CORE_CASES_REQUIRED.md` for details.
 
-## Tech Stack
+---
 
-- Next.js 16 App Router
-- React 19
-- TypeScript
-- Tailwind CSS
-- Zod contracts
-- Zustand session store
-- Playwright e2e tests
-- Python/FastAPI RAG service
-- Hybrid BM25 + FAISS retrieval in `rag_service`
-- OpenAI GPT-5.5 for clinical generation/simulator by default
-- Alem-compatible embeddings/rerank support for the existing index
+## ⚠️ Medical Safety & Privacy Notices
 
-## Repository Structure
+> [!CAUTION]
+> **Educational & Synthetic Use Only:**
+> - KazMedSim is designed for medical training and educational simulation only.
+> - **AI protocol drafts are NOT approved medical records** and MUST be reviewed, validated, and signed by a licensed physician before clinical application.
+> - Exact medication dosages in unreviewed cases are accompanied by an educational notice and must be verified by a clinician.
+> - **Privacy**: DO NOT upload real, identifiable patient health information (PHI/PII) to the system. All test cases use synthetic data.
 
-```text
-src/app/                         Next.js pages and route handlers
-src/app/api/clinical/*           Clinical diagnose/refine proxy/fallback APIs
-src/app/api/simulator/*          LLM patient simulator and evaluation APIs
-src/app/api/transcribe           Speech-to-text API
-src/components/ai                AI assistant and simulator UX
-src/components/training          Classic training workspace
-src/data/cases.server.ts         Synthetic patient cases
-src/domain/schemas.ts            Zod schemas and DTO contracts
-src/engines                      Patient response engine contracts
-src/repositories                 Case repository abstraction
-rag_service                      Python RAG backend
-tests/e2e                        Playwright checks
-```
+---
 
-## Environment Variables
+## 🚀 Development & Testing Setup
 
-Frontend / Vercel:
-
+### 1. Environment Setup
+Copy `.env.example` to `.env.local`:
 ```bash
-OPENAI_API_KEY=...
-OPENAI_CLINICAL_MODEL=gpt-5.5
-OPENAI_SIM_MODEL=gpt-5.5
-OPENAI_PATIENT_MODEL=gpt-5.5
-OPENAI_STT_MODEL=gpt-4o-transcribe-diarize
-RAG_SERVICE_URL=https://your-rag-backend.example.com
-CASE_REPOSITORY=seed
+cp .env.example .env.local
 ```
 
-`RAG_SERVICE_URL` is optional for local UI work, but required for the full protocol RAG path. Without it, `/api/clinical/diagnose` uses the GPT fallback and will not cite the full protocol corpus.
+For offline testing or CI:
+```bash
+LLM_PROVIDER=mock
+STT_PROVIDER=mock
+```
 
-RAG backend variables are documented in [rag_service/.env.example](./rag_service/.env.example).
-
-Do not commit real API keys. Rotate any key that was shared in chat or screenshots.
-
-## Local Frontend Setup
-
-Requirements:
-
-- Node.js 20.9+
-- pnpm 10+
-
+### 2. Run Frontend
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Open:
-
-```text
-http://localhost:3000/ru
-```
-
-If pnpm supply-chain policy blocks very fresh packages locally, you can run with already-installed dependencies:
-
+### 3. Run Quality Checks
 ```bash
-./node_modules/.bin/next dev -p 3000
+pnpm lint        # Run ESLint (0 errors/warnings)
+pnpm typecheck   # Run TypeScript compiler
+pnpm test        # Run Vitest unit & integration tests
+pnpm build       # Run Next.js production build
 ```
 
-## Local RAG Backend Setup
-
-The stronger medical RAG service lives in `rag_service/`. It adapts the Askhat hackathon RAG pipeline and uses merged protocol corpora/indexes.
-
+### 4. Run Playwright E2E Tests
 ```bash
-cd rag_service
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-cp .env.example .env
+pnpm exec playwright install --with-deps chromium
+pnpm test:e2e
 ```
 
-Fill `.env`, then build or reuse indexes:
-
-```bash
-python scripts/merge_protocol_corpus.py
-python scripts/askhat_build_index.py --corpus data/corpus/merged_protocols_structured_dedup.jsonl --force
-```
-
-Run:
-
-```bash
-chmod +x scripts/run_askhat_rag.sh
-./scripts/run_askhat_rag.sh
-```
-
-Open:
-
-```text
-http://127.0.0.1:8080
-```
-
-Point the Next.js app to it:
-
-```bash
-RAG_SERVICE_URL=http://127.0.0.1:8080 pnpm dev
-```
-
-Large PDF files, FAISS/BM25 indexes, generated corpus JSONL files, and local `.env` files should stay out of git.
-
-## RAG Endpoints
-
-Python backend:
-
-- `GET /health` - readiness check.
-- `POST /diagnose` - full diagnosis generation.
-- `POST /api/retrieve` - retrieval diagnostics.
-- `POST /refine` - refine existing candidates with clarification answers.
-
-Next.js proxy/fallback:
-
-- `POST /api/clinical/diagnose`
-- `POST /api/clinical/refine`
-
-Expected diagnose body:
-
-```json
-{
-  "symptoms": "Пациент: боль в груди, одышка, холодный пот..."
-}
-```
-
-## Data Extraction
-
-Official Kazakhstan protocols can be extracted and merged through scripts in `rag_service/scripts/`:
-
-- `extract_nrchd_structured.py` - structured extraction from NRCHD protocol files.
-- `merge_protocol_corpus.py` - merges Qazcode/official protocol sources into one JSONL corpus.
-- `askhat_build_index.py` - builds retrieval indexes.
-- `askhat_build_dense.py` - builds dense FAISS embeddings.
-
-For protocols with tables, prefer structured extraction/OCR-aware parsing before chunking. Tables should be preserved as markdown-like text or structured rows so dosage, criteria, and classification tables are not flattened into unreadable paragraphs.
-
-## Evaluation
-
-RAG checks:
-
+### 5. Run Python RAG Service (Optional)
 ```bash
 cd rag_service
-python scripts/evaluate_retrieval.py --limit 20
-python scripts/evaluate_golden.py --limit 20 --concurrency 1
-python scripts/audit_golden.py
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
 ```
 
-Frontend checks:
+---
 
-```bash
-pnpm typecheck
-pnpm build
-./node_modules/.bin/playwright test tests/e2e/critical-flow.spec.ts
-```
+## 🔑 Key Rotation & Security Guidelines
 
-The e2e suite currently verifies:
-
-- patient list opens and the public API does not leak hidden ground truth;
-- the training conversation input keeps focus while typing.
-
-## Deployment
-
-Frontend:
-
-```bash
-vercel --prod --yes
-```
-
-Required production env for full demo:
-
-```bash
-OPENAI_API_KEY=...
-RAG_SERVICE_URL=https://your-deployed-rag-backend.example.com
-```
-
-Backend:
-
-- deploy `rag_service/` as a Docker/FastAPI service;
-- mount or bake the generated corpus/index files;
-- expose `/health`, `/diagnose`, `/refine`, and `/api/retrieve`;
-- set `RAG_SERVICE_URL` in Vercel to that backend URL.
-
-For hackathon demo, a local tunnel can work temporarily, but it depends on the laptop and tunnel staying online.
-
-## Current Limitations
-
-- Medical content is still demo-grade and must be reviewed by clinicians.
-- Synthetic cases are useful for UX demonstration, not certified curriculum content.
-- The production frontend is stable, but full RAG quality depends on the separately hosted Python backend and its indexes.
-- Speech diarization quality depends on the selected OpenAI transcription model and audio quality.
-- Evaluation metrics are development metrics, not clinical validation.
-
-## Safety
-
-Never enter real patient-identifiable data into the demo unless the deployment, storage, consent, and compliance process have been formally approved. The intended workflow is physician support and student training, with the clinician keeping final responsibility.
+- Keep `.env.local` in `.gitignore` to prevent committing API keys.
+- **AlemLLM Key Rotation**: Update `ALEM_API_KEY` in `.env.local` (Next.js server side).
+- **OpenAI STT Key Rotation**: Update `OPENAI_API_KEY` in `.env.local`.
+- **Python RAG Key Rotation**: Update `rag_service/.env`.

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Sparkles, Send, History, HelpCircle, FileText } from 'lucide-react';
 
 interface ClinicalQueryFormProps {
@@ -22,14 +22,15 @@ export function ClinicalQueryForm({
   onCancelLoading,
 }: ClinicalQueryFormProps) {
   const [query, setQuery] = useState('');
-  const [history, setHistory] = useState<string[]>([]);
-
-  useEffect(() => {
+  const [history, setHistory] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
     try {
       const saved = localStorage.getItem('kms-ai-queries');
-      if (saved) setHistory(JSON.parse(saved));
-    } catch {}
-  }, []);
+      return saved ? (JSON.parse(saved) as string[]) : [];
+    } catch {
+      return [];
+    }
+  });
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
