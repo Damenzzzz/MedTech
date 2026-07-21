@@ -1,7 +1,12 @@
 type JsonValue=Record<string,unknown>;
 
+const RUSSIAN_TEXT_RULE='Отвечай строго на русском языке. Все человекочитаемые фразы, объяснения, вопросы, предупреждения и значения строк должны быть на русском. Не используй английский язык, кроме технических кодов, названий API, JSON-ключей, МКБ/ICD-кодов и общепринятых медицинских сокращений.';
+const JSON_RULE='Верни только валидный JSON. JSON-ключи оставь строго как запрошено, но все текстовые значения внутри JSON пиши строго на русском языке.';
+const TEXT_RULE='Отвечай только на русском языке.';
+
 export async function callClinicalJson<T extends JsonValue>(prompt:string, options?:{system?:string;maxTokens?:number;timeoutMs?:number}):Promise<T|null> {
-  const gemini=await callGemini(prompt,{...options,json:true});
+  const system=withRussianRule(options?.system??JSON_RULE, true);
+  const gemini=await callGemini(prompt,{...options,system,json:true});
   const geminiJson=gemini ? parseJsonObject<T>(gemini) : null;
   if (geminiJson) return geminiJson;
 
@@ -14,8 +19,8 @@ export async function callClinicalJson<T extends JsonValue>(prompt:string, optio
       body:JSON.stringify({
         model:process.env.ALEM_CHAT_MODEL??'alemllm',
         messages:[
-          {role:'system',content:options?.system??'Return valid JSON only.'},
-          {role:'user',content:prompt},
+          {role:'system',content:system},
+          {role:'user',content:withRussianUserInstruction(prompt,true)},
         ],
         temperature:0.1,
         max_tokens:options?.maxTokens??1600,
@@ -32,7 +37,8 @@ export async function callClinicalJson<T extends JsonValue>(prompt:string, optio
 }
 
 export async function callClinicalText(prompt:string, options?:{system?:string;maxTokens?:number;timeoutMs?:number}):Promise<string|null> {
-  const gemini=await callGemini(prompt,{...options,json:false});
+  const system=withRussianRule(options?.system??TEXT_RULE, false);
+  const gemini=await callGemini(prompt,{...options,system,json:false});
   if (gemini) return gemini;
 
   const apiKey=process.env.ALEM_API_KEY;
@@ -44,8 +50,8 @@ export async function callClinicalText(prompt:string, options?:{system?:string;m
       body:JSON.stringify({
         model:process.env.ALEM_CHAT_MODEL??'alemllm',
         messages:[
-          {role:'system',content:options?.system??'You are a helpful assistant.'},
-          {role:'user',content:prompt},
+          {role:'system',content:system},
+          {role:'user',content:withRussianUserInstruction(prompt,false)},
         ],
         temperature:0.2,
         max_tokens:options?.maxTokens??900,
@@ -70,8 +76,8 @@ async function callGemini(prompt:string, options?:{system?:string;maxTokens?:num
       method:'POST',
       headers:{'content-type':'application/json'},
       body:JSON.stringify({
-        systemInstruction:options?.system?{parts:[{text:options.system}]}:undefined,
-        contents:[{role:'user',parts:[{text:prompt}]}],
+        systemInstruction:{parts:[{text:options?.system??withRussianRule(options?.json?JSON_RULE:TEXT_RULE, Boolean(options?.json))}]},
+        contents:[{role:'user',parts:[{text:withRussianUserInstruction(prompt, Boolean(options?.json))}]}],
         generationConfig:{
           temperature:options?.json?0.1:0.2,
           maxOutputTokens:options?.maxTokens??1200,
@@ -89,6 +95,18 @@ async function callGemini(prompt:string, options?:{system?:string;maxTokens?:num
   } catch {
     return null;
   }
+}
+
+function withRussianRule(system:string, json:boolean) {
+  const rule=json?`${JSON_RULE}\n${RUSSIAN_TEXT_RULE}`:`${TEXT_RULE}\n${RUSSIAN_TEXT_RULE}`;
+  return `${rule}\n\n${system}`.trim();
+}
+
+function withRussianUserInstruction(prompt:string, json:boolean) {
+  const instruction=json
+    ? 'Важно: ответ должен быть строго валидным JSON; все текстовые значения внутри JSON должны быть на русском языке.'
+    : 'Важно: ответ должен быть полностью на русском языке.';
+  return `${prompt}\n\n${instruction}`;
 }
 
 function geminiBaseUrl() {

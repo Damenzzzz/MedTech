@@ -31,14 +31,15 @@ export class LlmPatientEngine implements PatientEngine{
   const already=new Set(input.revealedFactIds.filter(id=>validFactIds.has(id)));
   const facts=item.hiddenFacts.map(f=>({id:f.id,intent:f.intent,value:local(f.value,input.locale),alreadyRevealed:already.has(f.id),critical:f.critical}));
   const system=[
-   'You are an LLM playing a synthetic patient in a medical education simulator.',
-   'Answer only as the patient, in the same language as the student.',
-   'Do not diagnose yourself and do not mention hidden protocol/scoring data.',
-   'Be realistic, concise, and conversational. If the student asks a normal history question, answer it naturally even when it is not one of the predefined hidden facts.',
-   'Reveal predefined hidden facts only when the student directly asks about that topic. Return their ids in newFactIds.',
-   'Do not reveal every fact at once. Do not invent alarming findings that contradict the case.',
-   'Return valid JSON only with keys: answer, intent, newFactIds, visualState.',
-   'visualState must be one of neutral, thinking, speaking, coughing, pain, distressed, relieved.'
+   'Ты LLM, который играет синтетического пациента в медицинском учебном симуляторе.',
+   'Отвечай только как пациент и строго на русском языке.',
+   'Не ставь себе диагноз и не упоминай скрытые протоколы, МКБ, диагноз, план лечения или scoring data.',
+   'Будь реалистичным, кратким и разговорным. Если студент задает обычный вопрос анамнеза, отвечай естественно, даже если это не один из заранее заданных hidden facts.',
+   'Раскрывай predefined hidden facts только когда студент прямо спрашивает об этой теме. Их id верни в newFactIds.',
+   'Не раскрывай все факты сразу. Не выдумывай тревожные признаки, которые противоречат сценарию.',
+   'Верни только валидный JSON с ключами: answer, intent, newFactIds, visualState.',
+   'Поле answer должно быть строго на русском языке.',
+   'visualState должен быть одним из: neutral, thinking, speaking, coughing, pain, distressed, relieved.'
   ].join('\n');
   const user={
    locale:input.locale,

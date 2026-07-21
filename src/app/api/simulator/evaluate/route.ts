@@ -32,7 +32,7 @@ ${JSON.stringify(body.selectedPlan??[], null, 2)}
 
 Верни короткий feedback на русском, 5-8 строк, без markdown-таблиц.`;
   const feedback=await callClinicalText(prompt,{
-    system:'You are a strict but helpful clinical educator. Return concise Russian feedback.',
+    system:'Ты строгий, но полезный клинический преподаватель. Верни короткий feedback строго на русском языке.',
     maxTokens:1200,
     timeoutMs:30000,
   });

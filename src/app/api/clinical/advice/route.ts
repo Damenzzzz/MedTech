@@ -28,25 +28,25 @@ export async function POST(request:Request) {
 
 async function decideRagNeed({scenario,role,resources,messages}:{scenario:string;role:string;resources:string;messages:AdviceMessage[]}):Promise<RagDecision> {
   const history=messages.slice(-10).map(m=>`${m.role==='clinician'?'Медработник':'AI'}: ${m.content}`).join('\n');
-  const prompt=`Decide whether this rural clinical assistant request needs slow official-protocol RAG before giving an action plan.
+  const prompt=`Реши, нужен ли этому запросу сельского клинического ассистента медленный RAG-поиск по официальным протоколам перед выдачей плана действий.
 
-Return need_rag=true when:
-- possible emergency, red flags, unstable vitals, pregnancy, child/elderly high risk;
-- diagnosis, differential diagnosis, treatment, medication, contraindications, referral/evacuation, protocol-specific decision;
-- clinician asks "what to do" for a real patient and harm is possible.
+Верни need_rag=true, если:
+- возможна неотложная ситуация, красные флаги, нестабильные витальные показатели, беременность, ребенок или пожилой пациент с высоким риском;
+- нужен диагноз, дифференциальный диагноз, лечение, лекарства, противопоказания, направление/эвакуация или протокольное решение;
+- медработник спрашивает "что делать" для реального пациента и возможен вред.
 
-Return need_rag=false only when:
-- low-risk general workflow/admin explanation;
-- very light self-care/common-sense guidance with no medication/diagnostic commitment;
-- the answer can be safely framed as general triage without protocol details.
+Верни need_rag=false только если:
+- это низкорисковое общее объяснение рабочего процесса;
+- это очень легкая общая рекомендация без лекарств и диагностических обязательств;
+- ответ можно безопасно дать как общий triage без деталей протокола.
 
-Role: ${role}
-Resources: ${resources || 'not specified'}
-Scenario: ${scenario}
-Chat:
-${history || 'none'}
+Роль: ${role}
+Ресурсы: ${resources || 'не указаны'}
+Ситуация: ${scenario}
+Чат:
+${history || 'нет'}
 
-JSON only: {"need_rag":true|false,"reason":"short reason"}`;
+Только JSON: {"need_rag":true|false,"reason":"короткая причина на русском"}`;
   const parsed=await callClinicalJson<{need_rag?:boolean;reason?:string}>(prompt,{maxTokens:300,timeoutMs:9000});
   if (parsed) {
     return {need_rag:parsed.need_rag!==false,reason:String(parsed.reason??'LLM router decision')};
@@ -88,7 +88,7 @@ ${history || 'Пока нет.'}
 Верни JSON:
 {"mode":"chat","safety_notice":"...","reply":"короткий ответ","questions":["..."],"need_rag":true|false,"urgency_hint":"emergency|urgent|semi-urgent|routine"}`;
   const parsed=await callClinicalJson<{safety_notice?:string;reply?:string;questions?:string[];need_rag?:boolean;urgency_hint?:string}>(prompt,{
-    system:'Return valid JSON only. Keep answers short and clinically safe.',
+    system:'Верни только валидный JSON. Пиши коротко, безопасно и строго на русском.',
     maxTokens:1200,
     timeoutMs:16000,
   });
@@ -238,7 +238,7 @@ ${protocolContext}
     what_not_to_do?:string[];
     sources?:{title?:string;protocol_id?:string;excerpt?:string}[];
   }>(prompt,{
-    system:'Return valid JSON only. Be conservative and clinically safe.',
+    system:'Верни только валидный JSON. Будь консервативным, клинически безопасным и пиши строго на русском.',
     maxTokens:2600,
     timeoutMs:45000,
   });
