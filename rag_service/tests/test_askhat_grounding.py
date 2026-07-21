@@ -1,16 +1,46 @@
 import os
+import asyncio
 import unittest
 from unittest.mock import patch
 
 from askhat_rag import postprocessor
-from askhat_rag.data_loader import extract_icd_codes, extract_icd_labels
+from askhat_rag.data_loader import Protocol, extract_icd_codes, extract_icd_labels
 from askhat_rag.indexer import Chunk
 from askhat_rag.retriever import promote_strategy_coverage, select_top_chunks
 from askhat_rag.generator import _preferred_codes_for_chunk
-from askhat_rag.server import _stabilize_refined_assessment
+import askhat_rag.server as rag_server
+from askhat_rag.server import _source_items, _stabilize_refined_assessment
 
 
 class TestAskhatGrounding(unittest.TestCase):
+    def test_public_source_contains_viewer_metadata_and_full_chunk(self):
+        protocol = Protocol(
+            protocol_id="p_hellp",
+            source_file="HELLP-СИНДРОМ.pdf",
+            title="HELLP СИНДРОМ",
+            icd_codes=["O14.2"],
+            text="Полный текст протокола с диагностическими критериями.",
+        )
+        previous = rag_server._protocols
+        rag_server._protocols = {protocol.protocol_id: protocol}
+        try:
+            source = _source_items([Chunk(
+                chunk_id="p_hellp_diagnostic",
+                protocol_id=protocol.protocol_id,
+                protocol_title="Одобрен",
+                icd_codes=protocol.icd_codes,
+                section_type="diagnostic_criteria",
+                text="Точный текст процитированного фрагмента.",
+            )])[0]
+            self.assertEqual(source.title, "HELLP СИНДРОМ")
+            self.assertEqual(source.source_file, "HELLP-СИНДРОМ.pdf")
+            self.assertEqual(source.chunk_text, "Точный текст процитированного фрагмента.")
+
+            response = asyncio.run(rag_server.get_protocol(protocol.protocol_id))
+            self.assertEqual(response.text, protocol.text)
+        finally:
+            rag_server._protocols = previous
+
     def test_strict_context_drops_globally_valid_but_unretrieved_code(self):
         with patch.dict(os.environ, {"STRICT_CONTEXT_ICD": "1"}):
             postprocessor.ALL_VALID_ICD_CODES.clear()

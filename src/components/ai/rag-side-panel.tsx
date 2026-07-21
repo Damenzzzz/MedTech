@@ -20,6 +20,7 @@ export function RagSidePanel({
   canInsert,
   onInsertDiagnosis,
   onInsertSource,
+  onSourcesChange,
 }: {
   open: boolean;
   onClose: () => void;
@@ -27,6 +28,7 @@ export function RagSidePanel({
   canInsert: boolean;
   onInsertDiagnosis: (item: DiagnosisItem) => void;
   onInsertSource: (source: ProtocolSource) => void;
+  onSourcesChange?: (sources: ProtocolSource[]) => void;
 }) {
   const [symptoms, setSymptoms] = useState(initialSymptoms || sampleCase);
   const [additional, setAdditional] = useState('');
@@ -49,6 +51,7 @@ export function RagSidePanel({
       if (job?.job_id) {
         const result = (await waitDiagnoseJob(job.job_id)) as DiagnoseResponse;
         setData(result);
+        onSourcesChange?.(result.sources);
       } else {
         const response = await fetch('/api/clinical/diagnose', {
           method: 'POST',
@@ -61,6 +64,7 @@ export function RagSidePanel({
         }
         const result: DiagnoseResponse = await response.json();
         setData(result);
+        onSourcesChange?.(result.sources);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка анализа');
@@ -91,6 +95,7 @@ export function RagSidePanel({
 
       const result: DiagnoseResponse = await response.json();
       setData(result);
+      onSourcesChange?.(result.sources);
     } catch (e) {
       setError(
         e instanceof Error

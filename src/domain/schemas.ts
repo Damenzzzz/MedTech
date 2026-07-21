@@ -507,6 +507,9 @@ export const ProtocolSourceSchema = z.object({
   id: z.string().optional(),
   title: z.string(),
   protocolId: z.string().optional(),
+  sourceFile: z.string().optional(),
+  sectionType: z.string().optional(),
+  chunkText: z.string().optional(),
   excerpt: z.string().optional(),
   url: z.string().optional(),
 });

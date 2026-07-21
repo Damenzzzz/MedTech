@@ -1,17 +1,24 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Brain, ClipboardCheck, Loader2, Mic, Search, Send, ShieldAlert, UserRound } from 'lucide-react';
+import { BookOpen, Bot, Brain, ClipboardCheck, Loader2, Mic, RefreshCw, Search, Send, ShieldAlert, Stethoscope, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SttEncounterWorkspace } from '@/components/ai/stt-encounter-workspace';
-import type { StudentCaseDTO } from '@/domain/schemas';
+import { ProtocolViewer } from '@/components/ai/protocol-viewer';
+import { DifferentialResults } from '@/components/ai/differential-results';
+import type { DiagnoseResponse, ProtocolSource, StudentCaseDTO } from '@/domain/schemas';
 
 type AdviceStep = { step?: string; action?: string; why?: string };
 type AdviceOption = { option?: string; treatment?: string; when?: string; avoid_if?: string };
-type AdviceResponse = { safety_notice: string; urgency?: string; most_likely_risks?: string[]; do_now?: AdviceStep[]; ask_or_measure_next?: string[]; treatment_options?: AdviceOption[]; referral?: { decision?: string; reason?: string }; what_not_to_do?: string[]; sources?: { title?: string; protocol_id?: string; excerpt?: string }[]; rag_status?: string; rag_decision?: string };
+type AdviceSource = { title?: string; protocol_id?: string; source_file?: string; chunk_text?: string; excerpt?: string };
+type AdviceResponse = { safety_notice: string; urgency?: string; most_likely_risks?: string[]; do_now?: AdviceStep[]; ask_or_measure_next?: string[]; treatment_options?: AdviceOption[]; referral?: { decision?: string; reason?: string }; what_not_to_do?: string[]; sources?: AdviceSource[]; rag_status?: string; rag_decision?: string };
 type AdviceChatTurn = { role: 'clinician' | 'assistant'; content: string };
 type AdviceChatResponse = { reply: string; questions?: string[]; need_rag?: boolean; urgency_hint?: string; safety_notice?: string };
 type DialogueTurn = { speaker: 'doctor' | 'patient' | 'relative' | 'nurse' | 'unknown'; text: string; start?: number; end?: number };
+type DiagnoseJobStatus = { job_id?: string; status?: string; result?: DiagnoseResponse; error?: string };
+
+const sampleCase = 'Беременная женщина, 34 неделя беременности. Сильная головная боль, мелькание мушек перед глазами, боль в правом подреберье, выраженные отеки ног. Артериальное давление 170/110 мм рт. ст.';
+const refineSample = 'Общий билирубин 36 мкмоль/л, шистоциты и признаки гемолиза подтверждены.';
 
 const GENERIC_DIAGNOSES = [
   'R69 Неуточнённое состояние',
@@ -100,7 +107,7 @@ function Tab({ active, onClick, icon: Icon, label }: { active: boolean; onClick:
   </button>;
 }
 
-function RagPanel() {
+export function RagPanel() {
   const [symptoms, setSymptoms] = useState(sampleCase);
   const [additional, setAdditional] = useState('');
   const [data, setData] = useState<DiagnoseResponse | null>(null);
@@ -332,7 +339,31 @@ function StepList({ title, steps }: { title: string; steps: AdviceStep[] }) { re
 
 function OptionList({ title, options }: { title: string; options: AdviceOption[] }) { return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">{title}</h3><div className="mt-4 grid gap-3">{options.length ? options.slice(0, 8).map((item, index) => <div key={`${index}-${item.option ?? item.treatment}`} className="rounded-xl bg-white/5 p-4 text-sm leading-6 text-slate-200"><p className="font-semibold text-teal-100">{item.option ?? item.treatment}</p>{item.when && <p className="mt-1 text-slate-400">Когда: {item.when}</p>}{item.avoid_if && <p className="mt-1 text-amber-100">Осторожно/не применять: {item.avoid_if}</p>}</div>) : <p className="rounded-xl bg-white/5 p-4 text-sm text-slate-500">Нет безопасных вариантов без уточнения данных.</p>}</div></section> }
 
-function SourcesList({ sources, status }: { sources: { title?: string; protocol_id?: string; excerpt?: string }[]; status?: string }) { const label = ragStatusLabel(status); return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold">Источники RAG</h3>{label && <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-slate-400">{label}</span>}</div><div className="mt-4 grid gap-3">{sources.length ? sources.slice(0, 5).map((source, index) => <div key={`${index}-${source.title ?? source.protocol_id}`} className="rounded-xl bg-white/5 p-4 text-sm leading-6"><p className="font-semibold text-slate-200">{source.title ?? source.protocol_id ?? `Источник ${index + 1}`}</p>{source.excerpt && <p className="mt-2 text-slate-400">{source.excerpt}</p>}</div>) : <p className="rounded-xl bg-white/5 p-4 text-sm text-slate-500">{status === 'llm-direct-no-rag' ? 'LLM решил, что для этого лёгкого вопроса RAG не нужен.' : 'RAG сейчас недоступен или не успел вернуть источники. Совет помечен как ограниченный.'}</p>}</div></section> }
+function SourcesList({ sources, status }: { sources: AdviceSource[]; status?: string }) {
+  const label = ragStatusLabel(status);
+  const [viewerSource, setViewerSource] = useState<ProtocolSource | null>(null);
+  return (
+    <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold">Источники RAG</h3>{label && <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-slate-400">{label}</span>}</div>
+      <div className="mt-4 grid gap-3">
+        {sources.length ? sources.slice(0, 5).map((source, index) => (
+          <div key={`${index}-${source.title ?? source.protocol_id}`} className="rounded-xl bg-white/5 p-4 text-sm leading-6">
+            <div className="flex items-start justify-between gap-3">
+              <p className="font-semibold text-slate-200">{source.title ?? source.protocol_id ?? `Источник ${index + 1}`}</p>
+              {source.protocol_id && <button type="button" onClick={() => setViewerSource({ title: source.title || source.protocol_id!, protocolId: source.protocol_id, sourceFile: source.source_file, chunkText: source.chunk_text, excerpt: source.excerpt })} className="flex shrink-0 items-center gap-1 rounded-lg border border-teal-400/30 bg-teal-400/10 px-2.5 py-1 text-xs font-semibold text-teal-200 hover:bg-teal-400/20"><BookOpen size={13} />Протокол</button>}
+            </div>
+            {source.excerpt && <p className="mt-2 text-slate-400">{source.excerpt}</p>}
+          </div>
+        )) : <p className="rounded-xl bg-white/5 p-4 text-sm text-slate-500">{status === 'llm-direct-no-rag' ? 'LLM решил, что для этого лёгкого вопроса RAG не нужен.' : 'RAG сейчас недоступен или не успел вернуть источники. Совет помечен как ограниченный.'}</p>}
+      </div>
+      <ProtocolViewer source={viewerSource} onClose={() => setViewerSource(null)} />
+    </section>
+  );
+}
+
+function Questions({ questions }: { questions: Array<{ question: string; rationale?: string }> }) {
+  return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">Что уточнить врачу</h3><div className="mt-4 grid gap-3">{questions.slice(0, 5).map((question) => <div key={question.question} className="rounded-xl bg-white/5 p-4"><p className="font-medium">{question.question}</p>{question.rationale && <p className="mt-2 text-sm text-slate-400">{question.rationale}</p>}</div>)}</div></section>;
+}
 
 function ragStatusLabel(status?: string) {
   if (!status) return '';

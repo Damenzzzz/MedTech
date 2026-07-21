@@ -132,6 +132,15 @@ python scripts/askhat_build_index.py --corpus data/corpus/merged_protocols.jsonl
 
 Set `RAG_SERVICE_URL=http://127.0.0.1:8080` in `.env.local` to match.
 
+The primary service also exposes `GET /api/protocols/{protocol_id}`. It returns
+the cleaned title, source filename, and full extracted corpus text used by RAG.
+Every public `sources[]` item includes `protocol_id`, `title`, `source_file`,
+`section_type`, `icd_codes`, `excerpt`, and the exact `chunk_text` used for the
+citation. The frontend proxy is `GET /api/protocols/[id]`.
+
+For a container deployment, `rag_service/Dockerfile` starts this primary
+`askhat_rag.server` service on port 8080.
+
 **Fallback: offline lightweight server (`app/api/`, port 8000)** — only
 `/diagnose`, `/api/analyze`, `/api/health`. No job polling, no refine. Useful
 without LLM credentials, but the Next.js clinical routes above will not work
@@ -148,6 +157,28 @@ uvicorn app.api.server:app --host 127.0.0.1 --port 8000
 
 If unconfigured or unreachable, the Next.js API falls back to AlemLLM
 directly. See `rag_service/README.md` for full details on both servers.
+
+### 6. Patient encounters and access control
+
+Apply Supabase migrations before using the doctor/patient workflow:
+
+```bash
+supabase db push
+```
+
+The doctor signs in through the signed `kms_session` cookie. After STT,
+dialogue structuring, and protocol generation, `POST /api/encounters` validates
+the 12-digit patient IIN, creates/updates the patient, and saves the encounter.
+Unsent encounter drafts stay in browser `localStorage` under
+`kms-encounter-draft-v1`, so a Supabase outage does not erase the work.
+
+`/[locale]/dashboard` lists the signed-in doctor's patients. The shared
+`/[locale]/patient-portal/[iin]` read-only card is available to the matching
+patient and to a doctor who has an encounter with that patient. The second
+migration adds Supabase JWT-claim RLS policies (`app_metadata.role` and
+`app_metadata.iin`) for future direct authenticated Supabase reads; the current
+Next.js server also enforces its cookie authorization before using the
+server-only service-role client.
 
 ---
 

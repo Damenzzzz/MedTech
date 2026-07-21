@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Copy,
   Download,
@@ -22,11 +22,13 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { usePathname } from 'next/navigation';
 import { RagSidePanel } from '@/components/ai/rag-side-panel';
 import type {
   DiagnosisItem,
   EncounterProtocol,
   ProtocolSource,
+  StructuredDialogue,
   SttResponse,
   SttSpeaker,
   SttTurn,
@@ -44,7 +46,10 @@ export type SttWorkflowState =
   | 'protocol-ready'
   | 'error';
 
+const ENCOUNTER_DRAFT_KEY = 'kms-encounter-draft-v1';
+
 export function SttEncounterWorkspace() {
+  const pathname = usePathname();
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
@@ -77,6 +82,58 @@ export function SttEncounterWorkspace() {
 
   // RAG side panel
   const [ragOpen, setRagOpen] = useState(false);
+  const [ragSources, setRagSources] = useState<ProtocolSource[]>([]);
+
+  // Encounter persistence
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [patientIin, setPatientIin] = useState('');
+  const [patientFullName, setPatientFullName] = useState('');
+  const [savingEncounter, setSavingEncounter] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [savedPatientIin, setSavedPatientIin] = useState('');
+  const [draftHydrated, setDraftHydrated] = useState(false);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      try {
+        const raw = localStorage.getItem(ENCOUNTER_DRAFT_KEY);
+        if (raw) {
+          const draft = JSON.parse(raw) as {
+          transcriptText?: string;
+          turns?: SttTurn[];
+          protocol?: EncounterProtocol;
+          ragSources?: ProtocolSource[];
+          patientIin?: string;
+          patientFullName?: string;
+        };
+          setTranscriptText(draft.transcriptText || '');
+          setTurns(Array.isArray(draft.turns) ? draft.turns : []);
+          setProtocol(draft.protocol || null);
+          setRagSources(Array.isArray(draft.ragSources) ? draft.ragSources : []);
+          setPatientIin(draft.patientIin || '');
+          setPatientFullName(draft.patientFullName || '');
+          if (draft.protocol) setState('protocol-ready');
+        }
+      } catch (error) {
+        console.warn('[encounter draft] failed to restore local draft', error);
+      } finally {
+        setDraftHydrated(true);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!draftHydrated || !protocol) return;
+    localStorage.setItem(ENCOUNTER_DRAFT_KEY, JSON.stringify({
+      transcriptText,
+      turns,
+      protocol,
+      ragSources,
+      patientIin,
+      patientFullName,
+      updatedAt: new Date().toISOString(),
+    }));
+  }, [draftHydrated, transcriptText, turns, protocol, ragSources, patientIin, patientFullName]);
 
   // Recording Timer
   function startTimer() {
@@ -192,6 +249,8 @@ export function SttEncounterWorkspace() {
     setTranscriptText('');
     setTurns([]);
     setProtocol(null);
+    setRagSources([]);
+    localStorage.removeItem(ENCOUNTER_DRAFT_KEY);
     setState(audioBlob ? 'idle' : 'idle');
   }
 
@@ -202,7 +261,7 @@ export function SttEncounterWorkspace() {
     setErrorMessage('');
     setState('generating-protocol');
 
-    const payload = {
+    const dialoguePayload = {
       transcriptId: sttData?.transcriptId || `tr-manual-${Date.now()}`,
       transcriptText: transcriptText.trim(),
       turns,
@@ -211,10 +270,26 @@ export function SttEncounterWorkspace() {
     };
 
     try {
+      const dialogueResponse = await fetch('/api/encounter/structure-dialogue', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(dialoguePayload),
+      });
+      if (!dialogueResponse.ok) {
+        const errJson = await dialogueResponse.json().catch(() => ({ error: 'Dialogue Structuring Failed' }));
+        throw new Error(errJson.error || `Ошибка структурирования диалога: ${dialogueResponse.status}`);
+      }
+      const structuredDialogue: StructuredDialogue = await dialogueResponse.json();
+      const structuredTurns: SttTurn[] = structuredDialogue.turns.map((turn) => ({
+        speaker: turn.role,
+        text: turn.text,
+        start: turn.start_time,
+      }));
+
       const response = await fetch('/api/encounter/protocol', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...dialoguePayload, turns: structuredTurns }),
       });
 
       if (!response.ok) {
@@ -230,6 +305,7 @@ export function SttEncounterWorkspace() {
       if (protocol) {
         setProtocolHistory((prev) => [protocol, ...prev]);
       }
+      setTurns(structuredTurns);
       setProtocol(newProtocol);
       setState('protocol-ready');
     } catch (err) {
@@ -282,6 +358,51 @@ export function SttEncounterWorkspace() {
       ...protocol,
       status: 'reviewed',
     });
+  }
+
+  async function saveEncounter() {
+    if (!protocol) return;
+    if (!/^\d{12}$/.test(patientIin)) {
+      setSaveError('ИИН должен содержать ровно 12 цифр.');
+      return;
+    }
+
+    setSavingEncounter(true);
+    setSaveError('');
+    const payload = {
+      patientIin,
+      patientFullName: patientFullName.trim() || undefined,
+      rawTranscript: transcriptText,
+      structuredDialogue: turns,
+      protocol,
+      ragSources,
+      status: protocol.status === 'reviewed' ? 'final' : protocol.status,
+    };
+    localStorage.setItem(ENCOUNTER_DRAFT_KEY, JSON.stringify({
+      transcriptText,
+      turns,
+      protocol,
+      ragSources,
+      patientIin,
+      patientFullName,
+      updatedAt: new Date().toISOString(),
+    }));
+
+    try {
+      const response = await fetch('/api/encounters', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Ошибка сохранения ${response.status}`);
+      localStorage.removeItem(ENCOUNTER_DRAFT_KEY);
+      setSavedPatientIin(result.patientIin || patientIin);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Не удалось сохранить приём. Черновик остался в браузере.');
+    } finally {
+      setSavingEncounter(false);
+    }
   }
 
   // Insert RAG findings into the protocol draft
@@ -651,13 +772,16 @@ export function SttEncounterWorkspace() {
               {protocol && (
                 <>
                   <Button onClick={saveManualEdits} size="sm" variant="secondary" className="h-8 text-xs gap-1">
-                    <Save size={13} /> Сохранить
+                    <Save size={13} /> Сохранить правки
                   </Button>
                   {protocol.status !== 'reviewed' && (
                     <Button onClick={approveProtocol} size="sm" className="h-8 text-xs gap-1 bg-emerald-600 hover:bg-emerald-500 text-white">
                       <UserCheck size={13} /> Утвердить
                     </Button>
                   )}
+                  <Button onClick={() => setSaveOpen(true)} size="sm" className="h-8 gap-1 bg-teal-500 text-xs text-slate-950 hover:bg-teal-400">
+                    <Save size={13} /> Сохранить приём
+                  </Button>
                 </>
               )}
             </div>
@@ -875,7 +999,48 @@ export function SttEncounterWorkspace() {
         canInsert={!!protocol}
         onInsertDiagnosis={insertDiagnosisIntoProtocol}
         onInsertSource={insertSourceIntoProtocol}
+        onSourcesChange={setRagSources}
       />
+
+      {saveOpen && protocol && (
+        <div className="fixed inset-0 z-[80] grid place-items-center bg-slate-950/70 p-4" onMouseDown={(event) => { if (event.currentTarget === event.target) setSaveOpen(false); }}>
+          <div role="dialog" aria-modal="true" aria-labelledby="save-encounter-title" className="w-full max-w-lg rounded-3xl border border-white/10 bg-[#162320] p-6 text-slate-100 shadow-2xl">
+            {savedPatientIin ? (
+              <div className="space-y-4 text-center">
+                <UserCheck className="mx-auto text-emerald-300" size={38} />
+                <h2 id="save-encounter-title" className="text-xl font-semibold">Приём сохранён</h2>
+                <p className="text-sm text-slate-400">Запись добавлена в историю пациента. Локальный черновик удалён.</p>
+                <div className="flex justify-center gap-3">
+                  <a href={`/${pathname.split('/').filter(Boolean)[0] || 'ru'}/patient-portal/${savedPatientIin}`} className="inline-flex h-10 items-center rounded-xl bg-teal-500 px-4 text-sm font-semibold text-slate-950 hover:bg-teal-400">Открыть карточку пациента</a>
+                  <Button variant="secondary" onClick={() => setSaveOpen(false)}>Закрыть</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-teal-300">Перед сохранением</p>
+                  <h2 id="save-encounter-title" className="mt-2 text-xl font-semibold">Укажите пациента</h2>
+                  <p className="mt-1 text-sm text-slate-400">Если ИИН ещё нет в базе, пациент будет создан автоматически.</p>
+                </div>
+                <label className="block text-sm font-semibold">ИИН пациента
+                  <input autoFocus inputMode="numeric" maxLength={12} value={patientIin} onChange={(event) => setPatientIin(event.target.value.replace(/\D/g, '').slice(0, 12))} className="input mt-2 border-white/10 bg-white/5 text-white" placeholder="12 цифр" />
+                </label>
+                <label className="block text-sm font-semibold">ФИО <span className="font-normal text-slate-500">(необязательно)</span>
+                  <input value={patientFullName} onChange={(event) => setPatientFullName(event.target.value)} className="input mt-2 border-white/10 bg-white/5 text-white" placeholder="Фамилия Имя Отчество" />
+                </label>
+                {saveError && <div role="alert" className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">{saveError}<p className="mt-1 text-xs text-red-300">Черновик сохранён локально, данные не потеряны.</p></div>}
+                <div className="flex justify-end gap-3">
+                  <Button variant="secondary" onClick={() => setSaveOpen(false)} disabled={savingEncounter}>Отмена</Button>
+                  <Button onClick={saveEncounter} disabled={savingEncounter || patientIin.length !== 12} className="bg-teal-500 text-slate-950 hover:bg-teal-400">
+                    {savingEncounter ? <Loader2 className="animate-spin" size={15} /> : <Save size={15} />}
+                    {savingEncounter ? 'Сохранение…' : 'Сохранить приём'}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

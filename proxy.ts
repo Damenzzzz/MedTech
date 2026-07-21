@@ -26,7 +26,9 @@ export default async function proxy(request:NextRequest){
   }
 
   if(section==='patient-portal' && sub && sub!=='doctor' && sub!=='patient'){
-    if(session?.role!=='patient' || session.iin!==sub){
+    const patientOwnProfile=session?.role==='patient' && session.iin===sub;
+    const doctorProfileAccess=session?.role==='doctor';
+    if(!patientOwnProfile && !doctorProfileAccess){
       return NextResponse.redirect(new URL(`/${locale}/patient-portal`,request.url));
     }
   }
