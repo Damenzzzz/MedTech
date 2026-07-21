@@ -308,6 +308,22 @@
     "draft": "Case draft",
     "invalid": "Check required fields"
   },
+  "ProtocolViewer": {
+    "closeProtocol": "Close protocol",
+    "close": "Close",
+    "loading": "Loading protocol…"
+  },
+  "DoctorDashboard": {
+    "eyebrow": "Doctor workspace",
+    "title": "My patients",
+    "lead": "Patients whose encounters you have saved.",
+    "emptyTitle": "No saved patients yet",
+    "emptyLead": "Record an encounter in STT and save the protocol using the patient's IIN.",
+    "openEncounter": "Open encounter",
+    "noName": "Patient without a name",
+    "iin": "IIN",
+    "encounterCount": "Encounters: {count}"
+  },
   "AI": {
     "title": "Clinical AI Assistant",
     "subtitle": "Decision support & RAG search",

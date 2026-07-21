@@ -1,4 +1,5 @@
 import {NextResponse} from 'next/server';
+import {normalizeDiagnoseResponse} from '@/lib/ai/clinical-service.server';
 
 export async function GET(_request:Request,{params}:{params:Promise<{jobId:string}>}) {
   const base=process.env.RAG_SERVICE_URL;
@@ -9,7 +10,11 @@ export async function GET(_request:Request,{params}:{params:Promise<{jobId:strin
       cache:'no-store',
       signal:AbortSignal.timeout(12000),
     });
-    return NextResponse.json(await response.json(),{status:response.status});
+    const body=await response.json() as {status?:string;result?:Record<string,unknown>;[key:string]:unknown};
+    if(response.ok && body.status==='completed' && body.result){
+      body.result=normalizeDiagnoseResponse(body.result,`job-${jobId}`);
+    }
+    return NextResponse.json(body,{status:response.status});
   } catch {
     return NextResponse.json({error:'RAG job status failed',job_id:jobId,status:'proxy-error'},{status:502});
   }

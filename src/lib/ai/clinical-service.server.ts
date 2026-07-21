@@ -107,7 +107,10 @@ export function normalizeDiagnoseResponse(
   const sources: ProtocolSource[] = rawSources.map((s) => ({
     id: s.id ? String(s.id) : undefined,
     title: String(s.title ?? 'Клинический протокол МЗ РК'),
-    protocolId: s.protocolId ? String(s.protocolId) : undefined,
+    protocolId: s.protocolId || s.protocol_id ? String(s.protocolId ?? s.protocol_id) : undefined,
+    sourceFile: s.sourceFile || s.source_file ? String(s.sourceFile ?? s.source_file) : undefined,
+    sectionType: s.sectionType || s.section_type ? String(s.sectionType ?? s.section_type) : undefined,
+    chunkText: s.chunkText || s.chunk_text ? String(s.chunkText ?? s.chunk_text) : undefined,
     excerpt: s.excerpt ? String(s.excerpt) : undefined,
     url: s.url ? String(s.url) : undefined,
   }));

@@ -1,0 +1,11 @@
+.env
+.venv
+__pycache__
+*.pyc
+*.egg-info
+tests
+tools
+scripts
+codex_medical_platform_handoff
+app
+data/test_set

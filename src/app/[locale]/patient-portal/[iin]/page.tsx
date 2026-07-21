@@ -18,7 +18,7 @@ export default async function PatientProfilePage({
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   const session = token ? await verifySession(token) : null;
 
-  if (!session || session.role !== 'patient' || session.iin !== iin) {
+  if (!session || (session.role === 'patient' && session.iin !== iin)) {
     redirect(`/${locale}/patient-portal`);
   }
 
@@ -28,6 +28,9 @@ export default async function PatientProfilePage({
   }
 
   const encounters = await listEncountersByPatient(iin);
+  if (session.role === 'doctor' && !encounters.some((encounter) => encounter.doctor_id === session.doctorId)) {
+    redirect(`/${locale}/dashboard`);
+  }
 
   return (
     <div className="min-h-screen bg-[color:var(--canvas)] flex flex-col">

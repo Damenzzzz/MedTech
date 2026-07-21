@@ -3,7 +3,7 @@ import {callClinicalJson} from '@/lib/ai/text-llm.server';
 
 export const maxDuration=300;
 
-type RagSource={title?:string;protocol_id?:string;chunk_id?:string;section?:string;text?:string;excerpt?:string};
+type RagSource={title?:string;protocol_id?:string;source_file?:string;chunk_text?:string;chunk_id?:string;section?:string;text?:string;excerpt?:string};
 type RagDiagnosis={rank?:number;diagnosis?:string;icd10_code?:string;confidence?:string;why_this_diagnosis?:string;sources?:RagSource[]};
 type RagResult={diagnoses?:RagDiagnosis[];sources?:RagSource[];case_id?:string};
 type AdviceMessage={role:'clinician'|'assistant';content:string};
@@ -224,7 +224,7 @@ ${protocolContext}
   "treatment_options":[{"option":"...","when":"...","avoid_if":"..."}],
   "referral":{"decision":"...","reason":"..."},
   "what_not_to_do":["..."],
-  "sources":[{"title":"...","protocol_id":"...","excerpt":"..."}],
+  "sources":[{"title":"...","protocol_id":"...","source_file":"...","chunk_text":"...","excerpt":"..."}],
   "rag_status":"${rag.status}"
 }`;
   const parsed=await callClinicalJson<{
@@ -236,7 +236,7 @@ ${protocolContext}
     treatment_options?:unknown[];
     referral?:unknown;
     what_not_to_do?:string[];
-    sources?:{title?:string;protocol_id?:string;excerpt?:string}[];
+    sources?:RagSource[];
   }>(prompt,{
     system:'Верни только валидный JSON. Будь консервативным, клинически безопасным и пиши строго на русском.',
     maxTokens:2600,
@@ -252,7 +252,9 @@ ${protocolContext}
       treatment_options:Array.isArray(parsed.treatment_options)?parsed.treatment_options:[],
       referral:parsed.referral??{},
       what_not_to_do:Array.isArray(parsed.what_not_to_do)?parsed.what_not_to_do:[],
-      sources:Array.isArray(parsed.sources)&&parsed.sources.length?parsed.sources:sources.slice(0,4).map(source=>({title:source.title,protocol_id:source.protocol_id,excerpt:excerpt(source)})),
+      sources:Array.isArray(parsed.sources)&&parsed.sources.length
+        ? parsed.sources.map(source=>({...sources.find(item=>item.protocol_id===source.protocol_id),...source}))
+        : sources.slice(0,4).map(source=>({title:source.title,protocol_id:source.protocol_id,source_file:source.source_file,chunk_text:source.chunk_text,excerpt:excerpt(source)})),
       rag_status:rag.status,
     };
   }
@@ -293,7 +295,7 @@ function fallbackAdvice(scenario:string,rag:{status:string;result:RagResult|null
     ],
     referral:{decision:'При красных флагах организовать срочную маршрутизацию в стационар/к профильному специалисту.',reason:'RAG/GPT fallback не должен задерживать очную помощь.'},
     what_not_to_do:['Не откладывать эвакуацию при нестабильных витальных показателях','Не превращать критерии протокола в факты пациента без подтверждения','Не назначать потенциально опасные препараты без проверки противопоказаний'],
-    sources:collectSources(rag.result).slice(0,4).map(source=>({title:source.title,protocol_id:source.protocol_id,excerpt:excerpt(source)})),
+    sources:collectSources(rag.result).slice(0,4).map(source=>({title:source.title,protocol_id:source.protocol_id,source_file:source.source_file,chunk_text:source.chunk_text,excerpt:excerpt(source)})),
     rag_status:rag.status,
   };
 }

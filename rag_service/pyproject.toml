@@ -39,4 +39,4 @@ testpaths = ["tests"]
 pythonpath = ["."]
 
 [tool.setuptools.packages.find]
-include = ["app*"]
+include = ["app*", "askhat_rag*"]

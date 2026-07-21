@@ -13,7 +13,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()  # load .env before anything reads os.getenv()
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
@@ -160,9 +160,18 @@ class FollowUpQuestion(BaseModel):
 class SourceItem(BaseModel):
     protocol_id: str
     title: str
+    source_file: str
     section_type: str
     icd_codes: list[str]
     excerpt: str
+    chunk_text: str
+
+
+class ProtocolResponse(BaseModel):
+    protocol_id: str
+    title: str
+    source_file: str
+    text: str
 
 
 class DiagnoseResponse(BaseModel):
@@ -419,12 +428,16 @@ def _source_items(context_chunks) -> list[SourceItem]:
         if chunk.protocol_id in seen_protocols:
             continue
         seen_protocols.add(chunk.protocol_id)
+        protocol = _protocols.get(chunk.protocol_id)
+        chunk_text = chunk.text
         source_items.append(SourceItem(
             protocol_id=chunk.protocol_id,
-            title=chunk.protocol_title or chunk.protocol_id,
+            title=(protocol.title if protocol else chunk.protocol_title) or chunk.protocol_id,
+            source_file=protocol.source_file if protocol else "",
             section_type=chunk.section_type,
             icd_codes=chunk.icd_codes[:20],
-            excerpt=chunk.text[:700],
+            excerpt=chunk_text[:700],
+            chunk_text=chunk_text,
         ))
         if len(source_items) >= 6:
             break
@@ -516,3 +529,17 @@ async def web_ui():
 @app.get("/health")
 async def health():
     return {"status": "ok", "protocols": len(_protocols)}
+
+
+@app.get("/api/protocols/{protocol_id}", response_model=ProtocolResponse)
+async def get_protocol(protocol_id: str) -> ProtocolResponse:
+    """Return the extracted full text used by RAG, never the original PDF."""
+    protocol = _protocols.get(protocol_id)
+    if protocol is None:
+        raise HTTPException(status_code=404, detail="Protocol not found")
+    return ProtocolResponse(
+        protocol_id=protocol.protocol_id,
+        title=protocol.title,
+        source_file=protocol.source_file,
+        text=protocol.text,
+    )

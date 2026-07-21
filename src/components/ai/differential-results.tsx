@@ -17,6 +17,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { ProtocolViewer } from '@/components/ai/protocol-viewer';
 import type {
   DiagnosisItem,
   ProtocolSource,
@@ -48,6 +49,7 @@ export function DifferentialResults({
   const [expandedDiagnosisIdxs, setExpandedDiagnosisIdxs] = useState<Set<number>>(new Set());
   const [insertedDiagnosisIdxs, setInsertedDiagnosisIdxs] = useState<Set<number>>(new Set());
   const [insertedSourceIdxs, setInsertedSourceIdxs] = useState<Set<number>>(new Set());
+  const [viewerSource, setViewerSource] = useState<ProtocolSource | null>(null);
 
   if (!diagnoses || diagnoses.length === 0) return null;
 
@@ -355,6 +357,16 @@ export function DifferentialResults({
                     </div>
 
                     <div className="flex shrink-0 items-center gap-2">
+                      {src.protocolId && (
+                        <button
+                          type="button"
+                          onClick={() => setViewerSource(src)}
+                          className="focus-ring flex items-center gap-1 rounded-lg border border-teal-300 bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-800 hover:bg-teal-100"
+                        >
+                          <BookOpen size={13} />
+                          <span>Протокол</span>
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => handleCopyCitation(src, idx)}
@@ -400,6 +412,7 @@ export function DifferentialResults({
           </p>
         )}
       </div>
+      <ProtocolViewer source={viewerSource} onClose={() => setViewerSource(null)} />
     </div>
   );
 }

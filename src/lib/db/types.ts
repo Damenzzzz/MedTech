@@ -10,10 +10,14 @@ export type DialogueTurn = {
 };
 
 export type RagSource = {
-  id: string;
+  id?: string;
   title: string;
+  protocolId?: string;
+  sourceFile?: string;
+  sectionType?: string;
+  chunkText?: string;
   url?: string;
-  snippet?: string;
+  excerpt?: string;
 };
 
 export interface Database {
