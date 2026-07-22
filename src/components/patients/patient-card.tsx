@@ -1,9 +1,10 @@
 'use client';
 
-import { Clock, Heart, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { Clock, Heart, ArrowRight, CheckCircle2, BarChart3 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import type { StudentCaseDTO } from '@/domain/schemas';
+import type { ProgressEntry } from '@/lib/progress';
 import { Link } from '@/i18n/navigation';
 import { FallbackImage } from '@/components/ui/fallback-image';
 
@@ -11,7 +12,7 @@ interface PatientCardProps {
   item: StudentCaseDTO;
   locale: string;
   isFavorite: boolean;
-  isCompleted: boolean;
+  progressEntry?: ProgressEntry;
   onToggleFavorite: (id: string) => void;
   index: number;
 }
@@ -20,10 +21,11 @@ export function PatientCard({
   item,
   locale,
   isFavorite,
-  isCompleted,
+  progressEntry,
   onToggleFavorite,
   index,
 }: PatientCardProps) {
+  const isCompleted = Boolean(progressEntry);
   const t = useTranslations('Catalog');
   const c = useTranslations('Common');
 
@@ -78,6 +80,7 @@ export function PatientCard({
             <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm">
               <CheckCircle2 size={13} />
               {t('completed')}
+              {progressEntry && <span>· {Math.round(progressEntry.score)}%</span>}
             </span>
           )}
 
@@ -143,13 +146,32 @@ export function PatientCard({
           </span>
         </div>
 
-        <Link
-          href={`/training/${item.id}`}
-          className="focus-ring flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-teal-600 font-bold text-xs text-white shadow-sm hover:bg-teal-700 transition-all hover:scale-[1.01] active:scale-[0.99]"
-        >
-          <span>{t('start')}</span>
-          <ArrowRight size={15} />
-        </Link>
+        {isCompleted ? (
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              href={`/debrief/${item.id}`}
+              className="focus-ring flex h-11 items-center justify-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 font-bold text-xs text-emerald-800 hover:bg-emerald-100 transition-all"
+            >
+              <BarChart3 size={15} />
+              <span>{t('viewResult')}</span>
+            </Link>
+            <Link
+              href={`/training/${item.id}`}
+              className="focus-ring flex h-11 items-center justify-center gap-1.5 rounded-xl bg-teal-600 font-bold text-xs text-white shadow-sm hover:bg-teal-700 transition-all hover:scale-[1.01] active:scale-[0.99]"
+            >
+              <span>{t('retry')}</span>
+              <ArrowRight size={15} />
+            </Link>
+          </div>
+        ) : (
+          <Link
+            href={`/training/${item.id}`}
+            className="focus-ring flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-teal-600 font-bold text-xs text-white shadow-sm hover:bg-teal-700 transition-all hover:scale-[1.01] active:scale-[0.99]"
+          >
+            <span>{t('start')}</span>
+            <ArrowRight size={15} />
+          </Link>
+        )}
       </div>
     </motion.article>
   );

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { StudentCaseDTO } from '@/domain/schemas';
+import type { ProgressEntry } from '@/lib/progress';
 import { PatientCard } from './patient-card';
 import { ChevronDown } from 'lucide-react';
 
@@ -9,7 +10,7 @@ interface PatientGridProps {
   cases: StudentCaseDTO[];
   locale: string;
   favorites: string[];
-  completedIds: Set<string>;
+  progressByCase: Map<string, ProgressEntry>;
   onToggleFavorite: (id: string) => void;
 }
 
@@ -17,7 +18,7 @@ export function PatientGrid({
   cases,
   locale,
   favorites,
-  completedIds,
+  progressByCase,
   onToggleFavorite,
 }: PatientGridProps) {
   const INITIAL_PAGE_SIZE = 12;
@@ -36,7 +37,7 @@ export function PatientGrid({
             item={item}
             locale={locale}
             isFavorite={favorites.includes(item.id)}
-            isCompleted={completedIds.has(item.id)}
+            progressEntry={progressByCase.get(item.id)}
             onToggleFavorite={onToggleFavorite}
             index={idx}
           />

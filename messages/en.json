@@ -208,7 +208,9 @@
     "completed": "Completed",
     "hideCompleted": "Hide completed",
     "resetProgress": "Reset progress",
-    "resetProgressConfirm": "Reset all training progress? This cannot be undone."
+    "resetProgressConfirm": "Reset all training progress? This cannot be undone.",
+    "viewResult": "Result",
+    "retry": "Retry"
   },
   "Training": {
     "start": "Start conversation with patient",

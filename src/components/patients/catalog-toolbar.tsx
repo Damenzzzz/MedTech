@@ -48,13 +48,14 @@ export function CatalogToolbar({
       <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-xs md:grid-cols-[1.4fr_1fr_1fr_1fr_auto_auto_auto]">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
           <input
             type="text"
             aria-label={t('search')}
             placeholder={t('search')}
             value={filters.search}
             onChange={(e) => onFilterChange({ search: e.target.value })}
+            style={{ paddingLeft: '2.25rem' }}
             className="input pl-9 text-xs border-slate-200 focus:border-teal-600 h-10"
           />
           {filters.search && (
