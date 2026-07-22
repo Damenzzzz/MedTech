@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { AlertTriangle, ArrowRight, BookOpen, CheckCircle2, RotateCcw, Target, Award, ShieldAlert, Sparkles, Activity } from 'lucide-react';
+import { AlertTriangle, ArrowRight, BookOpen, CheckCircle2, RotateCcw, Target, Award, ShieldAlert, Sparkles, Activity, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { DebriefResultSchema, type DebriefReference, type DebriefResult } from '@/domain/schemas';
 import { Link } from '@/i18n/navigation';
@@ -25,23 +25,31 @@ export function DebriefView({ caseId }: { caseId: string }) {
     if (!data || !data.referencePlaceholders.some((x) => x.status === 'rag-pending')) return;
     let cancelled = false;
 
+    const applyReferences = (references: DebriefReference[]) => {
+      if (cancelled) return;
+      const next = DebriefResultSchema.parse({ ...data, referencePlaceholders: references });
+      try {
+        localStorage.setItem(`kms-debrief-${caseId}`, JSON.stringify(next));
+      } catch {
+        // Non-fatal: the debrief still renders the fetched references in memory.
+      }
+      setData(next);
+    };
+
+    // Never leave the block spinning: a failed lookup resolves to rag-unavailable.
+    const failed: DebriefReference[] = [
+      { title: t('ragTimeout'), status: 'rag-unavailable' },
+    ];
+
     fetch(`/api/session/references?caseId=${encodeURIComponent(caseId)}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((payload) => {
-        if (cancelled || !payload?.references?.length) return;
-        const next = DebriefResultSchema.parse({
-          ...data,
-          referencePlaceholders: payload.references,
-        });
-        localStorage.setItem(`kms-debrief-${caseId}`, JSON.stringify(next));
-        setData(next);
-      })
-      .catch(() => {});
+      .then((payload) => applyReferences(payload?.references?.length ? payload.references : failed))
+      .catch(() => applyReferences(failed));
 
     return () => {
       cancelled = true;
     };
-  }, [caseId, data]);
+  }, [caseId, data, t]);
 
   if (!data) {
     return (
@@ -238,8 +246,10 @@ export function DebriefView({ caseId }: { caseId: string }) {
 }
 
 function RagReferences({ title, refs }: { title: string; refs: DebriefReference[] }) {
+  const t = useTranslations('Debrief');
+
   const label = (status: DebriefReference['status']) =>
-    status === 'rag-ready' ? 'RAG подключён' : status === 'rag-unavailable' ? 'RAG недоступен' : 'Загрузка RAG';
+    status === 'rag-ready' ? t('ragReady') : status === 'rag-unavailable' ? t('ragUnavailable') : t('ragLoading');
 
   return (
     <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
@@ -249,18 +259,49 @@ function RagReferences({ title, refs }: { title: string; refs: DebriefReference[
       </div>
 
       <div className="space-y-3">
-        {refs.map((x, i) => (
-          <div key={i} className="rounded-2xl bg-slate-50/80 p-4 border border-slate-100 space-y-2">
-            <div className="flex justify-between items-start gap-4">
-              <span className="font-bold text-xs text-slate-900">{x.title}</span>
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${x.status === 'rag-ready' ? 'bg-teal-50 text-teal-800' : 'bg-amber-50 text-amber-800'}`}>
-                {label(x.status)}
-              </span>
+        {refs.map((x, i) => {
+          const pending = x.status === 'rag-pending';
+
+          return (
+            <div
+              key={i}
+              className={`rounded-2xl p-4 border space-y-2 ${
+                pending ? 'bg-teal-50/40 border-teal-100 animate-pulse' : 'bg-slate-50/80 border-slate-100'
+              }`}
+            >
+              <div className="flex justify-between items-start gap-4">
+                <span className="flex items-center gap-2 font-bold text-xs text-slate-900">
+                  {pending && <Loader2 size={14} className="shrink-0 animate-spin text-teal-600" />}
+                  {x.title}
+                </span>
+                <span
+                  className={`text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap ${
+                    x.status === 'rag-ready'
+                      ? 'bg-teal-50 text-teal-800'
+                      : pending
+                      ? 'bg-teal-50 text-teal-700'
+                      : 'bg-amber-50 text-amber-800'
+                  }`}
+                >
+                  {label(x.status)}
+                </span>
+              </div>
+
+              {pending ? (
+                <div className="space-y-1.5 pt-0.5" aria-hidden>
+                  <div className="h-2 w-full rounded-full bg-slate-200/70" />
+                  <div className="h-2 w-4/5 rounded-full bg-slate-200/70" />
+                  <div className="h-2 w-2/3 rounded-full bg-slate-200/70" />
+                </div>
+              ) : (
+                <>
+                  {x.excerpt && <p className="text-xs leading-relaxed text-slate-700 font-medium">{x.excerpt}</p>}
+                  {x.protocolId && <p className="text-[10px] font-mono text-slate-400">{x.protocolId}</p>}
+                </>
+              )}
             </div>
-            {x.excerpt && <p className="text-xs leading-relaxed text-slate-700 font-medium">{x.excerpt}</p>}
-            {x.protocolId && <p className="text-[10px] font-mono text-slate-400">{x.protocolId}</p>}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
