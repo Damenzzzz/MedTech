@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import type { StudentCaseDTO } from '@/domain/schemas';
+import { clearProgress } from '@/lib/progress';
 import { useCompletedCaseIds } from '@/lib/use-progress';
 import { useRouter, usePathname } from '@/i18n/navigation';
 import { CatalogHeader } from './catalog-header';
@@ -18,6 +20,7 @@ interface PatientCatalogProps {
 }
 
 export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
+  const tCatalog = useTranslations('Catalog');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -193,6 +196,11 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
     [cases, completedIds]
   );
 
+  const handleResetProgress = () => {
+    if (!window.confirm(tCatalog('resetProgressConfirm'))) return;
+    clearProgress();
+  };
+
   // Random Case Selector
   const handleSelectRandom = () => {
     const pool = filteredCases.length > 0 ? filteredCases : cases;
@@ -218,6 +226,7 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
         completedCount={completedCount}
         onSelectRandom={handleSelectRandom}
         onResumeLast={handleResumeLast}
+        onResetProgress={handleResetProgress}
         hasActiveSession={Boolean(trainingSession?.caseId)}
       />
 

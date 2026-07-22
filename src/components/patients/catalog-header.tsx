@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Shuffle, RotateCcw, Activity, Sparkles, Trophy } from 'lucide-react';
+import { Shuffle, RotateCcw, Activity, Sparkles, Trophy, Trash2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useUserStore } from '@/stores/user-store';
 
@@ -10,6 +10,7 @@ interface CatalogHeaderProps {
   completedCount: number;
   onSelectRandom: () => void;
   onResumeLast: () => void;
+  onResetProgress?: () => void;
   hasActiveSession: boolean;
 }
 
@@ -18,6 +19,7 @@ export function CatalogHeader({
   completedCount,
   onSelectRandom,
   onResumeLast,
+  onResetProgress,
   hasActiveSession,
 }: CatalogHeaderProps) {
   const t = useTranslations('Catalog');
@@ -58,6 +60,17 @@ export function CatalogHeader({
             <Trophy size={15} className="text-emerald-600" />
             <span>Пройдено: {completedCount} из {totalCases}</span>
           </div>
+
+          {completedCount > 0 && onResetProgress && (
+            <button
+              type="button"
+              onClick={onResetProgress}
+              className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 shadow-xs transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+            >
+              <Trash2 size={14} />
+              <span>{t('resetProgress')}</span>
+            </button>
+          )}
         </div>
       </div>
 
