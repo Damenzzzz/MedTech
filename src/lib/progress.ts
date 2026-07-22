@@ -80,6 +80,17 @@ export function getCompletedCaseIds(): Set<string> {
   return new Set(loadProgress().map((e) => e.caseId));
 }
 
+/** Wipes every recorded attempt. Callers are expected to confirm with the user first. */
+export function clearProgress(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // Storage unavailable — still reset the in-memory snapshot below.
+  }
+  cache = [];
+  for (const listener of listeners) listener();
+}
+
 /* ── External-store adapter, so components can read progress via useSyncExternalStore ── */
 
 const EMPTY: ProgressEntry[] = [];
