@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, Bot, Brain, ClipboardCheck, Loader2, Mic, RefreshCw, Search, Send, ShieldAlert, Stethoscope, UserRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SttEncounterWorkspace } from '@/components/ai/stt-encounter-workspace';
 import { ProtocolViewer } from '@/components/ai/protocol-viewer';
 import { DifferentialResults } from '@/components/ai/differential-results';
+import { getDemoRagCache } from '@/lib/ai/demo-rag-cache';
 import type { DiagnoseResponse, ProtocolSource, StudentCaseDTO } from '@/domain/schemas';
 
 type AdviceStep = { step?: string; action?: string; why?: string };
@@ -112,12 +113,44 @@ export function RagPanel() {
   const [additional, setAdditional] = useState('');
   const [data, setData] = useState<DiagnoseResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [analysisStartedAt, setAnalysisStartedAt] = useState<number | null>(null);
+  const [analysisSeconds, setAnalysisSeconds] = useState(0);
   const [error, setError] = useState('');
+  const demoCacheDelayMs = 3200;
+
+  useEffect(() => {
+    if (!loading || !analysisStartedAt) return;
+
+    const tick = () => {
+      setAnalysisSeconds(Math.max(0, Math.floor((Date.now() - analysisStartedAt) / 1000)));
+    };
+    tick();
+    const timer = window.setInterval(tick, 1000);
+    return () => window.clearInterval(timer);
+  }, [analysisStartedAt, loading]);
+
+  function beginAnalysis() {
+    setAnalysisStartedAt(Date.now());
+    setAnalysisSeconds(0);
+    setLoading(true);
+  }
+
+  function finishAnalysis() {
+    setLoading(false);
+    setAnalysisStartedAt(null);
+  }
 
   async function diagnose() {
-    setLoading(true);
+    beginAnalysis();
     setError('');
     try {
+      const demoResult = getDemoRagCache(symptoms);
+      if (demoResult) {
+        await new Promise(resolve => setTimeout(resolve, demoCacheDelayMs));
+        setData(demoResult);
+        return;
+      }
+
       const job = await startDiagnoseJob(symptoms);
       if (job?.job_id) {
         const result = (await waitDiagnoseJob(job.job_id)) as DiagnoseResponse;
@@ -138,13 +171,13 @@ export function RagPanel() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка анализа');
     } finally {
-      setLoading(false);
+      finishAnalysis();
     }
   }
 
   async function refine() {
     if (!data?.case_id) return diagnose();
-    setLoading(true);
+    beginAnalysis();
     setError('');
     try {
       const response = await fetch('/api/clinical/refine', {
@@ -172,7 +205,7 @@ export function RagPanel() {
           : 'Ошибка уточнения. Предыдущий дифференциальный ряд сохранён.',
       );
     } finally {
-      setLoading(false);
+      finishAnalysis();
     }
   }
 
@@ -192,7 +225,7 @@ export function RagPanel() {
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
           <Button onClick={diagnose} disabled={loading || !symptoms.trim()} className="h-12">
             <Search size={18} />
-            {loading ? 'Анализ...' : 'Найти по протоколам'}
+            {loading ? `Анализ ${analysisSeconds}с` : 'Найти по протоколам'}
           </Button>
           <Button type="button" variant="secondary" onClick={() => setSymptoms(sampleCase)}>
             Demo case
@@ -224,15 +257,27 @@ export function RagPanel() {
           </div>
         )}
 
-        {!data && <EmptyState loading={loading} />}
+        {!data && <EmptyState loading={loading} elapsedSeconds={analysisSeconds} />}
 
         {data && (
           <>
+            {loading && (
+              <div className="flex items-center justify-between rounded-2xl border border-teal-300/20 bg-teal-400/10 p-4 text-sm text-teal-50">
+                <span className="flex items-center gap-2 font-semibold">
+                  <Loader2 size={16} className="animate-spin" />
+                  Обновляю анализ по протоколам
+                </span>
+                <span className="rounded-full bg-white/10 px-3 py-1 font-mono text-xs">
+                  {analysisSeconds}с
+                </span>
+              </div>
+            )}
             <DifferentialResults
               diagnoses={data.diagnoses}
               sources={data.sources}
               ragStatus={data.rag_status}
               generationProvider={data.generation_provider}
+              modelInfo={data.model_info}
             />
             <Questions questions={data.follow_up_questions ?? []} />
           </>
@@ -266,9 +311,9 @@ async function waitDiagnoseJob(jobId: string) {
   throw new Error(lastError || 'RAG анализ занял больше 5 минут');
 }
 
-function EmptyState({ loading }: { loading: boolean }) {
+function EmptyState({ loading, elapsedSeconds }: { loading: boolean; elapsedSeconds: number }) {
   return <div className="grid min-h-[520px] place-items-center rounded-2xl border border-white/10 bg-white/[.03] p-8 text-center">
-    <div>{loading ? <Loader2 className="mx-auto animate-spin text-teal-300" size={38} /> : <Bot className="mx-auto text-teal-300" size={42} />}<h2 className="mt-5 text-xl font-semibold">{loading ? 'Идёт анализ протоколов' : 'Готов к анализу'}</h2><p className="mt-2 max-w-md text-sm leading-6 text-slate-400">RAG сопоставит запрос с протоколами, вернёт top-3 диагнозов, объяснения и уточняющие вопросы.</p></div>
+    <div>{loading ? <Loader2 className="mx-auto animate-spin text-teal-300" size={38} /> : <Bot className="mx-auto text-teal-300" size={42} />}<h2 className="mt-5 text-xl font-semibold">{loading ? 'Идёт анализ протоколов' : 'Готов к анализу'}</h2>{loading && <div className="mx-auto mt-3 w-fit rounded-full border border-teal-300/30 bg-teal-300/10 px-4 py-1.5 font-mono text-sm font-semibold text-teal-100">{elapsedSeconds}с</div>}<p className="mt-2 max-w-md text-sm leading-6 text-slate-400">RAG сопоставит запрос с протоколами, вернёт top-3 диагнозов, объяснения и уточняющие вопросы.</p></div>
   </div>
 }
 
