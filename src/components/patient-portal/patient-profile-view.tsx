@@ -2,13 +2,16 @@ import type { ReactNode } from 'react';
 import { getTranslations } from 'next-intl/server';
 import {
   Activity,
+  ArrowRight,
   CalendarCheck,
   ClipboardList,
   FileText,
+  MessageCircleHeart,
   Send,
   ShieldAlert,
   Stethoscope,
 } from 'lucide-react';
+import { Link } from '@/i18n/navigation';
 import type { EncounterWithDoctor } from '@/lib/db/encounters.server';
 import type { Encounter, Patient } from '@/lib/db/types';
 
@@ -66,6 +69,29 @@ export async function PatientProfileView({
           {t('profileIinLabel')}: {patient?.iin || iin}
         </p>
       </div>
+
+      {/* Visit-preparation assistant CTA */}
+      <section className="card mt-6 rounded-3xl border-teal-200 bg-gradient-to-br from-teal-50/80 via-white to-teal-50/30 p-6 sm:p-7">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-teal-100 text-teal-700">
+              <MessageCircleHeart size={24} />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">{t('assistantCtaTitle')}</h2>
+              <p className="mt-1 max-w-xl text-sm leading-6 text-slate-600">{t('assistantCtaLead')}</p>
+            </div>
+          </div>
+
+          <Link
+            href={`/patient-portal/${iin}/assistant`}
+            className="focus-ring inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 text-xs font-bold text-white shadow-md shadow-teal-600/20 transition-all hover:bg-teal-700"
+          >
+            <span>{t('assistantCtaButton')}</span>
+            <ArrowRight size={15} />
+          </Link>
+        </div>
+      </section>
 
       {encounters.length === 0 ? (
         <div className="card mt-8 flex flex-col items-center gap-4 rounded-3xl px-6 py-12 text-center">
