@@ -1,5 +1,5 @@
 import { setRequestLocale } from 'next-intl/server';
-import { Header } from '@/components/layout/header';
+import { SiteHeader } from '@/components/layout/site-header';
 import { ClinicalAIWorkspace } from '@/components/ai/clinical-ai-workspace';
 import { getCaseRepository } from '@/repositories/index.server';
 
@@ -15,7 +15,7 @@ export default async function AIAssistantPage({
 
   return (
     <div className="min-h-screen bg-[color:var(--canvas)] flex flex-col">
-      <Header />
+      <SiteHeader />
       <main className="flex-1">
         <ClinicalAIWorkspace cases={cases} locale={locale} />
       </main>

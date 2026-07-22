@@ -2,12 +2,27 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import { Activity, Menu, X, User, BookOpen, LogOut, ChevronDown } from 'lucide-react';
+import { Activity, Menu, X, User, BookOpen, LogOut, ChevronDown, FileText, MessageCircleHeart } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { useUserStore } from '@/stores/user-store';
 
-export function Header() {
+export type HeaderRole = 'doctor' | 'patient' | null;
+
+/**
+ * `minimal` renders brand + language only — used on the role picker and every
+ * sign-in screen. An anonymous visitor always collapses to `minimal`, so no
+ * navigation can leak before a role is chosen.
+ */
+export function Header({
+  role = null,
+  variant = 'full',
+  patientIin,
+}: {
+  role?: HeaderRole;
+  variant?: 'full' | 'minimal';
+  patientIin?: string;
+} = {}) {
   const t = useTranslations('Nav');
   const path = usePathname();
   const router = useRouter();
@@ -45,16 +60,42 @@ export function Header() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const navItems = [
+  const isMinimal = variant === 'minimal' || role === null;
+  const isDoctor = !isMinimal && role === 'doctor';
+  const isPatient = !isMinimal && role === 'patient';
+
+  const doctorNavItems = [
     { href: '/', label: t('home') },
     { href: '/patients', label: t('patients') },
     { href: '/dashboard', label: t('dashboard') },
     { href: '/ai-assistant', label: t('ai') },
   ];
 
+  // A patient only ever sees their own portal — never patients/dashboard/ai-assistant/builder.
+  const patientNavItems = patientIin
+    ? [
+        { href: `/patient-portal/${patientIin}`, label: t('myCard') },
+        { href: `/patient-portal/${patientIin}/assistant`, label: t('visitAssistant') },
+      ]
+    : [];
+
+  const navItems = isDoctor ? doctorNavItems : isPatient ? patientNavItems : [];
+
   // Match on a full segment so /patients does not light up for /patients-archive.
   const isNavActive = (href: string) =>
     href === '/' ? path === '/' || path === '' : path === href || path.startsWith(`${href}/`);
+
+  const handleSignOut = async () => {
+    setDropdownOpen(false);
+    setMobileOpen(false);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // Even if the call fails, send the user back to the role picker.
+    }
+    router.push('/patient-portal');
+    router.refresh();
+  };
 
   // Helper to extract initials
   const initials = profile?.name
@@ -66,26 +107,61 @@ export function Header() {
         .join('')
     : '??';
 
+  const languageSwitcher = (
+    <div
+      className="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1"
+      role="group"
+      aria-label={t('languageLabel')}
+    >
+      {(['ru', 'kk', 'en'] as const).map((locale) => (
+        <button
+          key={locale}
+          type="button"
+          onClick={() => router.replace(path, { locale })}
+          aria-label={t('switchLanguage', { locale: locale.toUpperCase() })}
+          className="focus-ring rounded-lg px-2.5 py-1 text-xs font-bold uppercase text-slate-600 transition-colors hover:bg-white hover:text-teal-700 hover:shadow-xs"
+        >
+          {locale}
+        </button>
+      ))}
+    </div>
+  );
+
+  const brand = (
+    <Link
+      href={isPatient && patientIin ? `/patient-portal/${patientIin}` : '/'}
+      className="focus-ring flex items-center gap-2.5 rounded-xl transition-transform hover:scale-[1.01]"
+    >
+      <div className="grid size-10 place-items-center rounded-xl bg-teal-600 text-white shadow-sm shadow-teal-600/30">
+        <Activity size={20} strokeWidth={2.5} />
+      </div>
+      <div className="flex flex-col">
+        <span className="font-bold tracking-tight text-slate-900 leading-tight text-base">
+          КазМедСим
+        </span>
+        <span className="text-[10px] font-semibold tracking-wider text-teal-600 uppercase">
+          MedTech
+        </span>
+      </div>
+    </Link>
+  );
+
+  // Minimal: brand + language only. No nav, no profile menu, no burger.
+  if (isMinimal) {
+    return (
+      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md transition-shadow duration-200 shadow-xs">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+          {brand}
+          {languageSwitcher}
+        </div>
+      </header>
+    );
+  }
+
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md transition-shadow duration-200 shadow-xs">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        {/* Brand Logo */}
-        <Link
-          href="/"
-          className="focus-ring flex items-center gap-2.5 rounded-xl transition-transform hover:scale-[1.01]"
-        >
-          <div className="grid size-10 place-items-center rounded-xl bg-teal-600 text-white shadow-sm shadow-teal-600/30">
-            <Activity size={20} strokeWidth={2.5} />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-bold tracking-tight text-slate-900 leading-tight text-base">
-              КазМедСим
-            </span>
-            <span className="text-[10px] font-semibold tracking-wider text-teal-600 uppercase">
-              MedTech
-            </span>
-          </div>
-        </Link>
+        {brand}
 
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-1 md:flex">
@@ -118,23 +194,18 @@ export function Header() {
 
         {/* Desktop Controls (Lang + User Dropdown) */}
         <div className="hidden items-center gap-3 md:flex">
-          {/* Language Switcher */}
-          <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1" role="group" aria-label={t('languageLabel')}>
-            {(['ru', 'kk', 'en'] as const).map((locale) => (
-              <button
-                key={locale}
-                type="button"
-                onClick={() => router.replace(path, { locale })}
-                aria-label={t('switchLanguage', { locale: locale.toUpperCase() })}
-                className="focus-ring rounded-lg px-2.5 py-1 text-xs font-bold uppercase text-slate-600 transition-colors hover:bg-white hover:text-teal-700 hover:shadow-xs"
-              >
-                {locale}
-              </button>
-            ))}
-          </div>
+          {languageSwitcher}
 
-          {/* User Profile / Avatar Dropdown */}
-          {hydrated && profile ? (
+          {isPatient ? (
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="focus-ring inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:border-red-200 hover:bg-red-50 hover:text-red-700 transition-all"
+            >
+              <LogOut size={15} />
+              {t('switchRole')}
+            </button>
+          ) : hydrated && profile ? (
             <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
@@ -190,10 +261,18 @@ export function Header() {
                           clearProfile();
                           router.push('/');
                         }}
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 transition-colors text-left"
+                      >
+                        <User size={15} className="text-slate-500" />
+                        {t('changeName')}
+                      </button>
+
+                      <button
+                        onClick={handleSignOut}
                         className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors text-left"
                       >
                         <LogOut size={15} />
-                        {t('changeName')}
+                        {t('switchRole')}
                       </button>
                     </div>
                   </motion.div>
@@ -248,7 +327,7 @@ export function Header() {
             >
               <div className="flex flex-col gap-3">
                 {/* User Header if logged in */}
-                {hydrated && profile && (
+                {isDoctor && hydrated && profile && (
                   <div className="flex items-center gap-3 rounded-2xl bg-teal-50/70 p-3 border border-teal-100 mb-2">
                     <div className="grid size-10 place-items-center rounded-xl bg-teal-600 font-bold text-white">
                       {initials}
@@ -265,8 +344,9 @@ export function Header() {
                 )}
 
                 {/* Nav Links */}
-                {navItems.map((item) => {
+                {navItems.map((item, index) => {
                   const isActive = isNavActive(item.href);
+                  const Icon = isPatient ? (index === 0 ? FileText : MessageCircleHeart) : null;
 
                   return (
                     <Link
@@ -280,13 +360,16 @@ export function Header() {
                           : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
                       }`}
                     >
-                      <span>{item.label}</span>
+                      <span className="flex items-center gap-2">
+                        {Icon && <Icon size={18} />}
+                        {item.label}
+                      </span>
                     </Link>
                   );
                 })}
 
                 {/* Additional profile options if logged in */}
-                {hydrated && profile && (
+                {isDoctor && hydrated && profile && (
                   <div className="mt-2 grid gap-2 border-t border-slate-100 pt-3">
                     <button
                       onClick={() => {
@@ -305,13 +388,22 @@ export function Header() {
                         clearProfile();
                         router.push('/');
                       }}
-                      className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700"
+                      className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-700"
                     >
-                      <LogOut size={16} />
+                      <User size={16} />
                       {t('changeName')}
                     </button>
                   </div>
                 )}
+
+                {/* Sign out / switch role — available to every signed-in role */}
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700"
+                >
+                  <LogOut size={16} />
+                  {t('switchRole')}
+                </button>
 
                 {/* Mobile Language Switcher */}
                 <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-2">

@@ -4,7 +4,9 @@ import {routing,type Locale} from './src/i18n/routing';
 import {SESSION_COOKIE,verifySession} from './src/lib/auth/session.server';
 
 const handleI18nRouting=createMiddleware(routing);
-const DOCTOR_ONLY_SEGMENTS=new Set(['ai-assistant','dashboard']);
+// Every doctor workspace segment. The role picker (`/`), `login` and `patient-portal`
+// stay open so a signed-out visitor cannot be bounced into a redirect loop.
+const DOCTOR_ONLY_SEGMENTS=new Set(['ai-assistant','dashboard','patients','builder','training','debrief']);
 
 function isLocale(value:string):value is Locale{return (routing.locales as readonly string[]).includes(value)}
 
@@ -22,7 +24,9 @@ export default async function proxy(request:NextRequest){
   const session=token?await verifySession(token):null;
 
   if(DOCTOR_ONLY_SEGMENTS.has(section) && session?.role!=='doctor'){
-    return NextResponse.redirect(new URL(`/${locale}/patient-portal`,request.url));
+    // Send a signed-in patient straight to their own card; anyone else to the role picker.
+    const target=session?.role==='patient'?`/${locale}/patient-portal/${session.iin}`:`/${locale}/patient-portal`;
+    return NextResponse.redirect(new URL(target,request.url));
   }
 
   if(section==='patient-portal' && sub && sub!=='doctor' && sub!=='patient'){

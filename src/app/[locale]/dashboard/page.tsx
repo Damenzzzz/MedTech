@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { Header } from '@/components/layout/header';
+import { SiteHeader } from '@/components/layout/site-header';
 import { DoctorPatientDashboard } from '@/components/dashboard/doctor-patient-dashboard';
 import { SESSION_COOKIE, verifySession } from '@/lib/auth/session.server';
 import { listDoctorPatients } from '@/lib/db/encounters.server';
@@ -13,7 +13,7 @@ export default async function Dashboard({ params }: { params: Promise<{ locale: 
   const patients = await listDoctorPatients(session.doctorId);
   return (
     <>
-      <Header />
+      <SiteHeader />
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <DoctorPatientDashboard patients={patients} locale={locale} />
       </main>

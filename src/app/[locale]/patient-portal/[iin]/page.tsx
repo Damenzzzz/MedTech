@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
-import { Header } from '@/components/layout/header';
+import { SiteHeader } from '@/components/layout/site-header';
 import { PatientProfileView } from '@/components/patient-portal/patient-profile-view';
 import { SESSION_COOKIE, verifySession } from '@/lib/auth/session.server';
 import { getPatientByIin } from '@/lib/db/patients.server';
@@ -34,7 +34,7 @@ export default async function PatientProfilePage({
 
   return (
     <div className="min-h-screen bg-[color:var(--canvas)] flex flex-col">
-      <Header />
+      <SiteHeader />
       <main className="flex-1">
         <PatientProfileView patient={patient} iin={iin} encounters={encounters} locale={locale} />
       </main>
