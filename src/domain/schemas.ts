@@ -541,7 +541,8 @@ export const DiagnoseResponseSchema = z.object({
   rag_status: RagStatusSchema.default('fallback'),
   cached_context: z.boolean().default(false),
   interaction_count: z.number().default(1),
-  generation_provider: z.enum(['alem', 'mock']).default('alem'),
+  generation_provider: z.string().default('alem'),
+  model_info: z.record(z.string(), z.unknown()).optional(),
   request_id: z.string().optional(),
 });
 export type DiagnoseResponse = z.infer<typeof DiagnoseResponseSchema>;
@@ -566,5 +567,3 @@ export const PatientEntrySchema = z.object({
   iin: z.string().trim().regex(IIN_REGEX),
 });
 export type PatientEntryInput = z.infer<typeof PatientEntrySchema>;
-
-
