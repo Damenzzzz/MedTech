@@ -6,7 +6,7 @@
   "specialty": "pulmonology",
   "portrait": "/patients/copd-exacerbation/portrait.png",
   "portraitFallback": "/patients/copd-exacerbation/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

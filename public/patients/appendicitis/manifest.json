@@ -6,7 +6,7 @@
   "specialty": "gastroenterology",
   "portrait": "/patients/appendicitis/portrait.png",
   "portraitFallback": "/patients/appendicitis/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

@@ -6,7 +6,7 @@
   "specialty": "therapy",
   "portrait": "/patients/anemia/portrait.png",
   "portraitFallback": "/patients/anemia/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

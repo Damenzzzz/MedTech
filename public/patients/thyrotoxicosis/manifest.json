@@ -6,7 +6,7 @@
   "specialty": "endocrinology",
   "portrait": "/patients/thyrotoxicosis/portrait.png",
   "portraitFallback": "/patients/thyrotoxicosis/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

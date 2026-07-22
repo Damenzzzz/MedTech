@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { Stethoscope, Search, Send, Bot } from 'lucide-react';
 import type { StudentCaseDTO } from '@/domain/schemas';
+import { FallbackImage } from '@/components/ui/fallback-image';
 
 interface SimulatorPanelProps {
   cases: StudentCaseDTO[];
@@ -126,7 +126,7 @@ export function SimulatorPanel({ cases, locale }: SimulatorPanelProps) {
                 }`}
               >
                 <div className="relative size-10 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-200">
-                  <Image src={item.patient.avatar} alt={name} fill className="object-cover" unoptimized />
+                  <FallbackImage key={item.id} src={item.patient.avatar} alt={name} fill className="object-cover" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <h4 className="text-xs font-bold truncate">{name}</h4>
@@ -143,7 +143,7 @@ export function SimulatorPanel({ cases, locale }: SimulatorPanelProps) {
         {/* Scenario Header */}
         <div className="flex items-center gap-4 border-b border-slate-100 pb-4">
           <div className="relative size-14 shrink-0 overflow-hidden rounded-2xl border-2 border-teal-200 bg-slate-100 shadow-sm">
-            <Image src={selectedCase.patient.avatar} alt={patientName} fill className="object-cover" unoptimized />
+            <FallbackImage key={selectedCase.id} src={selectedCase.patient.avatar} alt={patientName} fill className="object-cover" />
           </div>
           <div>
             <div className="flex items-center gap-2">

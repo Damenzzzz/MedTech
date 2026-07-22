@@ -6,7 +6,7 @@
   "specialty": "gastroenterology",
   "portrait": "/patients/pancreatitis/portrait.png",
   "portraitFallback": "/patients/pancreatitis/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

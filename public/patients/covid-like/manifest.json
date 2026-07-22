@@ -6,7 +6,7 @@
   "specialty": "infectious",
   "portrait": "/patients/covid-like/portrait.png",
   "portraitFallback": "/patients/covid-like/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

@@ -6,7 +6,7 @@
   "specialty": "therapy",
   "portrait": "/patients/pyelonephritis/portrait.png",
   "portraitFallback": "/patients/pyelonephritis/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

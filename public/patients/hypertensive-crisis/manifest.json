@@ -6,7 +6,7 @@
   "specialty": "cardiology",
   "portrait": "/patients/hypertensive-crisis/portrait.png",
   "portraitFallback": "/patients/hypertensive-crisis/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

@@ -6,7 +6,7 @@
   "specialty": "endocrinology",
   "portrait": "/patients/hypothyroid-myxedema/portrait.png",
   "portraitFallback": "/patients/hypothyroid-myxedema/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",
