@@ -26,6 +26,7 @@ interface DifferentialResultsProps {
   sources?: ProtocolSource[];
   ragStatus?: RagStatus;
   generationProvider?: string;
+  modelInfo?: Record<string, unknown>;
   onRequestRetry?: () => void;
 }
 
@@ -34,6 +35,7 @@ export function DifferentialResults({
   sources = [],
   ragStatus = 'rag-ready',
   generationProvider = 'alem',
+  modelInfo,
 }: DifferentialResultsProps) {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [expandedSourceIdx, setExpandedSourceIdx] = useState<number | null>(null);
@@ -61,6 +63,8 @@ export function DifferentialResults({
   };
 
   const hasSources = Array.isArray(sources) && sources.length > 0;
+  const ragMarker = typeof modelInfo?.rag_marker === 'string' ? modelInfo.rag_marker : '';
+  const modeMarker = typeof modelInfo?.mode_marker === 'string' ? modelInfo.mode_marker : '';
 
   return (
     <div className="space-y-6">
@@ -87,13 +91,22 @@ export function DifferentialResults({
 
       {/* Ranked Diagnoses Cards */}
       <div className="space-y-4">
-        <h3 className="text-base font-bold text-slate-900 flex items-center justify-between">
-          <span className="flex items-center gap-2">
+        <h3 className="flex flex-wrap items-center justify-between gap-3 text-base font-bold text-slate-900">
+          <span className="flex min-w-0 items-center gap-2">
             <Activity size={18} className="text-teal-600" />
             Дифференциально-диагностический ряд ({diagnoses.length})
           </span>
-          <span className="text-xs font-medium text-slate-500">
-            LLM: <span className="font-bold text-teal-700">{generationProvider}</span>
+          <span
+            className="inline-flex max-w-full items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-500"
+            title={ragMarker || undefined}
+          >
+            <span className="shrink-0">LLM:</span>
+            <span className="min-w-0 truncate font-bold text-teal-700">{generationProvider}</span>
+            {modeMarker && (
+              <span className="grid size-5 shrink-0 place-items-center rounded-full bg-slate-900 text-[11px] font-black text-white">
+                {modeMarker}
+              </span>
+            )}
           </span>
         </h3>
 

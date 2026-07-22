@@ -456,7 +456,8 @@ export const DiagnoseResponseSchema = z.object({
   rag_status: RagStatusSchema.default('fallback'),
   cached_context: z.boolean().default(false),
   interaction_count: z.number().default(1),
-  generation_provider: z.enum(['alem', 'mock']).default('alem'),
+  generation_provider: z.string().default('alem'),
+  model_info: z.record(z.string(), z.unknown()).optional(),
   request_id: z.string().optional(),
 });
 export type DiagnoseResponse = z.infer<typeof DiagnoseResponseSchema>;
@@ -468,5 +469,4 @@ export const RefineInputSchema = z.object({
   locale: LocaleSchema.optional().default('ru'),
 });
 export type RefineInput = z.infer<typeof RefineInputSchema>;
-
 
