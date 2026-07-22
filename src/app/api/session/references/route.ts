@@ -1,6 +1,8 @@
 import {getRagReferencesByCaseId} from '@/services/debrief.server';
 
-export const maxDuration=60;
+export const dynamic='force-dynamic';
+// Job-based RAG polling can run up to ~3 min, same budget as /api/clinical/diagnose.
+export const maxDuration=300;
 
 export async function GET(request:Request){
  try{

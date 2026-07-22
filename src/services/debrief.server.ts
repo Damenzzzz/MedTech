@@ -30,56 +30,114 @@ function buildRagQuery(item: MedicalCase, session?: TrainingSession) {
   ].filter(Boolean).join('\n');
 }
 
-export async function getRagReferences(item: MedicalCase, session?: TrainingSession): Promise<DebriefReference[]> {
-  const base = process.env.RAG_SERVICE_URL;
-  if (!base)
-    return [
-      DebriefReferenceSchema.parse({
-        title: 'RAG backend не настроен для этого окружения',
-        status: 'rag-unavailable',
-        excerpt: 'Укажите RAG_SERVICE_URL, чтобы debrief подтягивал источники из протоколов.',
-      }),
-    ];
+type RagPayload = { sources?: RagSource[]; diagnoses?: { sources?: RagSource[] }[] };
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isLocalRag(base: string) {
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(base.trim());
+}
+
+/**
+ * The deployed RAG service only answers through the job endpoint — the synchronous
+ * POST /diagnose times out in production. Mirrors `diagnoseViaJob` in
+ * src/app/api/clinical/diagnose/route.ts: start a job, then poll until completion.
+ */
+async function fetchRagViaJob(base: string, body: { symptoms: string }): Promise<RagPayload | null> {
+  const root = base.replace(/\/$/, '');
+  try {
+    const start = await fetch(`${root}/api/diagnose-jobs`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!start.ok) return null;
+    const started = (await start.json()) as { job_id?: string; result?: RagPayload };
+    if (started.result) return started.result;
+    if (!started.job_id) return null;
+
+    const deadline = Date.now() + 185000;
+    while (Date.now() < deadline) {
+      await sleep(3500);
+      const statusResponse = await fetch(`${root}/api/diagnose-jobs/${started.job_id}`, {
+        cache: 'no-store',
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!statusResponse.ok) continue;
+      const status = (await statusResponse.json()) as { status?: string; result?: RagPayload };
+      if (status.status === 'completed' && status.result) return status.result;
+      if (status.status === 'failed' || status.status === 'not_found') {
+        console.error('[debrief fetchRagViaJob]', { status: status.status });
+        return null;
+      }
+    }
+  } catch (err) {
+    console.error('[debrief fetchRagViaJob error]', { err: err instanceof Error ? err.message : String(err) });
+  }
+  return null;
+}
+
+/** Synchronous fallback — only usable against a local RAG instance. */
+async function fetchRagSync(base: string, body: { symptoms: string }): Promise<RagPayload | null> {
   try {
     const response = await fetch(`${base.replace(/\/$/, '')}/diagnose`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ symptoms: buildRagQuery(item, session) }),
+      body: JSON.stringify(body),
       cache: 'no-store',
       signal: AbortSignal.timeout(55000),
     });
-    if (!response.ok) throw new Error(`RAG failed ${response.status}`);
-    const data = (await response.json()) as { sources?: RagSource[]; diagnoses?: { sources?: RagSource[] }[] };
-    const raw = [...(data.sources ?? []), ...((data.diagnoses ?? []).flatMap((d) => d.sources ?? []))];
-    const seen = new Set<string>();
-    const refs = raw
-      .map((s, i) => {
-        const title = s.title || s.protocol_id || `Источник RAG ${i + 1}`;
-        const key = `${s.protocol_id ?? ''}:${title}:${s.excerpt ?? ''}`;
-        if (seen.has(key)) return null;
-        seen.add(key);
-        return DebriefReferenceSchema.parse({ title, status: 'rag-ready', protocolId: s.protocol_id, excerpt: s.excerpt });
-      })
-      .filter(Boolean)
-      .slice(0, 3) as DebriefReference[];
-    return refs.length
-      ? refs
-      : [
-          DebriefReferenceSchema.parse({
-            title: 'RAG ответил, но источники не вернул',
-            status: 'rag-unavailable',
-            excerpt: 'Проверьте формат ответа backend /diagnose.',
-          }),
-        ];
+    if (!response.ok) return null;
+    return (await response.json()) as RagPayload;
   } catch {
-    return [
-      DebriefReferenceSchema.parse({
-        title: 'RAG backend недоступен во время debrief',
-        status: 'rag-unavailable',
-        excerpt: 'Проверьте, что Python RAG service запущен и RAG_SERVICE_URL указывает на него.',
-      }),
-    ];
+    return null;
   }
+}
+
+function toReferences(data: RagPayload): DebriefReference[] {
+  const raw = [...(data.sources ?? []), ...((data.diagnoses ?? []).flatMap((d) => d.sources ?? []))];
+  const seen = new Set<string>();
+  return raw
+    .map((s, i) => {
+      const title = s.title || s.protocol_id || `Источник RAG ${i + 1}`;
+      const key = `${s.protocol_id ?? ''}:${title}:${s.excerpt ?? ''}`;
+      if (seen.has(key)) return null;
+      seen.add(key);
+      return DebriefReferenceSchema.parse({ title, status: 'rag-ready', protocolId: s.protocol_id, excerpt: s.excerpt });
+    })
+    .filter(Boolean)
+    .slice(0, 3) as DebriefReference[];
+}
+
+function unavailable(title: string, excerpt: string): DebriefReference[] {
+  return [DebriefReferenceSchema.parse({ title, status: 'rag-unavailable', excerpt })];
+}
+
+export async function getRagReferences(item: MedicalCase, session?: TrainingSession): Promise<DebriefReference[]> {
+  const base = process.env.RAG_SERVICE_URL;
+  if (!base)
+    return unavailable(
+      'RAG backend не настроен для этого окружения',
+      'Укажите RAG_SERVICE_URL, чтобы debrief подтягивал источники из протоколов.',
+    );
+
+  const body = { symptoms: buildRagQuery(item, session) };
+  const data = (await fetchRagViaJob(base, body)) ?? (isLocalRag(base) ? await fetchRagSync(base, body) : null);
+
+  if (!data)
+    return unavailable(
+      'RAG backend недоступен во время debrief',
+      'Проверьте, что Python RAG service запущен и RAG_SERVICE_URL указывает на него.',
+    );
+
+  const refs = toReferences(data);
+  return refs.length
+    ? refs
+    : unavailable('RAG ответил, но источники не вернул', 'Проверьте формат ответа backend /api/diagnose-jobs.');
 }
 
 export async function getRagReferencesByCaseId(caseId: string) {
@@ -249,7 +307,14 @@ export async function scoreSession(raw: unknown): Promise<DebriefResult> {
     strengths: strengths.length ? strengths : ['Сессия завершена с разбором результатов'],
     recommendations: recommendations.length ? recommendations : ['Продолжайте регулярные тренировки'],
     timeline: session.actions,
-    referencePlaceholders: await getRagReferences(item, session),
+    // Scoring stays deterministic and network-free: the debrief screen lazily
+    // pulls the real protocols via GET /api/session/references.
+    referencePlaceholders: [
+      DebriefReferenceSchema.parse({
+        title: 'Загрузка источников из протоколов…',
+        status: 'rag-pending',
+      }),
+    ],
     correctDiagnosis: `${item.correctDiagnosis.code} — ${local(item.correctDiagnosis.name)}`,
   });
 }
