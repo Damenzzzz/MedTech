@@ -59,6 +59,43 @@ describe('Stage 2 — STT & Medical Protocol Draft Tests', () => {
       expect(url).not.toContain('/v1/responses');
     });
 
+    it('1b. STT preserves speaker separation but never infers doctor/patient from the speaker index', async () => {
+      process.env.STT_PROVIDER = 'openai';
+      process.env.OPENAI_API_KEY = 'sk-test-openai-stt';
+      process.env.OPENAI_BASE_URL = 'https://api.openai.com/v1';
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            text: 'Здравствуйте доктор. Что вас беспокоит?',
+            duration: 6,
+            segments: [
+              { speaker: 'speaker_0', text: 'Здравствуйте, доктор.', start: 0, end: 2 },
+              { speaker: 'speaker_1', text: 'Что вас беспокоит?', start: 2, end: 4 },
+              { speaker: 'speaker_0', text: 'У меня болит голова.', start: 4, end: 6 },
+            ],
+          }),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const form = new FormData();
+      form.append('audio', new File(['dummy'], 'audio.webm', { type: 'audio/webm' }));
+
+      const res = await transcribeRoute(createMockFormRequest(form));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+
+      // Roles are the LLM's job (Prompt B) — STT must not guess them.
+      expect(body.turns.map((t: { speaker: string }) => t.speaker)).toEqual(['unknown', 'unknown', 'unknown']);
+      // ...but "who spoke when" must survive as stable labels.
+      expect(body.turns.map((t: { speakerLabel?: string }) => t.speakerLabel)).toEqual([
+        'speaker_0',
+        'speaker_1',
+        'speaker_0',
+      ]);
+    });
+
     it('2. /api/transcribe never calls OpenAI chat completions', async () => {
       process.env.STT_PROVIDER = 'openai';
       process.env.OPENAI_API_KEY = 'sk-test-key';

@@ -4,7 +4,9 @@
   "age": 35,
   "sex": "male",
   "specialty": "infectious",
-  "portrait": "/patients/influenza/portrait.svg",
+  "portrait": "/patients/influenza/portrait.png",
+  "portraitFallback": "/patients/influenza/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

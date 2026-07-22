@@ -4,7 +4,9 @@
   "age": 44,
   "sex": "female",
   "specialty": "infectious",
-  "portrait": "/patients/covid-like/portrait.svg",
+  "portrait": "/patients/covid-like/portrait.png",
+  "portraitFallback": "/patients/covid-like/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

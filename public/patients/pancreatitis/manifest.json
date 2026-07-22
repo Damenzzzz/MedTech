@@ -4,7 +4,9 @@
   "age": 41,
   "sex": "male",
   "specialty": "gastroenterology",
-  "portrait": "/patients/pancreatitis/portrait.svg",
+  "portrait": "/patients/pancreatitis/portrait.png",
+  "portraitFallback": "/patients/pancreatitis/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

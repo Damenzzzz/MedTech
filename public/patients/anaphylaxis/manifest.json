@@ -4,7 +4,9 @@
   "age": 31,
   "sex": "female",
   "specialty": "emergency",
-  "portrait": "/patients/anaphylaxis/portrait.svg",
+  "portrait": "/patients/anaphylaxis/portrait.png",
+  "portraitFallback": "/patients/anaphylaxis/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

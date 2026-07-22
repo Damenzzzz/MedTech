@@ -4,7 +4,9 @@
   "age": 68,
   "sex": "female",
   "specialty": "infectious",
-  "portrait": "/patients/sepsis/portrait.svg",
+  "portrait": "/patients/sepsis/portrait.png",
+  "portraitFallback": "/patients/sepsis/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

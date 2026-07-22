@@ -4,7 +4,9 @@
   "age": 55,
   "sex": "male",
   "specialty": "endocrinology",
-  "portrait": "/patients/hypothyroid-myxedema/portrait.svg",
+  "portrait": "/patients/hypothyroid-myxedema/portrait.png",
+  "portraitFallback": "/patients/hypothyroid-myxedema/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

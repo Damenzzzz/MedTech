@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 import { IIN_REGEX } from '@/domain/schemas';
@@ -13,7 +13,6 @@ import { IIN_REGEX } from '@/domain/schemas';
 export function PatientEntryForm() {
   const t = useTranslations('PatientPortal');
   const router = useRouter();
-  const [notFound, setNotFound] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
   const schema = z.object({
@@ -28,7 +27,6 @@ export function PatientEntryForm() {
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (data: FormData) => {
-    setNotFound(false);
     setServerError(null);
 
     const response = await fetch('/api/auth/patient', {
@@ -37,10 +35,6 @@ export function PatientEntryForm() {
       body: JSON.stringify(data),
     });
 
-    if (response.status === 404) {
-      setNotFound(true);
-      return;
-    }
     if (!response.ok) {
       setServerError(t('patientError'));
       return;
@@ -61,25 +55,23 @@ export function PatientEntryForm() {
         <span>{t('demoNotice')}</span>
       </div>
 
-      <label className="mt-7 block text-sm font-semibold">
+      <label htmlFor="patient-iin" className="mt-7 block text-sm font-semibold">
         {t('iinLabel')}
-        <input
-          autoFocus
-          inputMode="numeric"
-          maxLength={12}
-          className="input mt-2"
-          placeholder={t('iinPlaceholder')}
-          {...register('iin')}
-        />
       </label>
+      <input
+        id="patient-iin"
+        autoFocus
+        inputMode="numeric"
+        maxLength={12}
+        className="focus-ring input mt-2"
+        placeholder={t('iinPlaceholder')}
+        aria-invalid={errors.iin ? true : undefined}
+        aria-describedby={errors.iin ? 'patient-iin-error' : undefined}
+        {...register('iin')}
+      />
       {errors.iin && (
-        <p role="alert" className="mt-2 text-sm text-red-600">
+        <p id="patient-iin-error" role="alert" className="mt-2 text-sm text-red-600">
           {errors.iin.message}
-        </p>
-      )}
-      {notFound && (
-        <p role="alert" className="mt-2 text-sm text-red-600">
-          {t('iinNotFound')}
         </p>
       )}
       {serverError && (
@@ -88,7 +80,8 @@ export function PatientEntryForm() {
         </p>
       )}
 
-      <Button className="mt-6 w-full" disabled={isSubmitting}>
+      <Button className="mt-6 w-full" disabled={isSubmitting} aria-busy={isSubmitting}>
+        {isSubmitting && <Loader2 className="animate-spin" size={16} />}
         {t('submit')}
       </Button>
     </form>

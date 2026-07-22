@@ -106,10 +106,15 @@ function buildStructurePromptSystem(): string {
 {"turns": [{"turn_index": 0, "speaker_label": "...", "text": "...", "start_time": 0.0}]}`;
 }
 
+/** Diarization label if present, otherwise the coarse speaker field. */
+function sourceLabel(turn: { speaker: string; speakerLabel?: string }): string {
+  return turn.speakerLabel?.trim() || turn.speaker;
+}
+
 function buildStructurePromptUser(input: StructureDialogueRequest): string {
   const turnsBlock = input.turns.length
     ? input.turns
-        .map((t, i) => `${i}. [${t.speaker}]${typeof t.start === 'number' ? ` (${t.start}s)` : ''}: ${t.text}`)
+        .map((t, i) => `${i}. [${sourceLabel(t)}]${typeof t.start === 'number' ? ` (${t.start}s)` : ''}: ${t.text}`)
         .join('\n')
     : '(метки спикеров и таймкоды отсутствуют)';
 
@@ -152,7 +157,7 @@ function mockStructureTurns(input: StructureDialogueRequest): StructuredTurn[] {
   if (input.turns.length) {
     return input.turns.map((t, i) => ({
       turn_index: i,
-      speaker_label: t.speaker,
+      speaker_label: sourceLabel(t),
       text: t.text,
       start_time: t.start,
     }));
@@ -168,14 +173,36 @@ function mockStructureTurns(input: StructureDialogueRequest): StructuredTurn[] {
 function buildRolePromptSystem(): string {
   return `Ты медицинский ассистент. На вход подан уже структурированный по репликам диалог врача и пациента (без ролей).
 
-Задача: для каждой реплики определить role: "doctor" или "patient", опираясь на контекст (кто спрашивает про симптомы/анамнез/жалобы — обычно врач, кто отвечает от первого лица о своём состоянии — обычно пациент).
+Задача: для каждой реплики определить role: "doctor" или "patient", опираясь ИСКЛЮЧИТЕЛЬНО на смысл всего диалога.
+
+КАК ОТЛИЧИТЬ РОЛИ ПО СМЫСЛУ:
+- Врач: задаёт вопросы о жалобах, анамнезе, длительности и характере симптомов; обращается на «вы» («что вас беспокоит», «как давно», «принимали ли»); назначает обследования и лечение; объясняет диагноз.
+- Пациент: описывает своё состояние от первого лица («у меня болит», «чувствую», «принимал»); отвечает на вопросы; обращается к собеседнику «доктор».
 
 СТРОГИЕ ПРАВИЛА:
-1. Один и тот же speaker_label должен соответствовать ОДНОЙ роли на протяжении всего диалога — сохраняй консистентность.
-2. Если по смыслу середина диалога явно противоречит ранее присвоенной роли для этого speaker_label (например, метки спикеров перепутаны в источнике), скорректируй роль, ориентируясь на смысл реплики, а не на исходную метку.
-3. НЕ меняй текст реплик, их порядок, turn_index, speaker_label или start_time — только добавь поле role.
-4. Верни СТРОГО валидный JSON вида:
-{"turns": [{"turn_index": 0, "speaker_label": "...", "text": "...", "start_time": 0.0, "role": "doctor"}]}`;
+1. Метка speaker_label — это ТОЛЬКО результат диаризации («кто говорил»), она НЕ несёт информации о роли. Порядковый номер метки (speaker_0, speaker_1) НИЧЕГО не значит: speaker_0 — не обязательно врач. Никогда не выводи роль из номера метки.
+2. Один и тот же speaker_label должен соответствовать ОДНОЙ роли на протяжении всего диалога — сохраняй консистентность. Определи роль каждой метки по совокупности ВСЕХ её реплик, а не по одной.
+3. Если исходные метки перепутаны или смысл противоречит первому впечатлению, ориентируйся на смысл реплик, а не на метку.
+4. Первым может говорить как врач, так и пациент — не предполагай очередность заранее.
+5. НЕ меняй текст реплик, их порядок, turn_index, speaker_label или start_time — только добавь поле role.
+6. Верни СТРОГО валидный JSON вида:
+{"turns": [{"turn_index": 0, "speaker_label": "...", "text": "...", "start_time": 0.0, "role": "doctor"}]}
+
+ПРИМЕР (метки в источнике перепутаны — роль определяется по смыслу):
+Вход:
+{"turns": [
+  {"turn_index": 0, "speaker_label": "speaker_0", "text": "Здравствуйте, доктор. У меня третий день болит горло."},
+  {"turn_index": 1, "speaker_label": "speaker_1", "text": "Здравствуйте. Температуру измеряли?"},
+  {"turn_index": 2, "speaker_label": "speaker_0", "text": "Да, вчера было 37.8."},
+  {"turn_index": 3, "speaker_label": "speaker_1", "text": "Хорошо, давайте посмотрим горло и сдадим общий анализ крови."}
+]}
+Правильный выход (speaker_0 = пациент, несмотря на нулевой номер):
+{"turns": [
+  {"turn_index": 0, "speaker_label": "speaker_0", "text": "Здравствуйте, доктор. У меня третий день болит горло.", "role": "patient"},
+  {"turn_index": 1, "speaker_label": "speaker_1", "text": "Здравствуйте. Температуру измеряли?", "role": "doctor"},
+  {"turn_index": 2, "speaker_label": "speaker_0", "text": "Да, вчера было 37.8.", "role": "patient"},
+  {"turn_index": 3, "speaker_label": "speaker_1", "text": "Хорошо, давайте посмотрим горло и сдадим общий анализ крови.", "role": "doctor"}
+]}`;
 }
 
 function buildRolePromptUser(turns: StructuredTurn[]): string {
@@ -214,29 +241,139 @@ async function runAssignRolesPrompt(
     );
   }
 
-  return parsed.data.turns;
+  // Rule 2 of the prompt (one label = one role) is enforced in code rather than
+  // trusted: an LLM that flip-flops mid-dialogue gets repaired by majority vote.
+  return enforceLabelRoleConsistency(parsed.data.turns);
 }
 
 function mockAssignRoles(turns: StructuredTurn[]): RoledTurn[] {
-  const knownLabelRoles = new Map<string, DialogueRole>();
-  let nextFallbackRole: DialogueRole = 'doctor';
+  return assignRolesHeuristically(turns);
+}
 
-  return turns.map((turn) => {
-    const label = turn.speaker_label.toLowerCase();
-    let role: DialogueRole;
+// --- Role heuristics: used by the mock provider and as a deterministic
+// --- last resort when no LLM judgement is available.
 
-    if (label.includes('doctor') || label.includes('врач')) {
-      role = 'doctor';
-    } else if (label.includes('patient') || label.includes('пациент')) {
-      role = 'patient';
-    } else if (knownLabelRoles.has(turn.speaker_label)) {
-      role = knownLabelRoles.get(turn.speaker_label)!;
-    } else {
-      role = nextFallbackRole;
-      nextFallbackRole = nextFallbackRole === 'doctor' ? 'patient' : 'doctor';
+const DOCTOR_MARKERS: RegExp[] = [
+  /\bчто вас беспокоит\b/i,
+  /\bна что жалуетесь\b/i,
+  /\bкак давно\b/i,
+  /\bкогда (?:это )?началось\b/i,
+  /\bизмеряли\b/i,
+  /\bпринимали ли\b/i,
+  /\bпринимаете\b/i,
+  /\bбеспокоит ли\b/i,
+  /\bесть ли у вас\b/i,
+  /\bваш[аиеу]?\b/i,
+  /\bвас\b/i,
+  /\bвам\b/i,
+  /\bдавайте\b/i,
+  /\bназнач(?:у|им|аю)\b/i,
+  /\bрекомендую\b/i,
+  /\bсдади?м\b/i,
+  /\bсдать\b/i,
+  /\bосмотр(?:им|ю)?\b/i,
+  /\bанализ\b/i,
+  /\bобследовани/i,
+  /\bдиагноз\b/i,
+  /\bаллерги[яи]\b.*\?/i,
+];
+
+const PATIENT_MARKERS: RegExp[] = [
+  /\bу меня\b/i,
+  /\bмне\b/i,
+  /\bменя беспокоит\b/i,
+  /\bя чувствую\b/i,
+  /\bя принимал/i,
+  /\bпринимал[аи]?\b/i,
+  /\bболит\b/i,
+  /\bболи?т?\s|\bболь\b/i,
+  /\bдоктор\b/i,
+  /\bврач\b/i,
+  /\bне помогает\b/i,
+  /\bстало хуже\b/i,
+  /\bя не\b/i,
+];
+
+/** Positive score = sounds like a doctor, negative = sounds like a patient. */
+function scoreTurnText(text: string): number {
+  let score = 0;
+  for (const marker of DOCTOR_MARKERS) if (marker.test(text)) score += 1;
+  for (const marker of PATIENT_MARKERS) if (marker.test(text)) score -= 1;
+  // A question about the other person is the single strongest doctor signal.
+  if (/\?/.test(text) && !/\bу меня\b/i.test(text)) score += 1;
+  return score;
+}
+
+/**
+ * Assigns doctor/patient roles from dialogue content alone, guaranteeing that
+ * one speaker_label maps to exactly one role.
+ *
+ * An explicitly semantic label ("doctor"/"врач") is honoured; a positional label
+ * ("speaker_0") never is. When two labels are present the one that sounds more
+ * like a clinician becomes the doctor and the other becomes the patient, so the
+ * pair is always complementary even if both score the same sign.
+ */
+export function assignRolesHeuristically(turns: StructuredTurn[]): RoledTurn[] {
+  if (!turns.length) return [];
+
+  const scores = new Map<string, number>();
+  const firstSeen: string[] = [];
+  for (const turn of turns) {
+    if (!scores.has(turn.speaker_label)) {
+      scores.set(turn.speaker_label, 0);
+      firstSeen.push(turn.speaker_label);
     }
+    scores.set(turn.speaker_label, scores.get(turn.speaker_label)! + scoreTurnText(turn.text));
+  }
 
-    knownLabelRoles.set(turn.speaker_label, role);
-    return { ...turn, role };
-  });
+  const roleByLabel = new Map<string, DialogueRole>();
+
+  // 1. Labels that already state the role explicitly.
+  for (const label of firstSeen) {
+    const lower = label.toLowerCase();
+    if (lower.includes('doctor') || lower.includes('врач')) roleByLabel.set(label, 'doctor');
+    else if (lower.includes('patient') || lower.includes('пациент')) roleByLabel.set(label, 'patient');
+  }
+
+  // 2. Exactly two undecided labels: the more clinician-sounding one is the doctor.
+  const undecided = firstSeen.filter((label) => !roleByLabel.has(label));
+  if (undecided.length === 2) {
+    const [a, b] = undecided;
+    const scoreA = scores.get(a)!;
+    const scoreB = scores.get(b)!;
+    // Ties fall back to speaking order, which is stable and reproducible.
+    const doctorLabel = scoreA === scoreB ? a : scoreA > scoreB ? a : b;
+    roleByLabel.set(doctorLabel, 'doctor');
+    roleByLabel.set(doctorLabel === a ? b : a, 'patient');
+  } else {
+    // 3. Any other count: decide each label on its own score. A non-positive
+    //    score means "describes their own state" -> patient.
+    for (const label of undecided) {
+      roleByLabel.set(label, scores.get(label)! > 0 ? 'doctor' : 'patient');
+    }
+  }
+
+  return turns.map((turn) => ({ ...turn, role: roleByLabel.get(turn.speaker_label)! }));
+}
+
+/**
+ * Forces one speaker_label to carry a single role across the dialogue by taking
+ * the majority role the model assigned to that label (ties keep the first one).
+ */
+export function enforceLabelRoleConsistency(turns: RoledTurn[]): RoledTurn[] {
+  const tally = new Map<string, { doctor: number; patient: number; first: DialogueRole }>();
+
+  for (const turn of turns) {
+    const current = tally.get(turn.speaker_label) ?? { doctor: 0, patient: 0, first: turn.role };
+    current[turn.role] += 1;
+    tally.set(turn.speaker_label, current);
+  }
+
+  const roleByLabel = new Map<string, DialogueRole>();
+  for (const [label, counts] of tally) {
+    if (counts.doctor === counts.patient) roleByLabel.set(label, counts.first);
+    else roleByLabel.set(label, counts.doctor > counts.patient ? 'doctor' : 'patient');
+  }
+
+  return turns.map((turn) => ({ ...turn, role: roleByLabel.get(turn.speaker_label)! }));
 }

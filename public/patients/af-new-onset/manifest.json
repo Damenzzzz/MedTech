@@ -4,7 +4,9 @@
   "age": 64,
   "sex": "female",
   "specialty": "cardiology",
-  "portrait": "/patients/af-new-onset/portrait.svg",
+  "portrait": "/patients/af-new-onset/portrait.png",
+  "portraitFallback": "/patients/af-new-onset/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

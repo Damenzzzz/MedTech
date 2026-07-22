@@ -12,13 +12,33 @@ KazMedSim is an advanced medical education and clinical protocol simulation plat
 | **Clinical Reasoning & RAG Fallback** | **AlemLLM** | `POST https://llm.alem.ai/v1/chat/completions` (`alemllm`) | `LLM_PROVIDER=alem` |
 | **Protocol Draft Generation** | **AlemLLM** | `POST https://llm.alem.ai/v1/chat/completions` (`alemllm`) | `LLM_PROVIDER=alem` |
 | **Speech-to-Text (Audio STT)** | **OpenAI STT** | `POST https://api.openai.com/v1/audio/transcriptions` (`gpt-4o-transcribe-diarize`) | `STT_PROVIDER=openai` |
+| **Patient portraits & scene** *(offline script, not runtime)* | **OpenAI Images** | `POST https://api.openai.com/v1/images/generations` (`gpt-image-2`) | `OPENAI_IMAGE_API_KEY` |
 
 > [!IMPORTANT]
 > **Strict Provider Isolation Rules:**
 > - **AlemLLM (`alemllm`)** is the SOLE text LLM used for text generation, clinical rationale, patient role-play, and protocol drafting.
-> - **OpenAI** is used **ONLY** for audio Speech-to-Text (`POST /v1/audio/transcriptions`).
+> - **OpenAI** is used for exactly two things, both non-text: audio Speech-to-Text (`POST /v1/audio/transcriptions`) and **offline** image asset generation (`POST /v1/images/generations`).
 > - `OPENAI_API_KEY` is **NEVER** read by text LLM adapters or RAG endpoints.
 > - OpenAI Chat Completions and Responses APIs are strictly prohibited for text generation.
+> - Image generation uses its own key, `OPENAI_IMAGE_API_KEY`, is invoked **only** by `scripts/generate-patient-assets.ts`, and **never runs at runtime, in CI, or during a Vercel build**. Generated PNGs are committed; the UI falls back to committed SVG placeholders when a PNG is missing, so the build never requires the key.
+
+### Generating patient image assets (manual, local only)
+
+```bash
+# Preview what would be written — no API calls, no files
+pnpm dlx tsx scripts/generate-patient-assets.ts --dry-run
+
+# Generate all 32 portraits + the consultation scene (needs OPENAI_IMAGE_API_KEY)
+pnpm dlx tsx scripts/generate-patient-assets.ts --force
+
+# Regenerate a single case
+pnpm dlx tsx scripts/generate-patient-assets.ts --only=chest-pain --force
+
+# Refresh only the SVG placeholders, no image API calls
+pnpm dlx tsx scripts/generate-patient-assets.ts --skip-images --force
+```
+
+Outputs `public/patients/<caseId>/portrait.png` (+ `portrait.svg` fallback and `manifest.json`) and `public/scenes/consultation.png`. Requests run at a concurrency of 3 to stay within image rate limits. Commit the generated PNGs.
 
 ---
 

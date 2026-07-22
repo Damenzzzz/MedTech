@@ -4,7 +4,9 @@
   "age": 19,
   "sex": "female",
   "specialty": "endocrinology",
-  "portrait": "/patients/dka/portrait.svg",
+  "portrait": "/patients/dka/portrait.png",
+  "portraitFallback": "/patients/dka/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

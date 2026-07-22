@@ -4,7 +4,9 @@
   "age": 58,
   "sex": "female",
   "specialty": "cardiology",
-  "portrait": "/patients/hypertensive-crisis/portrait.svg",
+  "portrait": "/patients/hypertensive-crisis/portrait.png",
+  "portraitFallback": "/patients/hypertensive-crisis/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

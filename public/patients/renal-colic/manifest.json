@@ -4,7 +4,9 @@
   "age": 36,
   "sex": "male",
   "specialty": "emergency",
-  "portrait": "/patients/renal-colic/portrait.svg",
+  "portrait": "/patients/renal-colic/portrait.png",
+  "portraitFallback": "/patients/renal-colic/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

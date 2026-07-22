@@ -4,7 +4,9 @@
   "age": 42,
   "sex": "male",
   "specialty": "gastroenterology",
-  "portrait": "/patients/gerd/portrait.svg",
+  "portrait": "/patients/gerd/portrait.png",
+  "portraitFallback": "/patients/gerd/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

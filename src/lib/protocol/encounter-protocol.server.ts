@@ -86,13 +86,19 @@ export async function generateEncounterProtocol(rawInput: unknown): Promise<{ pr
 
 async function callAlemForProtocol(input: EncounterProtocolRequest): Promise<Record<string, unknown> | null> {
   const turnsText = input.turns.map((t) => `[${t.speaker.toUpperCase()}]: ${t.text}`).join('\n');
-  const fullContent = input.transcriptText || turnsText;
+  // The role-labelled turns are the authoritative view of who said what, so they
+  // are always included — a raw transcript alone would strip that attribution and
+  // let the model mix up doctor statements with patient-reported symptoms.
+  const fullContent = input.transcriptText && turnsText
+    ? `${input.transcriptText}\n\nРазмеченные по ролям реплики:\n${turnsText}`
+    : input.transcriptText || turnsText;
 
   const systemPrompt = `Ты профессиональный клинический AI-ассистент врача. Твоя задача — сформировать структурированный черновик протокола амбулаторного/клинического приёма строго на основе транскрипта разговора.
 
 СТРОГИЕ ПРАВИЛА БЕЗОПАСНОСТИ:
 1. Категорически ЗАПРЕЩЕНО придумывать или домышлять симптомы, анамнез, препараты, аллергии, показатели или осмотр, которых нет в транскрипте.
 2. Все факты в разделах chiefComplaints, historyOfPresentIllness, pastMedicalHistory, medications, allergies, objectiveFindings, vitalSigns, redFlags ДОЛЖНЫ иметь точные цитаты ("sourceQuotes") из текста транскрипта.
+2a. Жалобы и анамнез («со слов пациента») бери ТОЛЬКО из реплик с меткой [PATIENT]. Реплики [DOCTOR] — это вопросы и назначения врача, они не являются жалобами пациента.
 3. Вся отсутствующая, но важная клиническая информация должна попадать в раздел "unresolvedQuestions".
 4. Раздел "plan" является только предложенным черновиком рекомендаций врача.
 5. Отвечай СТРОГО на русском языке в формате JSON.

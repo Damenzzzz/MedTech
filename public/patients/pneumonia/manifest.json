@@ -4,7 +4,9 @@
   "age": 45,
   "sex": "male",
   "specialty": "pulmonology",
-  "portrait": "/patients/pneumonia/portrait.svg",
+  "portrait": "/patients/pneumonia/portrait.png",
+  "portraitFallback": "/patients/pneumonia/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

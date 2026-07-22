@@ -2,15 +2,36 @@ import fs from 'fs';
 import path from 'path';
 
 /**
- * Script to generate local SVG fallback portraits and manifests for all 32 synthetic cases.
- * 
- * Supports OpenAI API generation if OPENAI_API_KEY is defined in server environment.
- * NEVER leaks API keys into client bundles or NEXT_PUBLIC_.
- * Does NOT run automatically during Vercel build.
- * Includes --dry-run and --force options.
+ * Offline asset generator for the 32 synthetic training cases.
+ *
+ * Produces, per case:
+ *   - portrait.png  — photorealistic portrait via the OpenAI Images API (requires a key)
+ *   - portrait.svg  — flat vector placeholder, always written, used as the UI fallback
+ *   - manifest.json — asset metadata
+ * Plus one shared consultation scene at public/scenes/consultation.{png,svg}.
+ *
+ * PROVIDER ISOLATION
+ * ------------------
+ * Image generation uses OPENAI_IMAGE_API_KEY, a variable separate from the STT key,
+ * and hits ONLY `POST /v1/images/generations`. It is never invoked at runtime and
+ * never by a text/RAG code path — text generation stays exclusively on AlemLLM.
+ *
+ * THIS SCRIPT IS MANUAL-ONLY. It must never run in CI or during a Vercel build:
+ * generated PNGs are committed to the repo, and the app degrades to the committed
+ * SVGs when a PNG is absent, so the build never depends on this script or a key.
+ *
+ * Usage:
+ *   pnpm dlx tsx scripts/generate-patient-assets.ts --dry-run
+ *   pnpm dlx tsx scripts/generate-patient-assets.ts --force
+ *   pnpm dlx tsx scripts/generate-patient-assets.ts --only=chest-pain --force
+ *   pnpm dlx tsx scripts/generate-patient-assets.ts --skip-images   (SVG placeholders only)
  */
 
 const PUBLIC_PATIENTS_DIR = path.join(process.cwd(), 'public', 'patients');
+const PUBLIC_SCENES_DIR = path.join(process.cwd(), 'public', 'scenes');
+
+/** Parallel image requests. Kept low deliberately to stay clear of image rate limits. */
+const IMAGE_CONCURRENCY = 3;
 
 // Seed metadata for 32 cases
 const PATIENTS_SEED = [
@@ -121,54 +142,293 @@ function generateSVG(p: typeof PATIENTS_SEED[number]): string {
 </svg>`;
 }
 
-export function generateAllPatientAssets(force = false, dryRun = false) {
-  console.log(`[Asset Generator] Starting generation for ${PATIENTS_SEED.length} patient cases...`);
-  if (dryRun) console.log(`[Asset Generator] DRY RUN MODE ENABLED — no files will be written.`);
+type Patient = (typeof PATIENTS_SEED)[number];
 
-  let createdCount = 0;
+// --- OpenAI Images configuration (offline asset generation only) ---
 
-  for (const patient of PATIENTS_SEED) {
+/**
+ * Reads image-generation config. Uses OPENAI_IMAGE_API_KEY rather than
+ * OPENAI_API_KEY so the image credential can be rotated, scoped or revoked
+ * independently of the STT credential. Returns null when unconfigured, which
+ * makes the script degrade to SVG-only instead of failing.
+ */
+function getImageConfig() {
+  const apiKey = process.env.OPENAI_IMAGE_API_KEY;
+  if (!apiKey) return null;
+  const baseUrl = (process.env.OPENAI_IMAGE_BASE_URL ?? 'https://api.openai.com/v1').replace(/\/$/, '');
+  const model = process.env.OPENAI_IMAGE_MODEL ?? 'gpt-image-2';
+  const size = process.env.OPENAI_IMAGE_SIZE ?? '1024x1024';
+  const timeoutMs = parseInt(process.env.OPENAI_IMAGE_TIMEOUT_MS ?? '120000', 10);
+  return { apiKey, baseUrl, model, size, timeoutMs } as const;
+}
+
+const SPECIALTY_CONTEXT: Record<string, string> = {
+  cardiology: 'calm cardiology outpatient room',
+  pulmonology: 'calm pulmonology outpatient room',
+  endocrinology: 'calm endocrinology outpatient room',
+  gastroenterology: 'calm gastroenterology outpatient room',
+  neurology: 'calm neurology outpatient room',
+  therapy: 'calm general practice outpatient room',
+  infectious: 'calm infectious diseases outpatient room',
+  emergency: 'calm emergency department consultation area',
+};
+
+function buildPortraitPrompt(p: Patient): string {
+  const gender = p.sex === 'female' ? 'woman' : 'man';
+  const room = SPECIALTY_CONTEXT[p.specialty] ?? 'calm outpatient clinic room';
+  return [
+    `Photorealistic medical portrait photograph of a ${p.age}-year-old Central Asian (Kazakh) ${gender}`,
+    'sitting as a patient during a routine clinic visit.',
+    `Background: softly blurred ${room}, neutral clinical wall, no equipment in focus.`,
+    'Head and shoulders framing, chest up, facing the camera, neutral calm expression, direct eye contact.',
+    'Soft natural daylight from a window, gentle shadows, realistic skin texture, shallow depth of field.',
+    'Everyday casual clothing, not a hospital gown. Photographic, documentary style, 50mm lens look.',
+    'IMPORTANT: absolutely no text, no letters, no numbers, no watermarks, no logos, no captions in the image.',
+    'A single person only. No medical staff, no props held in hands.',
+  ].join(' ');
+}
+
+function buildScenePrompt(): string {
+  return [
+    'Photorealistic photograph of a medical consultation in a modern, calm outpatient clinic room in Kazakhstan.',
+    'A doctor in a white coat sits at a desk on one side, a patient sits facing them on the other side, seen from a neutral wide angle.',
+    'Both people are seen from behind or in three-quarter view so faces are not the focus; the room itself is the subject.',
+    'Soft natural daylight from a large window, light neutral walls, tidy desk with a computer monitor turned away from the camera.',
+    'Warm, reassuring, professional atmosphere. Shallow depth of field, documentary photography style.',
+    'IMPORTANT: absolutely no text, no letters, no numbers, no watermarks, no logos, no signage in the image.',
+  ].join(' ');
+}
+
+/** Calls the OpenAI Images API and returns raw PNG bytes, or null on failure. */
+async function generateImage(prompt: string, label: string): Promise<Buffer | null> {
+  const config = getImageConfig();
+  if (!config) return null;
+
+  try {
+    const response = await fetch(`${config.baseUrl}/images/generations`, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${config.apiKey}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: config.model,
+        prompt,
+        size: config.size,
+        n: 1,
+      }),
+      signal: AbortSignal.timeout(config.timeoutMs),
+    });
+
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      console.warn(`[Asset Generator] ${label}: image API ${response.status} — ${detail.slice(0, 200)}`);
+      return null;
+    }
+
+    const payload = (await response.json()) as { data?: Array<{ b64_json?: string; url?: string }> };
+    const item = payload.data?.[0];
+
+    if (item?.b64_json) return Buffer.from(item.b64_json, 'base64');
+
+    if (item?.url) {
+      const binary = await fetch(item.url, { signal: AbortSignal.timeout(config.timeoutMs) });
+      if (!binary.ok) {
+        console.warn(`[Asset Generator] ${label}: could not download generated image (${binary.status}).`);
+        return null;
+      }
+      return Buffer.from(await binary.arrayBuffer());
+    }
+
+    console.warn(`[Asset Generator] ${label}: image API returned no image payload.`);
+    return null;
+  } catch (error) {
+    console.warn(`[Asset Generator] ${label}: image generation failed —`, error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
+/** Runs tasks with a fixed concurrency ceiling to avoid image rate limits. */
+async function runWithConcurrency<T>(items: T[], limit: number, worker: (item: T) => Promise<void>) {
+  let cursor = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const index = cursor++;
+      await worker(items[index]);
+    }
+  });
+  await Promise.all(runners);
+}
+
+export interface GenerateOptions {
+  force?: boolean;
+  dryRun?: boolean;
+  only?: string;
+  skipImages?: boolean;
+}
+
+export async function generateAllPatientAssets(options: GenerateOptions = {}) {
+  const { force = false, dryRun = false, only, skipImages = false } = options;
+
+  const targets = only ? PATIENTS_SEED.filter((p) => p.id === only) : PATIENTS_SEED;
+  if (only && !targets.length) {
+    console.error(`[Asset Generator] Unknown --only case id: "${only}"`);
+    process.exitCode = 1;
+    return;
+  }
+
+  const imageConfig = getImageConfig();
+  const imagesEnabled = !skipImages && !dryRun && imageConfig !== null;
+
+  console.log(`[Asset Generator] Processing ${targets.length} patient case(s)...`);
+  if (dryRun) console.log('[Asset Generator] DRY RUN — no files will be written, no API calls made.');
+  if (skipImages) console.log('[Asset Generator] --skip-images — SVG placeholders only.');
+  if (!skipImages && !dryRun && !imageConfig) {
+    console.warn(
+      '[Asset Generator] OPENAI_IMAGE_API_KEY is not set — writing SVG placeholders only.\n' +
+        '                  Set it in .env.local to generate photorealistic PNG portraits.',
+    );
+  }
+  if (imagesEnabled && imageConfig) {
+    console.log(`[Asset Generator] Image model: ${imageConfig.model} @ ${imageConfig.size} (concurrency ${IMAGE_CONCURRENCY})`);
+  }
+
+  let svgCount = 0;
+  let pngCount = 0;
+
+  // 1. SVG placeholders + manifests — cheap, deterministic, always refreshed.
+  for (const patient of targets) {
     const dir = path.join(PUBLIC_PATIENTS_DIR, patient.id);
     const svgPath = path.join(dir, 'portrait.svg');
     const manifestPath = path.join(dir, 'manifest.json');
+    const pngExists = fs.existsSync(path.join(dir, 'portrait.png'));
 
-    if (!dryRun && !fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    if (dryRun) {
+      svgCount++;
+      continue;
     }
 
-    const manifestContent = JSON.stringify(
-      {
-        caseId: patient.id,
-        name: patient.name,
-        age: patient.age,
-        sex: patient.sex,
-        specialty: patient.specialty,
-        portrait: `/patients/${patient.id}/portrait.svg`,
-        visualStates: ['neutral', 'thinking', 'speaking', 'pain', 'relieved'],
-      },
-      null,
-      2
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+    if (!fs.existsSync(svgPath) || force) {
+      fs.writeFileSync(svgPath, generateSVG(patient), 'utf8');
+      svgCount++;
+    }
+
+    fs.writeFileSync(
+      manifestPath,
+      `${JSON.stringify(
+        {
+          caseId: patient.id,
+          name: patient.name,
+          age: patient.age,
+          sex: patient.sex,
+          specialty: patient.specialty,
+          portrait: `/patients/${patient.id}/portrait.png`,
+          portraitFallback: `/patients/${patient.id}/portrait.svg`,
+          portraitGenerated: pngExists || imagesEnabled,
+          visualStates: ['neutral', 'thinking', 'speaking', 'pain', 'relieved'],
+        },
+        null,
+        2,
+      )}\n`,
+      'utf8',
     );
-
-    const svgContent = generateSVG(patient);
-
-    if (!dryRun) {
-      if (!fs.existsSync(svgPath) || force) {
-        fs.writeFileSync(svgPath, svgContent, 'utf8');
-        fs.writeFileSync(manifestPath, manifestContent, 'utf8');
-        createdCount++;
-      }
-    } else {
-      createdCount++;
-    }
   }
 
-  console.log(`[Asset Generator] Completed. ${createdCount} patient asset folders processed.`);
+  // 2. Photorealistic PNG portraits.
+  if (imagesEnabled) {
+    const pending = targets.filter(
+      (p) => force || !fs.existsSync(path.join(PUBLIC_PATIENTS_DIR, p.id, 'portrait.png')),
+    );
+    console.log(`[Asset Generator] Generating ${pending.length} portrait PNG(s)...`);
+
+    await runWithConcurrency(pending, IMAGE_CONCURRENCY, async (patient) => {
+      const buffer = await generateImage(buildPortraitPrompt(patient), `portrait:${patient.id}`);
+      if (!buffer) return;
+      const dir = path.join(PUBLIC_PATIENTS_DIR, patient.id);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'portrait.png'), buffer);
+      pngCount++;
+      console.log(`[Asset Generator] ✓ ${patient.id}/portrait.png`);
+    });
+  }
+
+  // 3. Shared consultation scene (skipped when targeting a single case).
+  if (!only) {
+    await generateConsultationScene({ force, dryRun, imagesEnabled });
+  }
+
+  console.log(`[Asset Generator] Done. ${svgCount} SVG placeholder(s), ${pngCount} PNG portrait(s) written.`);
+  if (!imagesEnabled && !dryRun) {
+    console.log('[Asset Generator] PNGs were not generated — the UI will fall back to the SVG placeholders.');
+  }
 }
 
-// Execute if run via node directly
+async function generateConsultationScene(opts: { force: boolean; dryRun: boolean; imagesEnabled: boolean }) {
+  const svgPath = path.join(PUBLIC_SCENES_DIR, 'consultation.svg');
+  const pngPath = path.join(PUBLIC_SCENES_DIR, 'consultation.png');
+
+  if (opts.dryRun) {
+    console.log('[Asset Generator] (dry run) would write public/scenes/consultation.{svg,png}');
+    return;
+  }
+
+  if (!fs.existsSync(PUBLIC_SCENES_DIR)) fs.mkdirSync(PUBLIC_SCENES_DIR, { recursive: true });
+  if (!fs.existsSync(svgPath) || opts.force) {
+    fs.writeFileSync(svgPath, generateSceneSVG(), 'utf8');
+  }
+
+  if (!opts.imagesEnabled) return;
+  if (fs.existsSync(pngPath) && !opts.force) return;
+
+  const buffer = await generateImage(buildScenePrompt(), 'scene:consultation');
+  if (!buffer) return;
+  fs.writeFileSync(pngPath, buffer);
+  console.log('[Asset Generator] ✓ scenes/consultation.png');
+}
+
+/** Flat vector stand-in for the consultation scene, used until a PNG is generated. */
+function generateSceneSVG(): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" width="100%" height="100%">
+  <defs>
+    <linearGradient id="scene-room" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e2f3f1" />
+      <stop offset="100%" stop-color="#f8fafc" />
+    </linearGradient>
+    <linearGradient id="scene-window" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#cfe9e6" stop-opacity="0.5" />
+    </linearGradient>
+  </defs>
+
+  <rect width="960" height="540" fill="url(#scene-room)" />
+  <rect x="60" y="70" width="250" height="180" rx="10" fill="url(#scene-window)" />
+  <rect x="0" y="400" width="960" height="140" fill="#e7eef0" />
+  <rect x="330" y="330" width="300" height="24" rx="8" fill="#cbd5e1" />
+  <rect x="360" y="354" width="18" height="60" fill="#cbd5e1" />
+  <rect x="582" y="354" width="18" height="60" fill="#cbd5e1" />
+
+  <g opacity="0.85">
+    <circle cx="300" cy="290" r="34" fill="#94a3b8" />
+    <path d="M246 400 C246 344 272 326 300 326 C328 326 354 344 354 400 Z" fill="#e2e8f0" />
+  </g>
+  <g opacity="0.85">
+    <circle cx="662" cy="286" r="34" fill="#7f9c98" />
+    <path d="M608 400 C608 344 634 326 662 326 C690 326 716 344 716 400 Z" fill="#0f766e" opacity="0.75" />
+  </g>
+</svg>`;
+}
+
+// Execute only when run directly; never imported by app code or the build.
 if (require.main === module) {
-  const force = process.argv.includes('--force');
-  const dryRun = process.argv.includes('--dry-run');
-  generateAllPatientAssets(force, dryRun);
+  const argv = process.argv.slice(2);
+  const onlyArg = argv.find((a) => a.startsWith('--only='));
+
+  void generateAllPatientAssets({
+    force: argv.includes('--force'),
+    dryRun: argv.includes('--dry-run'),
+    skipImages: argv.includes('--skip-images'),
+    only: onlyArg ? onlyArg.slice('--only='.length) : undefined,
+  });
 }

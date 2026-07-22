@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2 } from 'lucide-react';
 import { useRouter } from '@/i18n/navigation';
 import { Button } from '@/components/ui/button';
 
@@ -46,12 +47,20 @@ export function DoctorEntryForm() {
       <h1 className="mt-3 text-3xl font-semibold">{t('doctorTitle')}</h1>
       <p className="mt-3 text-slate-600 dark:text-slate-300">{t('doctorLead')}</p>
 
-      <label className="mt-7 block text-sm font-semibold">
+      <label htmlFor="doctor-full-name" className="mt-7 block text-sm font-semibold">
         {t('nameLabel')}
-        <input autoFocus className="input mt-2" placeholder={t('namePlaceholder')} {...register('fullName')} />
       </label>
+      <input
+        id="doctor-full-name"
+        autoFocus
+        className="focus-ring input mt-2"
+        placeholder={t('namePlaceholder')}
+        aria-invalid={errors.fullName ? true : undefined}
+        aria-describedby={errors.fullName ? 'doctor-full-name-error' : undefined}
+        {...register('fullName')}
+      />
       {errors.fullName && (
-        <p role="alert" className="mt-2 text-sm text-red-600">
+        <p id="doctor-full-name-error" role="alert" className="mt-2 text-sm text-red-600">
           {errors.fullName.message}
         </p>
       )}
@@ -61,7 +70,8 @@ export function DoctorEntryForm() {
         </p>
       )}
 
-      <Button className="mt-6 w-full" disabled={isSubmitting}>
+      <Button className="mt-6 w-full" disabled={isSubmitting} aria-busy={isSubmitting}>
+        {isSubmitting && <Loader2 className="animate-spin" size={16} />}
         {t('submit')}
       </Button>
     </form>

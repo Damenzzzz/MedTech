@@ -4,7 +4,9 @@
   "age": 33,
   "sex": "female",
   "specialty": "endocrinology",
-  "portrait": "/patients/thyrotoxicosis/portrait.svg",
+  "portrait": "/patients/thyrotoxicosis/portrait.png",
+  "portraitFallback": "/patients/thyrotoxicosis/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

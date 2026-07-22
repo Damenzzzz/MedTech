@@ -4,7 +4,9 @@
   "age": 59,
   "sex": "male",
   "specialty": "neurology",
-  "portrait": "/patients/stroke-ischemic/portrait.svg",
+  "portrait": "/patients/stroke-ischemic/portrait.png",
+  "portraitFallback": "/patients/stroke-ischemic/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

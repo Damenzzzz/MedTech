@@ -4,7 +4,9 @@
   "age": 49,
   "sex": "male",
   "specialty": "therapy",
-  "portrait": "/patients/hypertension/portrait.svg",
+  "portrait": "/patients/hypertension/portrait.png",
+  "portraitFallback": "/patients/hypertension/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

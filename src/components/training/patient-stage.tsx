@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import type { PatientVisualState, StudentCaseDTO } from '@/domain/schemas';
@@ -24,6 +25,16 @@ export function PatientStage({
     typeof patient.patient.name === 'object'
       ? patient.patient.name[locale as 'ru' | 'kk' | 'en'] || patient.patient.name.ru
       : patient.patient.name;
+
+  // Generated PNGs are committed, but may be absent on a fresh checkout before
+  // scripts/generate-patient-assets.ts has run. Swap to the committed SVG
+  // placeholder on load failure so the stage never renders a broken image.
+  const [avatarSrc, setAvatarSrc] = useState(patient.patient.avatar);
+  const [sceneSrc, setSceneSrc] = useState(patient.scene);
+
+  const swapToSvgFallback = (current: string, apply: (next: string) => void) => {
+    if (current.endsWith('.png')) apply(current.replace(/\.png$/, '.svg'));
+  };
 
   const complaint =
     typeof patient.complaint === 'object'
@@ -80,6 +91,24 @@ export function PatientStage({
 
   return (
     <section className="relative flex min-h-[460px] flex-col items-center justify-center overflow-hidden rounded-3xl border border-slate-200/90 bg-gradient-to-b from-slate-50 to-white p-6 shadow-sm">
+      {/* Consultation-room backdrop: doctor and patient in the clinic room. Sits
+          behind everything, softened so the portrait and overlays stay readable. */}
+      {sceneSrc && (
+        <>
+          <Image
+            src={sceneSrc}
+            alt=""
+            aria-hidden
+            fill
+            sizes="(max-width: 768px) 100vw, 900px"
+            className="object-cover opacity-45 blur-[2px]"
+            onError={() => swapToSvgFallback(sceneSrc, setSceneSrc)}
+            unoptimized
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/45 to-white/80" />
+        </>
+      )}
+
       {/* Background Clinical Grid */}
       <div className="clinical-grid absolute inset-0 opacity-50" />
 
@@ -136,12 +165,13 @@ export function PatientStage({
           className="relative aspect-[4/3] w-full max-w-sm overflow-hidden rounded-3xl border-2 border-slate-200 bg-slate-100 shadow-xl shadow-slate-200/50"
         >
           <Image
-            src={patient.patient.avatar}
+            src={avatarSrc}
             alt={patientName}
             fill
             priority
             sizes="(max-width: 768px) 100vw, 400px"
             className="object-cover transition duration-300"
+            onError={() => swapToSvgFallback(avatarSrc, setAvatarSrc)}
             unoptimized
           />
 

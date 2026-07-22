@@ -22,8 +22,9 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePathname } from 'next/navigation';
+import { Link } from '@/i18n/navigation';
 import { RagSidePanel } from '@/components/ai/rag-side-panel';
+import { IIN_REGEX } from '@/domain/schemas';
 import type {
   DiagnosisItem,
   EncounterProtocol,
@@ -49,7 +50,6 @@ export type SttWorkflowState =
 const ENCOUNTER_DRAFT_KEY = 'kms-encounter-draft-v1';
 
 export function SttEncounterWorkspace() {
-  const pathname = usePathname();
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
@@ -80,6 +80,11 @@ export function SttEncounterWorkspace() {
   // Patient consent
   const [hasConsent, setHasConsent] = useState(false);
 
+  // Speaker-role provenance: set once Prompt B has labelled the turns, and
+  // flipped to "stale" as soon as the doctor overrides a role by hand.
+  const [rolesFromAi, setRolesFromAi] = useState(false);
+  const [rolesEditedManually, setRolesEditedManually] = useState(false);
+
   // RAG side panel
   const [ragOpen, setRagOpen] = useState(false);
   const [ragSources, setRagSources] = useState<ProtocolSource[]>([]);
@@ -90,6 +95,7 @@ export function SttEncounterWorkspace() {
   const [patientFullName, setPatientFullName] = useState('');
   const [savingEncounter, setSavingEncounter] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [needsDoctorLogin, setNeedsDoctorLogin] = useState(false);
   const [savedPatientIin, setSavedPatientIin] = useState('');
   const [draftHydrated, setDraftHydrated] = useState(false);
 
@@ -250,8 +256,10 @@ export function SttEncounterWorkspace() {
     setTurns([]);
     setProtocol(null);
     setRagSources([]);
+    setRolesFromAi(false);
+    setRolesEditedManually(false);
     localStorage.removeItem(ENCOUNTER_DRAFT_KEY);
-    setState(audioBlob ? 'idle' : 'idle');
+    setState('idle');
   }
 
   // Protocol Generation Handler
@@ -307,11 +315,69 @@ export function SttEncounterWorkspace() {
       }
       setTurns(structuredTurns);
       setProtocol(newProtocol);
+      setRolesFromAi(true);
+      setRolesEditedManually(false);
       setState('protocol-ready');
     } catch (err) {
       setState('error');
       setErrorMessage(err instanceof Error ? err.message : 'Ошибка генерации протокола.');
     }
+  }
+
+  /**
+   * Rebuilds the protocol from the roles currently shown in the editor.
+   * Deliberately skips structure-dialogue (Prompt A/B): once the doctor has
+   * corrected a role by hand, that assignment is authoritative and must not be
+   * overwritten by the model on the next pass.
+   */
+  async function rebuildProtocolFromTurns() {
+    if (!turns.length) return;
+
+    setErrorMessage('');
+    setState('generating-protocol');
+
+    try {
+      const response = await fetch('/api/encounter/protocol', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          transcriptId: sttData?.transcriptId || `tr-manual-${Date.now()}`,
+          transcriptText: transcriptText.trim(),
+          turns,
+          locale: 'ru',
+          regenerate: false,
+        }),
+      });
+
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({ error: 'Protocol Generation Failed' }));
+        throw new Error(errJson.error || `Ошибка генерации протокола: ${response.status}`);
+      }
+
+      setCacheHit(response.headers.get('x-protocol-cache-hit') === '1');
+      const newProtocol: EncounterProtocol = await response.json();
+      if (protocol) setProtocolHistory((prev) => [protocol, ...prev]);
+      setProtocol(newProtocol);
+      setRolesEditedManually(false);
+      setState('protocol-ready');
+    } catch (err) {
+      setState('error');
+      setErrorMessage(err instanceof Error ? err.message : 'Ошибка генерации протокола.');
+    }
+  }
+
+  /** Whole dialogue inverted — the single most common diarization mistake. */
+  function swapAllRoles() {
+    setTurns((prev) =>
+      prev.map((turn) =>
+        turn.speaker === 'doctor'
+          ? { ...turn, speaker: 'patient' as const }
+          : turn.speaker === 'patient'
+            ? { ...turn, speaker: 'doctor' as const }
+            : turn,
+      ),
+    );
+    setRolesEditedManually(true);
   }
 
   // Manual Protocol Edit Handlers (Local State, NO LLM Invocation!)
@@ -362,13 +428,14 @@ export function SttEncounterWorkspace() {
 
   async function saveEncounter() {
     if (!protocol) return;
-    if (!/^\d{12}$/.test(patientIin)) {
+    if (!IIN_REGEX.test(patientIin)) {
       setSaveError('ИИН должен содержать ровно 12 цифр.');
       return;
     }
 
     setSavingEncounter(true);
     setSaveError('');
+    setNeedsDoctorLogin(false);
     const payload = {
       patientIin,
       patientFullName: patientFullName.trim() || undefined,
@@ -395,6 +462,11 @@ export function SttEncounterWorkspace() {
         body: JSON.stringify(payload),
       });
       const result = await response.json().catch(() => ({}));
+      // 401 means no doctor session — surface a login CTA instead of a raw error.
+      if (response.status === 401) {
+        setNeedsDoctorLogin(true);
+        return;
+      }
       if (!response.ok) throw new Error(result.error || `Ошибка сохранения ${response.status}`);
       localStorage.removeItem(ENCOUNTER_DRAFT_KEY);
       setSavedPatientIin(result.patientIin || patientIin);
@@ -446,6 +518,7 @@ export function SttEncounterWorkspace() {
     const next = [...turns];
     next[index] = { ...next[index], speaker: newSpeaker };
     setTurns(next);
+    if (rolesFromAi) setRolesEditedManually(true);
   }
 
   function updateTurnText(index: number, newText: string) {
@@ -662,10 +735,47 @@ export function SttEncounterWorkspace() {
           <div className="mt-5 flex-1 space-y-3">
             <div className="flex items-center justify-between">
               <label className="block text-xs font-semibold text-slate-300">Разделение по спикерам (Diarization)</label>
-              <Button onClick={addTurn} variant="ghost" size="sm" className="h-7 text-xs text-teal-300">
-                <Plus size={14} className="mr-1" /> Добавить реплику
-              </Button>
+              <div className="flex items-center gap-1">
+                {turns.length > 0 && (
+                  <Button onClick={swapAllRoles} variant="ghost" size="sm" className="h-7 text-xs text-teal-300">
+                    <RefreshCw size={13} className="mr-1" /> Поменять роли местами
+                  </Button>
+                )}
+                <Button onClick={addTurn} variant="ghost" size="sm" className="h-7 text-xs text-teal-300">
+                  <Plus size={14} className="mr-1" /> Добавить реплику
+                </Button>
+              </div>
             </div>
+
+            {/* Role provenance: AI-assigned, and whether manual edits made the protocol stale */}
+            {rolesFromAi && (
+              <div className="space-y-2">
+                <div className="flex items-start gap-2 rounded-xl border border-teal-400/25 bg-teal-400/5 p-2.5 text-[11px] leading-5 text-teal-100">
+                  <Sparkles size={14} className="mt-0.5 shrink-0 text-teal-300" />
+                  <span>
+                    <span className="font-semibold text-teal-200">Роли расставлены ИИ</span> по смыслу диалога, а не по номеру спикера. Проверьте и при необходимости исправьте вручную.
+                  </span>
+                </div>
+
+                {rolesEditedManually && (
+                  <div className="flex flex-col gap-2 rounded-xl border border-amber-400/30 bg-amber-500/10 p-2.5 text-[11px] leading-5 text-amber-100 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="flex items-start gap-2">
+                      <ShieldAlert size={14} className="mt-0.5 shrink-0 text-amber-300" />
+                      Роли изменены вручную — текущий протокол собран по прежним ролям.
+                    </span>
+                    <Button
+                      onClick={rebuildProtocolFromTurns}
+                      size="sm"
+                      disabled={state === 'generating-protocol'}
+                      className="h-7 shrink-0 gap-1 bg-amber-500 text-[11px] font-semibold text-slate-950 hover:bg-amber-400"
+                    >
+                      {state === 'generating-protocol' ? <Loader2 className="animate-spin" size={12} /> : <RefreshCw size={12} />}
+                      Пересобрать протокол
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="max-h-[380px] space-y-3 overflow-y-auto pr-1">
               {turns.length ? (
@@ -718,7 +828,8 @@ export function SttEncounterWorkspace() {
           <div className="mt-5 border-t border-white/10 pt-4 flex items-center justify-between">
             <Button
               onClick={() => generateProtocol(false)}
-              disabled={!transcriptText.trim() && !turns.length}
+              disabled={state === 'generating-protocol' || (!transcriptText.trim() && !turns.length)}
+              aria-busy={state === 'generating-protocol'}
               className="w-full h-11 bg-teal-500 text-slate-950 font-semibold hover:bg-teal-400 gap-2"
             >
               {state === 'generating-protocol' ? (
@@ -1010,9 +1121,38 @@ export function SttEncounterWorkspace() {
                 <UserCheck className="mx-auto text-emerald-300" size={38} />
                 <h2 id="save-encounter-title" className="text-xl font-semibold">Приём сохранён</h2>
                 <p className="text-sm text-slate-400">Запись добавлена в историю пациента. Локальный черновик удалён.</p>
+                <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">ИИН пациента</p>
+                  <p className="mt-1 font-mono text-lg font-bold tracking-widest text-teal-300">{savedPatientIin}</p>
+                </div>
                 <div className="flex justify-center gap-3">
-                  <a href={`/${pathname.split('/').filter(Boolean)[0] || 'ru'}/patient-portal/${savedPatientIin}`} className="inline-flex h-10 items-center rounded-xl bg-teal-500 px-4 text-sm font-semibold text-slate-950 hover:bg-teal-400">Открыть карточку пациента</a>
+                  <Link href={`/patient-portal/${savedPatientIin}`} className="focus-ring inline-flex h-10 items-center rounded-xl bg-teal-500 px-4 text-sm font-semibold text-slate-950 hover:bg-teal-400">Открыть кабинет пациента</Link>
                   <Button variant="secondary" onClick={() => setSaveOpen(false)}>Закрыть</Button>
+                </div>
+              </div>
+            ) : needsDoctorLogin ? (
+              <div className="space-y-5">
+                <div className="flex items-start gap-3">
+                  <Stethoscope className="mt-0.5 shrink-0 text-amber-300" size={26} />
+                  <div>
+                    <h2 id="save-encounter-title" className="text-xl font-semibold">Войдите как врач</h2>
+                    <p className="mt-1 text-sm text-slate-400">
+                      Приём сохраняется от имени врача, поэтому нужна врачебная сессия. Представьтесь один раз — и вернитесь сюда, чтобы завершить сохранение.
+                    </p>
+                  </div>
+                </div>
+                <div className="rounded-xl border border-teal-400/20 bg-teal-400/5 p-3 text-xs text-teal-100">
+                  Черновик протокола и введённый ИИН сохранены в этом браузере — после входа ничего вводить заново не придётся.
+                </div>
+                <div className="flex flex-wrap justify-end gap-3">
+                  <Button variant="secondary" onClick={() => setSaveOpen(false)}>Отмена</Button>
+                  <Button variant="secondary" onClick={() => setNeedsDoctorLogin(false)}>Повторить сохранение</Button>
+                  <Link
+                    href="/patient-portal/doctor"
+                    className="focus-ring inline-flex h-10 items-center rounded-xl bg-teal-500 px-4 text-sm font-semibold text-slate-950 hover:bg-teal-400"
+                  >
+                    Войти как врач
+                  </Link>
                 </div>
               </div>
             ) : (

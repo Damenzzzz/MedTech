@@ -4,7 +4,9 @@
   "age": 29,
   "sex": "female",
   "specialty": "neurology",
-  "portrait": "/patients/migraine/portrait.svg",
+  "portrait": "/patients/migraine/portrait.png",
+  "portraitFallback": "/patients/migraine/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

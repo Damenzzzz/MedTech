@@ -55,6 +55,13 @@ export function getSttConfig() {
 }
 
 /**
+ * Image generation (OPENAI_IMAGE_API_KEY / gpt-image-2) is intentionally absent
+ * from this module. It exists only in scripts/generate-patient-assets.ts and runs
+ * offline against `POST /v1/images/generations`; exposing it here would make it
+ * reachable at runtime, which is exactly what the isolation policy forbids.
+ */
+
+/**
  * Guard: OPENAI_API_KEY must NEVER be read by text LLM providers.
  * This function is used in tests to verify isolation.
  */
