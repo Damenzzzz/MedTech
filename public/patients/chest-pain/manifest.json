@@ -6,7 +6,7 @@
   "specialty": "cardiology",
   "portrait": "/patients/chest-pain/portrait.png",
   "portraitFallback": "/patients/chest-pain/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

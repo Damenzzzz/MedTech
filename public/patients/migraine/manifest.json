@@ -6,7 +6,7 @@
   "specialty": "neurology",
   "portrait": "/patients/migraine/portrait.png",
   "portraitFallback": "/patients/migraine/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

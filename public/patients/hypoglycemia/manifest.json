@@ -6,7 +6,7 @@
   "specialty": "endocrinology",
   "portrait": "/patients/hypoglycemia/portrait.png",
   "portraitFallback": "/patients/hypoglycemia/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

@@ -6,7 +6,7 @@
   "specialty": "neurology",
   "portrait": "/patients/tia/portrait.png",
   "portraitFallback": "/patients/tia/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

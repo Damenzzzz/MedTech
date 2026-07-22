@@ -6,7 +6,7 @@
   "specialty": "therapy",
   "portrait": "/patients/hypertension/portrait.png",
   "portraitFallback": "/patients/hypertension/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

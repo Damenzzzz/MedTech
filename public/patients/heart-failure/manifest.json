@@ -6,7 +6,7 @@
   "specialty": "cardiology",
   "portrait": "/patients/heart-failure/portrait.png",
   "portraitFallback": "/patients/heart-failure/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

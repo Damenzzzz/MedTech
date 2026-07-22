@@ -6,7 +6,7 @@
   "specialty": "pulmonology",
   "portrait": "/patients/asthma/portrait.png",
   "portraitFallback": "/patients/asthma/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

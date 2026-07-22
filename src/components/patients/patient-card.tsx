@@ -1,11 +1,11 @@
 'use client';
 
-import Image from 'next/image';
 import { Clock, Heart, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import type { StudentCaseDTO } from '@/domain/schemas';
 import { Link } from '@/i18n/navigation';
+import { FallbackImage } from '@/components/ui/fallback-image';
 
 interface PatientCardProps {
   item: StudentCaseDTO;
@@ -59,13 +59,13 @@ export function PatientCard({
       {/* Top Image & Header */}
       <div>
         <div className="relative h-44 w-full overflow-hidden bg-slate-100 border-b border-slate-100">
-          <Image
+          <FallbackImage
+            key={item.id}
             src={item.patient.avatar}
             alt={name}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             className="object-cover transition duration-500 group-hover:scale-105"
-            unoptimized
           />
           <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950/70 to-transparent" />
 

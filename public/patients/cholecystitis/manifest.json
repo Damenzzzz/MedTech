@@ -6,7 +6,7 @@
   "specialty": "gastroenterology",
   "portrait": "/patients/cholecystitis/portrait.png",
   "portraitFallback": "/patients/cholecystitis/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

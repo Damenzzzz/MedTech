@@ -6,7 +6,7 @@
   "specialty": "gastroenterology",
   "portrait": "/patients/gerd/portrait.png",
   "portraitFallback": "/patients/gerd/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

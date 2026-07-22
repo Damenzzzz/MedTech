@@ -6,7 +6,7 @@
   "specialty": "infectious",
   "portrait": "/patients/viral-uri/portrait.png",
   "portraitFallback": "/patients/viral-uri/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

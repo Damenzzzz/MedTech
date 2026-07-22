@@ -6,7 +6,7 @@
   "specialty": "therapy",
   "portrait": "/patients/dvt/portrait.png",
   "portraitFallback": "/patients/dvt/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

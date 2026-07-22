@@ -6,7 +6,7 @@
   "specialty": "emergency",
   "portrait": "/patients/status-epilepticus/portrait.png",
   "portraitFallback": "/patients/status-epilepticus/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",

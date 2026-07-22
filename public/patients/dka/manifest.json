@@ -6,7 +6,7 @@
   "specialty": "endocrinology",
   "portrait": "/patients/dka/portrait.png",
   "portraitFallback": "/patients/dka/portrait.svg",
-  "portraitGenerated": false,
+  "portraitGenerated": true,
   "visualStates": [
     "neutral",
     "thinking",
