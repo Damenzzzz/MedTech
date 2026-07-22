@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { X, RotateCcw, Heart, Check } from 'lucide-react';
+import { X, RotateCcw, Heart, Check, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface FilterState {
@@ -11,6 +11,7 @@ interface FilterState {
   difficulty: string;
   ageGroup: string;
   onlyFavorites: boolean;
+  hideCompleted: boolean;
 }
 
 interface FilterDrawerProps {
@@ -146,6 +147,23 @@ export function FilterDrawer({
                   {t('favorites')}
                 </span>
                 {filters.onlyFavorites && <Check size={16} />}
+              </button>
+
+              {/* Hide Completed Toggle */}
+              <button
+                onClick={() => onFilterChange({ hideCompleted: !filters.hideCompleted })}
+                aria-pressed={filters.hideCompleted}
+                className={`flex w-full items-center justify-between rounded-xl border p-3.5 text-xs font-bold transition-all ${
+                  filters.hideCompleted
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                    : 'border-slate-200 bg-white text-slate-700'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 size={16} />
+                  {t('hideCompleted')}
+                </span>
+                {filters.hideCompleted && <Check size={16} />}
               </button>
 
               {/* Actions */}

@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import type { PatientVisualState, StudentCaseDTO } from '@/domain/schemas';
 import { PatientMessageResultSchema } from '@/engines/patient-engine';
 import { useTrainingStore } from '@/stores/training-store';
+import { saveProgressEntry } from '@/lib/progress';
 import { useRouter } from '@/i18n/navigation';
 
 import { TrainingHeader } from './training-header';
@@ -214,31 +215,23 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
     }
 
     const resultData = await response.json();
+
+    // Record progress before navigating: scoring is deterministic and RAG sources
+    // are fetched lazily on the debrief screen, so this never waits on the network.
+    saveProgressEntry({
+      caseId: patient.id,
+      sessionId: session.id,
+      completedAt: Date.now(),
+      score: resultData.total ?? 0,
+      categories: resultData.categories ?? {},
+      specialty: patient.specialty,
+      validationTier: patient.validationTier,
+      missedRedFlags: resultData.missedRedFlags ?? [],
+      criticalErrors: resultData.criticalErrors ?? [],
+    });
+
     try {
       localStorage.setItem(`kms-debrief-${patient.id}`, JSON.stringify(resultData));
-
-      let progress: Record<string, unknown>[] = [];
-      try {
-        progress = JSON.parse(localStorage.getItem('kms-progress') ?? '[]');
-        if (!Array.isArray(progress)) progress = [];
-      } catch {
-        progress = [];
-      }
-
-      const filtered = progress.filter((p) => p && p.sessionId !== session.id);
-      const newEntry = {
-        caseId: patient.id,
-        sessionId: session.id,
-        completedAt: Date.now(),
-        score: resultData.total ?? 0,
-        categories: resultData.categories ?? {},
-        specialty: patient.specialty,
-        validationTier: patient.validationTier,
-        missedRedFlags: resultData.missedRedFlags ?? [],
-        criticalErrors: resultData.criticalErrors ?? [],
-      };
-
-      localStorage.setItem('kms-progress', JSON.stringify([...filtered, newEntry].slice(-50)));
     } catch {
       // Safe fallback if localStorage fails
     }

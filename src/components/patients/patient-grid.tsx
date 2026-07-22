@@ -9,6 +9,7 @@ interface PatientGridProps {
   cases: StudentCaseDTO[];
   locale: string;
   favorites: string[];
+  completedIds: Set<string>;
   onToggleFavorite: (id: string) => void;
 }
 
@@ -16,6 +17,7 @@ export function PatientGrid({
   cases,
   locale,
   favorites,
+  completedIds,
   onToggleFavorite,
 }: PatientGridProps) {
   const INITIAL_PAGE_SIZE = 12;
@@ -34,6 +36,7 @@ export function PatientGrid({
             item={item}
             locale={locale}
             isFavorite={favorites.includes(item.id)}
+            isCompleted={completedIds.has(item.id)}
             onToggleFavorite={onToggleFavorite}
             index={idx}
           />

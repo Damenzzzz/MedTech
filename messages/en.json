@@ -198,7 +198,9 @@
     "emergency": "Emergency",
     "easy": "Easy",
     "medium": "Medium",
-    "hard": "Hard"
+    "hard": "Hard",
+    "completed": "Completed",
+    "hideCompleted": "Hide completed"
   },
   "Training": {
     "start": "Start conversation with patient",

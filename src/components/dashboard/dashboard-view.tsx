@@ -1,58 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { Trophy, Target, Flag, ArrowRight, Activity, Sparkles, Award, BookOpen } from 'lucide-react';
-import { z } from 'zod';
 import type { StudentCaseDTO } from '@/domain/schemas';
 import { Link } from '@/i18n/navigation';
+import type { ProgressEntry } from '@/lib/progress';
+import { useProgress } from '@/lib/use-progress';
 import { useUserStore } from '@/stores/user-store';
-
-/* ── Versioned progress storage ── */
-
-const ProgressEntrySchema = z.object({
-  caseId: z.string(),
-  sessionId: z.string(),
-  score: z.number().min(0).max(100),
-  specialty: z.string(),
-  validationTier: z.enum(['core', 'beta']).optional().default('beta'),
-  missedRedFlags: z.array(z.string()).optional().default([]),
-  criticalErrors: z.array(z.string()).optional().default([]),
-  categories: z.record(z.string(), z.number()).optional(),
-  completedAt: z.number(),
-});
-type ProgressEntry = z.infer<typeof ProgressEntrySchema>;
-
-const ProgressStoreSchema = z.object({
-  version: z.literal(1),
-  entries: z.array(ProgressEntrySchema),
-});
-
-function loadProgress(): ProgressEntry[] {
-  try {
-    const raw = localStorage.getItem('kms-progress');
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-
-    // Handle v1 envelope
-    if (parsed && typeof parsed === 'object' && parsed.version === 1) {
-      return ProgressStoreSchema.parse(parsed).entries;
-    }
-
-    // Handle legacy array format
-    if (Array.isArray(parsed)) {
-      const entries: ProgressEntry[] = [];
-      for (const item of parsed) {
-        const result = ProgressEntrySchema.safeParse(item);
-        if (result.success) entries.push(result.data);
-      }
-      return entries;
-    }
-    return [];
-  } catch {
-    return [];
-  }
-}
 
 /* ── Analytics helpers ── */
 
@@ -129,10 +84,8 @@ export function DashboardView({ cases = [], recommended: initialRecommended }: D
 
   const userName = hydrated && profile?.name ? profile.name : '';
 
-  const [entries] = useState<ProgressEntry[]>(() => {
-    if (typeof window === 'undefined') return [];
-    return loadProgress();
-  });
+  // Empty on the server, filled from localStorage once hydrated.
+  const entries = useProgress();
 
   const analytics = useMemo(() => computeAnalytics(entries), [entries]);
 
