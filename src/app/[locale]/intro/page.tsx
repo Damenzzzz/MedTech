@@ -12,7 +12,7 @@ export default async function IntroPage({
 
   return (
     <div className="min-h-screen bg-[color:var(--canvas)] flex flex-col">
-      <Header />
+      <Header variant="minimal" />
       <main className="flex-1">
         <OnboardingView />
       </main>

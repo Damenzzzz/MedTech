@@ -12,7 +12,7 @@ export default async function PatientEntryPage({
 
   return (
     <div className="min-h-screen bg-[color:var(--canvas)] flex flex-col">
-      <Header />
+      <Header variant="minimal" />
       <main className="flex-1 grid place-items-center px-4 py-12">
         <PatientEntryForm />
       </main>

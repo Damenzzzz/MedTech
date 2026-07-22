@@ -14,7 +14,7 @@ export default async function Landing({
 
   return (
     <div className="min-h-screen bg-[color:var(--canvas)] flex flex-col">
-      <Header />
+      <Header variant="minimal" />
       <main className="flex-1 grid place-items-center px-4 py-12">
         <div className="w-full max-w-3xl space-y-10">
           <div className="space-y-3 text-center">
