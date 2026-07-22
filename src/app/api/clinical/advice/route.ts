@@ -1,5 +1,6 @@
 import {NextResponse} from 'next/server';
 import {callClinicalJson} from '@/lib/ai/text-llm.server';
+import {hasEmergencyRedFlags} from '@/lib/clinical/red-flags';
 
 export const maxDuration=300;
 
@@ -110,10 +111,6 @@ ${history || 'Пока нет.'}
     need_rag:true,
     urgency_hint:'urgent',
   };
-}
-
-function hasEmergencyRedFlags(scenario:string) {
-  return /боль за грудин|давящ.{0,40}грудин|холодн.{0,16}пот|иррадиац|одышк|SpO2\s*(8|9[0-2])|АД\s*8\d|потер.{0,16}созн|судорог|кровотеч|анафилак|инсульт|170\/110|беремен.{0,80}(голов|мушк|подреб|тромбоцит|алт|аст)/i.test(scenario);
 }
 
 async function getRagContext(scenario:string,resources:string) {
