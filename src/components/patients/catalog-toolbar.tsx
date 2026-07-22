@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Search, Heart, SlidersHorizontal, X, RotateCcw } from 'lucide-react';
+import { Search, Heart, SlidersHorizontal, X, RotateCcw, CheckCircle2 } from 'lucide-react';
 
 interface FilterState {
   search: string;
@@ -10,6 +10,7 @@ interface FilterState {
   difficulty: string;
   ageGroup: string;
   onlyFavorites: boolean;
+  hideCompleted: boolean;
 }
 
 interface CatalogToolbarProps {
@@ -38,12 +39,13 @@ export function CatalogToolbar({
     filters.urgency !== 'all' ||
     filters.difficulty !== 'all' ||
     filters.ageGroup !== 'all' ||
-    filters.onlyFavorites;
+    filters.onlyFavorites ||
+    filters.hideCompleted;
 
   return (
     <div className="space-y-3">
       {/* Desktop Toolbar */}
-      <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-xs md:grid-cols-[1.4fr_1fr_1fr_1fr_auto_auto]">
+      <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-xs md:grid-cols-[1.4fr_1fr_1fr_1fr_auto_auto_auto]">
         {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
@@ -119,6 +121,20 @@ export function CatalogToolbar({
           <span className="hidden sm:inline">{t('favorites')}</span>
         </button>
 
+        {/* Hide Completed Toggle */}
+        <button
+          onClick={() => onFilterChange({ hideCompleted: !filters.hideCompleted })}
+          aria-pressed={filters.hideCompleted}
+          className={`focus-ring flex items-center gap-1.5 rounded-xl border px-3.5 h-10 text-xs font-bold transition-all ${
+            filters.hideCompleted
+              ? 'border-emerald-300 bg-emerald-50 text-emerald-800 shadow-xs'
+              : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <CheckCircle2 size={15} />
+          <span className="hidden sm:inline">{t('hideCompleted')}</span>
+        </button>
+
         {/* Mobile Filter Drawer Trigger */}
         <button
           onClick={onOpenMobileDrawer}
@@ -159,8 +175,16 @@ export function CatalogToolbar({
 
           {filters.onlyFavorites && (
             <span className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1 font-semibold text-red-800 border border-red-200">
-              ❤️ Избранное
+              ❤️ {t('favorites')}
               <X size={13} className="cursor-pointer" onClick={() => onFilterChange({ onlyFavorites: false })} />
+            </span>
+          )}
+
+          {filters.hideCompleted && (
+            <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-800 border border-emerald-200">
+              <CheckCircle2 size={13} />
+              {t('hideCompleted')}
+              <X size={13} className="cursor-pointer" onClick={() => onFilterChange({ hideCompleted: false })} />
             </span>
           )}
         </div>

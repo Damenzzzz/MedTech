@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock, Heart, ArrowRight } from 'lucide-react';
+import { Clock, Heart, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useTranslations } from 'next-intl';
 import type { StudentCaseDTO } from '@/domain/schemas';
@@ -11,6 +11,7 @@ interface PatientCardProps {
   item: StudentCaseDTO;
   locale: string;
   isFavorite: boolean;
+  isCompleted: boolean;
   onToggleFavorite: (id: string) => void;
   index: number;
 }
@@ -19,6 +20,7 @@ export function PatientCard({
   item,
   locale,
   isFavorite,
+  isCompleted,
   onToggleFavorite,
   index,
 }: PatientCardProps) {
@@ -54,7 +56,9 @@ export function PatientCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.3) }}
-      className="card group flex flex-col justify-between overflow-hidden rounded-3xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-teal-300/60"
+      className={`card group flex flex-col justify-between overflow-hidden rounded-3xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-teal-300/60 ${
+        isCompleted ? 'border-emerald-200 bg-emerald-50/30 opacity-80 hover:opacity-100' : ''
+      }`}
     >
       {/* Top Image & Header */}
       <div>
@@ -68,6 +72,14 @@ export function PatientCard({
             className="object-cover transition duration-500 group-hover:scale-105"
           />
           <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950/70 to-transparent" />
+
+          {/* Completed Badge */}
+          {isCompleted && (
+            <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white shadow-sm">
+              <CheckCircle2 size={13} />
+              {t('completed')}
+            </span>
+          )}
 
           {/* Favorite Toggle Button */}
           <button

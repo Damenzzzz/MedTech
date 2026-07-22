@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { StudentCaseDTO } from '@/domain/schemas';
+import { useCompletedCaseIds } from '@/lib/use-progress';
 import { useRouter, usePathname } from '@/i18n/navigation';
 import { CatalogHeader } from './catalog-header';
 import { CatalogToolbar } from './catalog-toolbar';
@@ -36,6 +37,9 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
   });
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
+  // Completed cases live in localStorage; empty on the server, filled after hydration.
+  const completedIds = useCompletedCaseIds();
+
   const toggleFavorite = (id: string) => {
     const next = favorites.includes(id)
       ? favorites.filter((x) => x !== id)
@@ -56,6 +60,7 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
   const [difficulty, setDifficulty] = useState<string>(searchParams.get('difficulty') || 'all');
   const [ageGroup, setAgeGroup] = useState<string>(searchParams.get('ageGroup') || 'all');
   const [onlyFavorites, setOnlyFavorites] = useState<boolean>(searchParams.get('favorites') === 'true');
+  const [hideCompleted, setHideCompleted] = useState<boolean>(searchParams.get('hideCompleted') === 'true');
 
   // Sync state changes to URL Search Params
   const updateUrlParams = useCallback(
@@ -66,6 +71,7 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
       difficulty?: string;
       ageGroup?: string;
       onlyFavorites?: boolean;
+      hideCompleted?: boolean;
     }) => {
       const params = new URLSearchParams(searchParams.toString());
 
@@ -75,6 +81,7 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
       const nextDifficulty = updates.difficulty !== undefined ? updates.difficulty : difficulty;
       const nextAgeGroup = updates.ageGroup !== undefined ? updates.ageGroup : ageGroup;
       const nextFav = updates.onlyFavorites !== undefined ? updates.onlyFavorites : onlyFavorites;
+      const nextHideCompleted = updates.hideCompleted !== undefined ? updates.hideCompleted : hideCompleted;
 
       if (nextSearch) params.set('q', nextSearch);
       else params.delete('q');
@@ -94,9 +101,12 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
       if (nextFav) params.set('favorites', 'true');
       else params.delete('favorites');
 
+      if (nextHideCompleted) params.set('hideCompleted', 'true');
+      else params.delete('hideCompleted');
+
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
-    [searchParams, search, specialty, urgency, difficulty, ageGroup, onlyFavorites, pathname, router]
+    [searchParams, search, specialty, urgency, difficulty, ageGroup, onlyFavorites, hideCompleted, pathname, router]
   );
 
   const handleFilterChange = (updates: Partial<{
@@ -106,6 +116,7 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
     difficulty: string;
     ageGroup: string;
     onlyFavorites: boolean;
+    hideCompleted: boolean;
   }>) => {
     if (updates.search !== undefined) setSearch(updates.search);
     if (updates.specialty !== undefined) setSpecialty(updates.specialty);
@@ -113,6 +124,7 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
     if (updates.difficulty !== undefined) setDifficulty(updates.difficulty);
     if (updates.ageGroup !== undefined) setAgeGroup(updates.ageGroup);
     if (updates.onlyFavorites !== undefined) setOnlyFavorites(updates.onlyFavorites);
+    if (updates.hideCompleted !== undefined) setHideCompleted(updates.hideCompleted);
 
     updateUrlParams(updates);
   };
@@ -124,6 +136,7 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
     setDifficulty('all');
     setAgeGroup('all');
     setOnlyFavorites(false);
+    setHideCompleted(false);
 
     router.replace(pathname, { scroll: false });
   };
@@ -153,16 +166,32 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
       const matchesUrgency = urgency === 'all' || item.urgency === urgency;
       const matchesDifficulty = difficulty === 'all' || item.difficulty === difficulty;
       const matchesFavorites = !onlyFavorites || favorites.includes(item.id);
+      const matchesCompleted = !hideCompleted || !completedIds.has(item.id);
 
       return (
         matchesSearch &&
         matchesSpecialty &&
         matchesUrgency &&
         matchesDifficulty &&
-        matchesFavorites
+        matchesFavorites &&
+        matchesCompleted
       );
     });
-  }, [cases, locale, search, specialty, urgency, difficulty, onlyFavorites, favorites]);
+  }, [cases, locale, search, specialty, urgency, difficulty, onlyFavorites, favorites, hideCompleted, completedIds]);
+
+  // Completed cases stay in the list (so they can be retaken) but sink to the bottom.
+  const orderedCases = useMemo(() => {
+    if (completedIds.size === 0) return filteredCases;
+    return [...filteredCases].sort(
+      (a, b) => Number(completedIds.has(a.id)) - Number(completedIds.has(b.id))
+    );
+  }, [filteredCases, completedIds]);
+
+  // Count only cases still present in the catalog, so "X из N" can never overflow.
+  const completedCount = useMemo(
+    () => cases.reduce((n, item) => n + (completedIds.has(item.id) ? 1 : 0), 0),
+    [cases, completedIds]
+  );
 
   // Random Case Selector
   const handleSelectRandom = () => {
@@ -186,7 +215,7 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
       {/* Header */}
       <CatalogHeader
         totalCases={cases.length}
-        completedCount={0}
+        completedCount={completedCount}
         onSelectRandom={handleSelectRandom}
         onResumeLast={handleResumeLast}
         hasActiveSession={Boolean(trainingSession?.caseId)}
@@ -201,20 +230,22 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
           difficulty,
           ageGroup,
           onlyFavorites,
+          hideCompleted,
         }}
         onFilterChange={handleFilterChange}
         onResetFilters={handleResetFilters}
         onOpenMobileDrawer={() => setMobileDrawerOpen(true)}
         specialties={specialties}
-        totalResults={filteredCases.length}
+        totalResults={orderedCases.length}
       />
 
       {/* Grid or Empty State */}
-      {filteredCases.length > 0 ? (
+      {orderedCases.length > 0 ? (
         <PatientGrid
-          cases={filteredCases}
+          cases={orderedCases}
           locale={locale}
           favorites={favorites}
+          completedIds={completedIds}
           onToggleFavorite={toggleFavorite}
         />
       ) : (
@@ -232,11 +263,12 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
           difficulty,
           ageGroup,
           onlyFavorites,
+          hideCompleted,
         }}
         onFilterChange={handleFilterChange}
         onResetFilters={handleResetFilters}
         specialties={specialties}
-        totalResults={filteredCases.length}
+        totalResults={orderedCases.length}
       />
     </div>
   );
