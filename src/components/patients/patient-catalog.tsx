@@ -4,8 +4,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import type { StudentCaseDTO } from '@/domain/schemas';
-import { clearProgress } from '@/lib/progress';
-import { useCompletedCaseIds } from '@/lib/use-progress';
+import { clearProgress, type ProgressEntry } from '@/lib/progress';
+import { useProgress } from '@/lib/use-progress';
 import { useRouter, usePathname } from '@/i18n/navigation';
 import { CatalogHeader } from './catalog-header';
 import { CatalogToolbar } from './catalog-toolbar';
@@ -41,7 +41,14 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   // Completed cases live in localStorage; empty on the server, filled after hydration.
-  const completedIds = useCompletedCaseIds();
+  const progressEntries = useProgress();
+  const latestProgressByCase = useMemo(() => {
+    const map = new Map<string, ProgressEntry>();
+    // Entries come oldest-first, so the last write per caseId is the most recent attempt.
+    for (const entry of progressEntries) map.set(entry.caseId, entry);
+    return map;
+  }, [progressEntries]);
+  const completedIds = useMemo(() => new Set(latestProgressByCase.keys()), [latestProgressByCase]);
 
   const toggleFavorite = (id: string) => {
     const next = favorites.includes(id)
@@ -254,7 +261,7 @@ export function PatientCatalog({ cases, locale }: PatientCatalogProps) {
           cases={orderedCases}
           locale={locale}
           favorites={favorites}
-          completedIds={completedIds}
+          progressByCase={latestProgressByCase}
           onToggleFavorite={toggleFavorite}
         />
       ) : (
