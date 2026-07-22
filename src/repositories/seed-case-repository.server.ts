@@ -108,6 +108,7 @@ const toStudentDTO = (item: (typeof cases)[number]): StudentCaseDTO => {
     title: item.title,
     specialty: item.specialty,
     patient: item.patient,
+    scene: item.scene,
     complaint: item.complaint,
     urgency: item.urgency,
     difficulty: item.difficulty,

@@ -4,7 +4,9 @@
   "age": 39,
   "sex": "female",
   "specialty": "therapy",
-  "portrait": "/patients/anemia/portrait.svg",
+  "portrait": "/patients/anemia/portrait.png",
+  "portraitFallback": "/patients/anemia/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

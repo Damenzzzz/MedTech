@@ -4,7 +4,9 @@
   "age": 32,
   "sex": "female",
   "specialty": "emergency",
-  "portrait": "/patients/preeclampsia/portrait.svg",
+  "portrait": "/patients/preeclampsia/portrait.png",
+  "portraitFallback": "/patients/preeclampsia/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

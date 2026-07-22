@@ -4,7 +4,9 @@
   "age": 27,
   "sex": "male",
   "specialty": "gastroenterology",
-  "portrait": "/patients/appendicitis/portrait.svg",
+  "portrait": "/patients/appendicitis/portrait.png",
+  "portraitFallback": "/patients/appendicitis/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

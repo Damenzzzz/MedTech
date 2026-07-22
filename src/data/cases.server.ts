@@ -72,8 +72,12 @@ export const cases: MedicalCase[] = allSeeds.map((s) => {
       name: t(...s.name),
       age: s.age,
       sex: s.sex,
-      avatar: `/patients/${s.id}/portrait.svg`,
+      // Generated offline by scripts/generate-patient-assets.ts. The .svg placeholder
+      // is committed alongside it and the UI falls back to it if the .png is missing,
+      // so the build never depends on the generated assets being present.
+      avatar: `/patients/${s.id}/portrait.png`,
     },
+    scene: '/scenes/consultation.png',
     complaint: t(...s.complaint),
     urgency: s.urgency,
     difficulty: s.difficulty,

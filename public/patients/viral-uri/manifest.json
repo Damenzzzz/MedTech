@@ -4,7 +4,9 @@
   "age": 25,
   "sex": "male",
   "specialty": "infectious",
-  "portrait": "/patients/viral-uri/portrait.svg",
+  "portrait": "/patients/viral-uri/portrait.png",
+  "portraitFallback": "/patients/viral-uri/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

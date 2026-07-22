@@ -138,6 +138,8 @@ export const MedicalCaseSchema = z.object({
     sex: z.enum(['male', 'female']),
     avatar: z.string(),
   }),
+  /** Consultation-room backdrop for the training stage. Falls back to a gradient when absent. */
+  scene: z.string().optional(),
   complaint: LocalizedTextSchema,
   urgency: z.enum(['routine', 'urgent', 'emergency']),
   difficulty: z.enum(['easy', 'medium', 'hard']),
@@ -183,6 +185,8 @@ export const StudentCaseDTOSchema = z.object({
     sex: z.enum(['male', 'female']),
     avatar: z.string(),
   }),
+  /** Consultation-room backdrop for the training stage. Falls back to a gradient when absent. */
+  scene: z.string().optional(),
   complaint: LocalizedTextSchema,
   urgency: z.enum(['routine', 'urgent', 'emergency']),
   difficulty: z.enum(['easy', 'medium', 'hard']),
@@ -280,6 +284,12 @@ export type SttSpeaker = z.infer<typeof SttSpeakerSchema>;
 
 export const SttTurnSchema = z.object({
   speaker: SttSpeakerSchema,
+  /**
+   * Stable diarization label from the STT provider (e.g. "speaker_0").
+   * It says WHO SPOKE WHEN, never WHO THEY ARE — clinical roles are assigned
+   * downstream by the LLM (Prompt B), never inferred from the speaker index.
+   */
+  speakerLabel: z.string().optional(),
   text: z.string(),
   start: z.number().optional(),
   end: z.number().optional(),
@@ -461,6 +471,7 @@ export const StructureDialogueRequestSchema = z.object({
   transcriptText: z.string(),
   turns: z.array(z.object({
     speaker: z.enum(['doctor', 'patient', 'relative', 'nurse', 'unknown']),
+    speakerLabel: z.string().optional(),
     text: z.string(),
     start: z.number().optional(),
     end: z.number().optional(),

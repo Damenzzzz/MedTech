@@ -4,7 +4,9 @@
   "age": 23,
   "sex": "female",
   "specialty": "pulmonology",
-  "portrait": "/patients/asthma/portrait.svg",
+  "portrait": "/patients/asthma/portrait.png",
+  "portraitFallback": "/patients/asthma/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

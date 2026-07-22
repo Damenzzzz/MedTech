@@ -22,11 +22,11 @@ export default async function PatientProfilePage({
     redirect(`/${locale}/patient-portal`);
   }
 
+  // A patient row may not exist yet (first visit, no encounter recorded). That is not
+  // an error for the owning patient — the portal renders an empty state instead.
+  // Doctors are still gated by the encounter check below, which cannot match when
+  // the patient has no encounters at all.
   const patient = await getPatientByIin(iin);
-  if (!patient) {
-    redirect(`/${locale}/patient-portal`);
-  }
-
   const encounters = await listEncountersByPatient(iin);
   if (session.role === 'doctor' && !encounters.some((encounter) => encounter.doctor_id === session.doctorId)) {
     redirect(`/${locale}/dashboard`);
@@ -36,7 +36,7 @@ export default async function PatientProfilePage({
     <div className="min-h-screen bg-[color:var(--canvas)] flex flex-col">
       <Header />
       <main className="flex-1">
-        <PatientProfileView patient={patient} encounters={encounters} locale={locale} />
+        <PatientProfileView patient={patient} iin={iin} encounters={encounters} locale={locale} />
       </main>
     </div>
   );

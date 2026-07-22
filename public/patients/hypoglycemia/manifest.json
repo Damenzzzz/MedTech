@@ -4,7 +4,9 @@
   "age": 61,
   "sex": "male",
   "specialty": "endocrinology",
-  "portrait": "/patients/hypoglycemia/portrait.svg",
+  "portrait": "/patients/hypoglycemia/portrait.png",
+  "portraitFallback": "/patients/hypoglycemia/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

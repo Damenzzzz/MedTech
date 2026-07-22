@@ -4,7 +4,9 @@
   "age": 72,
   "sex": "male",
   "specialty": "cardiology",
-  "portrait": "/patients/heart-failure/portrait.svg",
+  "portrait": "/patients/heart-failure/portrait.png",
+  "portraitFallback": "/patients/heart-failure/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

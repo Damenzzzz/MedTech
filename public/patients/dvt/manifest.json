@@ -4,7 +4,9 @@
   "age": 52,
   "sex": "female",
   "specialty": "therapy",
-  "portrait": "/patients/dvt/portrait.svg",
+  "portrait": "/patients/dvt/portrait.png",
+  "portraitFallback": "/patients/dvt/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

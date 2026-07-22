@@ -4,7 +4,9 @@
   "age": 46,
   "sex": "male",
   "specialty": "cardiology",
-  "portrait": "/patients/chest-pain/portrait.svg",
+  "portrait": "/patients/chest-pain/portrait.png",
+  "portraitFallback": "/patients/chest-pain/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

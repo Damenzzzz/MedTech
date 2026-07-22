@@ -52,6 +52,10 @@ export function Header() {
     { href: '/ai-assistant', label: t('ai') },
   ];
 
+  // Match on a full segment so /patients does not light up for /patients-archive.
+  const isNavActive = (href: string) =>
+    href === '/' ? path === '/' || path === '' : path === href || path.startsWith(`${href}/`);
+
   // Helper to extract initials
   const initials = profile?.name
     ? profile.name
@@ -86,15 +90,13 @@ export function Header() {
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-1 md:flex">
           {navItems.map((item) => {
-            const isActive =
-              item.href === '/'
-                ? path === '/' || path === ''
-                : path.startsWith(item.href);
+            const isActive = isNavActive(item.href);
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={isActive ? 'page' : undefined}
                 className={`focus-ring relative rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${
                   isActive
                     ? 'text-teal-700 bg-teal-50 font-semibold'
@@ -117,11 +119,13 @@ export function Header() {
         {/* Desktop Controls (Lang + User Dropdown) */}
         <div className="hidden items-center gap-3 md:flex">
           {/* Language Switcher */}
-          <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1">
+          <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1" role="group" aria-label={t('languageLabel')}>
             {(['ru', 'kk', 'en'] as const).map((locale) => (
               <button
                 key={locale}
+                type="button"
                 onClick={() => router.replace(path, { locale })}
+                aria-label={t('switchLanguage', { locale: locale.toUpperCase() })}
                 className="focus-ring rounded-lg px-2.5 py-1 text-xs font-bold uppercase text-slate-600 transition-colors hover:bg-white hover:text-teal-700 hover:shadow-xs"
               >
                 {locale}
@@ -133,7 +137,11 @@ export function Header() {
           {hydrated && profile ? (
             <div className="relative" ref={dropdownRef}>
               <button
+                type="button"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
+                aria-label={t('openProfileMenu')}
+                aria-haspopup="menu"
+                aria-expanded={dropdownOpen}
                 className="focus-ring flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-xs hover:border-slate-300 hover:bg-slate-50 transition-all"
               >
                 <div className="grid size-7 place-items-center rounded-lg bg-teal-700 text-xs font-bold text-white shadow-xs">
@@ -205,9 +213,12 @@ export function Header() {
 
         {/* Mobile Hamburger Button */}
         <button
+          type="button"
           onClick={() => setMobileOpen(!mobileOpen)}
           className="focus-ring grid size-10 place-items-center rounded-xl border border-slate-200 text-slate-700 md:hidden hover:bg-slate-100"
-          aria-label={t('menu')}
+          aria-label={mobileOpen ? t('closeMenu') : t('openMenu')}
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-nav"
         >
           {mobileOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
@@ -228,6 +239,7 @@ export function Header() {
 
             {/* Drawer */}
             <motion.div
+              id="mobile-nav"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -254,17 +266,15 @@ export function Header() {
 
                 {/* Nav Links */}
                 {navItems.map((item) => {
-                  const isActive =
-                    item.href === '/'
-                      ? path === '/' || path === ''
-                      : path.startsWith(item.href);
+                  const isActive = isNavActive(item.href);
 
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
                       onClick={() => setMobileOpen(false)}
-                      className={`flex items-center justify-between rounded-xl px-4 py-3 text-base font-semibold transition-colors ${
+                      aria-current={isActive ? 'page' : undefined}
+                      className={`focus-ring flex items-center justify-between rounded-xl px-4 py-3 text-base font-semibold transition-colors ${
                         isActive
                           ? 'bg-teal-600 text-white'
                           : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
@@ -306,17 +316,19 @@ export function Header() {
                 {/* Mobile Language Switcher */}
                 <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-2">
                   <span className="text-xs font-medium text-slate-500 pl-2">
-                    Язык / Тіл / Lang:
+                    {t('languageLabel')}
                   </span>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1" role="group" aria-label={t('languageLabel')}>
                     {(['ru', 'kk', 'en'] as const).map((locale) => (
                       <button
                         key={locale}
+                        type="button"
                         onClick={() => {
                           setMobileOpen(false);
                           router.replace(path, { locale });
                         }}
-                        className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold uppercase text-slate-700 shadow-xs hover:text-teal-700"
+                        aria-label={t('switchLanguage', { locale: locale.toUpperCase() })}
+                        className="focus-ring rounded-lg bg-white px-3 py-1.5 text-xs font-bold uppercase text-slate-700 shadow-xs hover:text-teal-700"
                       >
                         {locale}
                       </button>

@@ -4,7 +4,9 @@
   "age": 48,
   "sex": "female",
   "specialty": "gastroenterology",
-  "portrait": "/patients/cholecystitis/portrait.svg",
+  "portrait": "/patients/cholecystitis/portrait.png",
+  "portraitFallback": "/patients/cholecystitis/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

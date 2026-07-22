@@ -4,7 +4,9 @@
   "age": 63,
   "sex": "male",
   "specialty": "pulmonology",
-  "portrait": "/patients/copd-exacerbation/portrait.svg",
+  "portrait": "/patients/copd-exacerbation/portrait.png",
+  "portraitFallback": "/patients/copd-exacerbation/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",

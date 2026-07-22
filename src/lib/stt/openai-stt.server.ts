@@ -3,7 +3,6 @@ import { getSttProvider } from '@/lib/ai/provider-config.server';
 import {
   SttResponse,
   SttResponseSchema,
-  SttSpeaker,
   SttTurn,
 } from '@/domain/schemas';
 
@@ -215,9 +214,11 @@ function normalizeDiarizedTurns(raw: Record<string, unknown>, diarizationEnabled
     const text = String(item.text ?? item.word ?? '').trim();
     if (!text) continue;
     const rawSpeaker = String(item.speaker ?? item.speaker_id ?? 'unknown');
-    const speaker = diarizationEnabled ? mapSpeaker(rawSpeaker) : 'unknown';
     turns.push({
-      speaker,
+      // Diarization answers "who spoke when", not "who is the doctor". Roles stay
+      // 'unknown' here and are assigned downstream by the LLM (Prompt B).
+      speaker: 'unknown',
+      speakerLabel: diarizationEnabled ? normalizeSpeakerLabel(rawSpeaker) : undefined,
       text,
       start: typeof item.start === 'number' ? item.start : undefined,
       end: typeof item.end === 'number' ? item.end : undefined,
@@ -226,13 +227,14 @@ function normalizeDiarizedTurns(raw: Record<string, unknown>, diarizationEnabled
   return turns;
 }
 
-function mapSpeaker(val: string): SttSpeaker {
-  const lower = val.toLowerCase();
-  if (lower.includes('doctor') || lower.includes('врач') || lower.includes('speaker_0') || lower.includes('speaker_a')) return 'doctor';
-  if (lower.includes('patient') || lower.includes('пациент') || lower.includes('speaker_1') || lower.includes('speaker_b')) return 'patient';
-  if (lower.includes('nurse') || lower.includes('медсестра')) return 'nurse';
-  if (lower.includes('relative') || lower.includes('родственник')) return 'relative';
-  return 'unknown';
+/**
+ * Normalizes a provider diarization label into a stable, comparable key
+ * ("Speaker 0" -> "speaker_0"). Deliberately does NOT interpret the label:
+ * mapping speaker_0 -> doctor was a biased guess and has been removed.
+ */
+export function normalizeSpeakerLabel(val: string): string {
+  const normalized = val.trim().toLowerCase().replace(/\s+/g, '_');
+  return normalized || 'unknown';
 }
 
 function mapLanguageCode(lang: string): 'ru' | 'kk' | 'en' | 'unknown' {
@@ -247,10 +249,11 @@ function mockSttResponse(requestId: string): SttResponse {
   return {
     transcriptId: `tr-mock-${Date.now()}`,
     text: 'Здравствуйте, доктор. У меня три дня болит голова и температура 38. Принимал парацетамол, но не помогает.',
+    // Mirrors real STT output: speakers are separated, roles are left unassigned.
     turns: [
-      { speaker: 'patient', text: 'Здравствуйте, доктор. У меня три дня болит голова и температура 38.', start: 0, end: 4.5 },
-      { speaker: 'doctor', text: 'Здравствуйте! Какую дозировку парацетамола принимали?', start: 4.8, end: 7.2 },
-      { speaker: 'patient', text: 'Принимал по 1 таблетке 500 миллиграмм, но боль не уходит.', start: 7.5, end: 11.0 },
+      { speaker: 'unknown', speakerLabel: 'speaker_0', text: 'Здравствуйте, доктор. У меня три дня болит голова и температура 38.', start: 0, end: 4.5 },
+      { speaker: 'unknown', speakerLabel: 'speaker_1', text: 'Здравствуйте! Какую дозировку парацетамола принимали?', start: 4.8, end: 7.2 },
+      { speaker: 'unknown', speakerLabel: 'speaker_0', text: 'Принимал по 1 таблетке 500 миллиграмм, но боль не уходит.', start: 7.5, end: 11.0 },
     ],
     language: 'ru',
     durationSeconds: 11,

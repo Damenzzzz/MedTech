@@ -4,7 +4,9 @@
   "age": 34,
   "sex": "female",
   "specialty": "therapy",
-  "portrait": "/patients/pyelonephritis/portrait.svg",
+  "portrait": "/patients/pyelonephritis/portrait.png",
+  "portraitFallback": "/patients/pyelonephritis/portrait.svg",
+  "portraitGenerated": false,
   "visualStates": [
     "neutral",
     "thinking",
