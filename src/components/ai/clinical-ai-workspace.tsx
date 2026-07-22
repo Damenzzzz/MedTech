@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { SttEncounterWorkspace } from '@/components/ai/stt-encounter-workspace';
 import { ProtocolViewer } from '@/components/ai/protocol-viewer';
 import { DifferentialResults } from '@/components/ai/differential-results';
+import { RagBadge } from '@/components/ai/rag-badge';
 import type { DiagnoseResponse, ProtocolSource, StudentCaseDTO } from '@/domain/schemas';
 
 type AdviceStep = { step?: string; action?: string; why?: string };
@@ -113,10 +114,12 @@ export function RagPanel() {
   const [data, setData] = useState<DiagnoseResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null);
 
   async function diagnose() {
     setLoading(true);
     setError('');
+    const started = performance.now();
     try {
       const job = await startDiagnoseJob(symptoms);
       if (job?.job_id) {
@@ -138,6 +141,7 @@ export function RagPanel() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка анализа');
     } finally {
+      setElapsedMs(performance.now() - started);
       setLoading(false);
     }
   }
@@ -146,6 +150,7 @@ export function RagPanel() {
     if (!data?.case_id) return diagnose();
     setLoading(true);
     setError('');
+    const started = performance.now();
     try {
       const response = await fetch('/api/clinical/refine', {
         method: 'POST',
@@ -172,6 +177,7 @@ export function RagPanel() {
           : 'Ошибка уточнения. Предыдущий дифференциальный ряд сохранён.',
       );
     } finally {
+      setElapsedMs(performance.now() - started);
       setLoading(false);
     }
   }
@@ -228,6 +234,12 @@ export function RagPanel() {
 
         {data && (
           <>
+            <RagBadge
+              ragStatus={data.rag_status}
+              sourcesCount={data.sources?.length ?? 0}
+              elapsedMs={elapsedMs}
+              tone="dark"
+            />
             <DifferentialResults
               diagnoses={data.diagnoses}
               sources={data.sources}
@@ -282,6 +294,7 @@ function AdvicePanel() {
   const [loading, setLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [error, setError] = useState('');
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null);
   async function sendAdviceMessage() {
     const value = message.trim();
     if (!value) return;
@@ -299,13 +312,14 @@ function AdvicePanel() {
   }
   async function askAdvice() {
     setLoading(true); setError('');
+    const started = performance.now();
     try {
       const dialogue = chat.map(turn => `${turn.role === 'clinician' ? 'Медработник' : 'AI'}: ${turn.content}`).join('\n');
       const response = await fetch('/api/clinical/advice', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ mode: 'action', scenario: `${scenario}\n\nКороткий чат до решения:\n${dialogue}`, role, resources, messages: chat }) });
       if (!response.ok) throw new Error(await response.text());
       setData(await response.json());
     } catch (e) { setError(e instanceof Error ? e.message : 'Ошибка консультации'); }
-    finally { setLoading(false); }
+    finally { setElapsedMs(performance.now() - started); setLoading(false); }
   }
   return <div className="grid gap-5 py-6 lg:grid-cols-[430px_minmax(0,1fr)]">
     <aside className="rounded-2xl border border-white/10 bg-[#162320] p-5">
@@ -328,7 +342,7 @@ function AdvicePanel() {
         <p className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/8 p-3 text-xs leading-5 text-amber-100">Если нужна конкретная тактика, нажмите “Дать действия”: лёгкий вопрос вернётся быстро, а глубокий RAG по протоколам может занять до 2-3 минут.</p>
       </div>
       {!data && <div className="grid min-h-60 place-items-center rounded-2xl border border-white/10 bg-white/[.03] p-8 text-center"><div>{loading ? <Loader2 className="mx-auto animate-spin text-teal-300" size={38} /> : <ShieldAlert className="mx-auto text-teal-300" size={42} />}<h2 className="mt-5 text-xl font-semibold">{loading ? 'Формирую план действий' : 'План действий появится здесь'}</h2><p className="mt-2 max-w-md text-sm leading-6 text-slate-400">LLM сначала решит, нужен ли RAG. Если нужен глубокий протокольный анализ, ожидание может быть до 2-3 минут.</p></div></div>}
-      {data && <><div className="rounded-2xl border border-amber-400/20 bg-amber-400/8 p-4 text-sm leading-6 text-amber-100">{data.safety_notice}</div><div className="rounded-2xl border border-white/10 bg-[#162320] p-5"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-2xl font-semibold">Тактика сейчас</h2>{data.urgency && <span className="rounded-full bg-red-500/15 px-3 py-1 text-sm font-semibold text-red-100">{data.urgency}</span>}</div>{data.rag_decision && <p className="mt-3 rounded-xl bg-white/5 p-3 text-xs leading-5 text-slate-400">Решение LLM-router: {data.rag_decision}</p>}<AdviceList title="Главные риски" items={data.most_likely_risks ?? []} /><StepList title="Что сделать сразу" steps={data.do_now ?? []} /><AdviceList title="Что уточнить или измерить" items={data.ask_or_measure_next ?? []} /></div><div className="grid gap-5 xl:grid-cols-2"><OptionList title="Варианты лечения" options={data.treatment_options ?? []} /><section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">Маршрутизация</h3><p className="mt-3 rounded-xl bg-white/5 p-4 text-sm leading-6 text-slate-200">{data.referral?.decision ?? 'Уточнить по тяжести и доступности помощи.'}</p>{data.referral?.reason && <p className="mt-3 text-sm leading-6 text-slate-400">{data.referral.reason}</p>}<AdviceList title="Чего не делать" items={data.what_not_to_do ?? []} /></section></div><SourcesList sources={data.sources ?? []} status={data.rag_status} /></>}
+      {data && <><RagBadge ragStatus={data.rag_status} sourcesCount={data.sources?.length ?? 0} elapsedMs={elapsedMs} tone="dark" /><div className="rounded-2xl border border-amber-400/20 bg-amber-400/8 p-4 text-sm leading-6 text-amber-100">{data.safety_notice}</div><div className="rounded-2xl border border-white/10 bg-[#162320] p-5"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-2xl font-semibold">Тактика сейчас</h2>{data.urgency && <span className="rounded-full bg-red-500/15 px-3 py-1 text-sm font-semibold text-red-100">{data.urgency}</span>}</div>{data.rag_decision && <p className="mt-3 rounded-xl bg-white/5 p-3 text-xs leading-5 text-slate-400">Решение LLM-router: {data.rag_decision}</p>}<AdviceList title="Главные риски" items={data.most_likely_risks ?? []} /><StepList title="Что сделать сразу" steps={data.do_now ?? []} /><AdviceList title="Что уточнить или измерить" items={data.ask_or_measure_next ?? []} /></div><div className="grid gap-5 xl:grid-cols-2"><OptionList title="Варианты лечения" options={data.treatment_options ?? []} /><section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">Маршрутизация</h3><p className="mt-3 rounded-xl bg-white/5 p-4 text-sm leading-6 text-slate-200">{data.referral?.decision ?? 'Уточнить по тяжести и доступности помощи.'}</p>{data.referral?.reason && <p className="mt-3 text-sm leading-6 text-slate-400">{data.referral.reason}</p>}<AdviceList title="Чего не делать" items={data.what_not_to_do ?? []} /></section></div><SourcesList sources={data.sources ?? []} status={data.rag_status} /></>}
     </section>
   </div>;
 }

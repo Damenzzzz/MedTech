@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Bot, Loader2, RefreshCw, Search, Stethoscope, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DifferentialResults } from '@/components/ai/differential-results';
+import { RagBadge } from '@/components/ai/rag-badge';
 import type { DiagnoseResponse, DiagnosisItem, ProtocolSource } from '@/domain/schemas';
 
 type Question = { question: string; target_diagnoses?: string[]; rationale?: string };
@@ -35,6 +36,7 @@ export function RagSidePanel({
   const [data, setData] = useState<DiagnoseResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [elapsedMs, setElapsedMs] = useState<number | null>(null);
   const [wasOpen, setWasOpen] = useState(open);
 
   // Re-seed the symptoms textarea from the live transcript each time the panel opens.
@@ -46,6 +48,7 @@ export function RagSidePanel({
   async function diagnose() {
     setLoading(true);
     setError('');
+    const started = performance.now();
     try {
       const job = await startDiagnoseJob(symptoms);
       if (job?.job_id) {
@@ -69,6 +72,7 @@ export function RagSidePanel({
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ошибка анализа');
     } finally {
+      setElapsedMs(performance.now() - started);
       setLoading(false);
     }
   }
@@ -77,6 +81,7 @@ export function RagSidePanel({
     if (!data?.case_id) return diagnose();
     setLoading(true);
     setError('');
+    const started = performance.now();
     try {
       const response = await fetch('/api/clinical/refine', {
         method: 'POST',
@@ -103,6 +108,7 @@ export function RagSidePanel({
           : 'Ошибка уточнения. Предыдущий дифференциальный ряд сохранён.',
       );
     } finally {
+      setElapsedMs(performance.now() - started);
       setLoading(false);
     }
   }
@@ -188,6 +194,12 @@ export function RagSidePanel({
 
               {data && (
                 <>
+                  <RagBadge
+                    ragStatus={data.rag_status}
+                    sourcesCount={data.sources?.length ?? 0}
+                    elapsedMs={elapsedMs}
+                    tone="dark"
+                  />
                   <DifferentialResults
                     diagnoses={data.diagnoses}
                     sources={data.sources}
