@@ -94,7 +94,7 @@ export function ClinicalAIWorkspace(props: { cases?: StudentCaseDTO[]; locale?: 
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1.5 rounded-full border border-[rgba(31,111,235,0.2)] bg-[rgba(31,111,235,0.09)] px-3 py-1.5 text-xs font-semibold text-[#1F6FEB]">
             <span className="size-4 rounded-md" style={{ background: 'linear-gradient(135deg,#1F6FEB,#12B5A6)' }} />
-            AlemLLM
+            AI-ассистент
           </span>
           <span className="flex items-center gap-1.5 rounded-full border border-[rgba(18,181,166,0.22)] bg-[rgba(18,181,166,0.1)] px-3 py-1.5 text-xs font-semibold text-[#0E7D72]">
             <span className="size-[7px] rounded-full bg-[#12B5A6]" />

@@ -118,37 +118,37 @@ export function RagSidePanel({
       {open && (
         <>
           <motion.div
-            className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-xs"
+            className="fixed inset-0 z-40 bg-[rgba(16,32,43,0.4)] backdrop-blur-xs"
             onClick={onClose}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           />
           <motion.aside
-            className="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col overflow-y-auto border-l border-white/10 bg-[#0f1917] p-5 text-slate-100 shadow-2xl"
+            className="fixed inset-y-0 right-0 z-50 flex w-full max-w-xl flex-col overflow-y-auto border-l border-[var(--glass-border)] bg-[var(--surface)] p-5 text-[var(--text-primary)] shadow-2xl"
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'tween', duration: 0.25 }}
           >
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-4">
               <div className="flex items-center gap-3">
-                <Stethoscope className="text-[#7CA9F2]" />
+                <Stethoscope className="text-[#1F6FEB]" />
                 <h2 className="font-semibold">Спросить у RAG</h2>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="focus-ring rounded-lg p-1.5 text-slate-400 hover:bg-white/8 hover:text-white"
+                className="focus-ring rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[#F4F7FB] hover:text-[var(--text-primary)]"
                 aria-label="Закрыть"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <label className="mt-5 block text-sm font-semibold text-slate-300">Жалобы, анамнез, осмотр, анализы</label>
+            <label className="mt-5 block text-sm font-semibold text-[var(--text-secondary)]">Жалобы, анамнез, осмотр, анализы</label>
             <textarea
-              className="input mt-2 min-h-40 border-white/10 bg-white/5 text-sm leading-6 text-white"
+              className="input mt-2 min-h-40 text-sm leading-6"
               value={symptoms}
               onChange={(e) => setSymptoms(e.target.value)}
             />
@@ -162,9 +162,9 @@ export function RagSidePanel({
               </Button>
             </div>
 
-            <label className="mt-5 block text-sm font-semibold text-slate-300">Ответы пациента на уточнения</label>
+            <label className="mt-5 block text-sm font-semibold text-[var(--text-secondary)]">Ответы пациента на уточнения</label>
             <textarea
-              className="input mt-2 min-h-24 border-white/10 bg-white/5 text-sm text-white"
+              className="input mt-2 min-h-24 text-sm"
               value={additional}
               onChange={(e) => setAdditional(e.target.value)}
               placeholder={refineSample}
@@ -175,16 +175,16 @@ export function RagSidePanel({
             </Button>
 
             {!canInsert && (
-              <p className="mt-4 rounded-xl border border-[#E5A04A]/20 bg-[#E5A04A]/8 p-3 text-xs leading-5 text-[#FAE3C4]">
+              <p className="mt-4 rounded-xl border border-[rgba(224,145,42,0.3)] bg-[rgba(224,145,42,0.08)] p-3 text-xs leading-5 text-[#6B4414]">
                 Сначала сформируйте черновик протокола — тогда найденные диагнозы и источники можно будет добавить в него одним кликом.
               </p>
             )}
 
-            <div className="mt-5 space-y-5 border-t border-white/10 pt-5">
+            <div className="mt-5 space-y-5 border-t border-[var(--border-color)] pt-5">
               {error && (
-                <div className="flex items-center justify-between rounded-2xl border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100">
+                <div className="flex items-center justify-between rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
                   <span>{error}</span>
-                  <Button onClick={refine} size="sm" variant="secondary" className="h-8 text-xs border-red-400/40 text-red-100">
+                  <Button onClick={refine} size="sm" variant="secondary" className="h-8 text-xs border-red-300 text-red-800">
                     <RefreshCw size={13} className="mr-1" /> Повторить
                   </Button>
                 </div>
@@ -198,7 +198,7 @@ export function RagSidePanel({
                     ragStatus={data.rag_status}
                     sourcesCount={data.sources?.length ?? 0}
                     elapsedMs={elapsedMs}
-                    tone="dark"
+                    tone="light"
                   />
                   <DifferentialResults
                     diagnoses={data.diagnoses}
@@ -245,9 +245,9 @@ async function waitDiagnoseJob(jobId: string) {
 }
 
 function EmptyState({ loading }: { loading: boolean }) {
-  return <div className="grid min-h-[320px] place-items-center rounded-2xl border border-white/10 bg-white/[.03] p-8 text-center">
-    <div>{loading ? <Loader2 className="mx-auto animate-spin text-[#7CA9F2]" size={38} /> : <Bot className="mx-auto text-[#7CA9F2]" size={42} />}<h2 className="mt-5 text-xl font-semibold">{loading ? 'Идёт анализ протоколов' : 'Готов к анализу'}</h2><p className="mt-2 max-w-md text-sm leading-6 text-slate-400">RAG сопоставит запрос с протоколами, вернёт top-3 диагнозов, объяснения и уточняющие вопросы.</p></div>
+  return <div className="grid min-h-[320px] place-items-center rounded-2xl border border-[var(--border-color)] bg-[#F4F7FB] p-8 text-center">
+    <div>{loading ? <Loader2 className="mx-auto animate-spin text-[#1F6FEB]" size={38} /> : <Bot className="mx-auto text-[#1F6FEB]" size={42} />}<h2 className="mt-5 text-xl font-semibold text-[var(--text-primary)]">{loading ? 'Идёт анализ протоколов' : 'Готов к анализу'}</h2><p className="mt-2 max-w-md text-sm leading-6 text-[var(--text-tertiary)]">RAG сопоставит запрос с протоколами, вернёт top-3 диагнозов, объяснения и уточняющие вопросы.</p></div>
   </div>
 }
 
-function Questions({ questions }: { questions: Question[] }) { return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">Что уточнить врачу</h3><div className="mt-4 grid gap-3">{questions.slice(0, 5).map(q => <div key={q.question} className="rounded-xl bg-white/5 p-4"><p className="font-medium">{q.question}</p>{q.rationale && <p className="mt-2 text-sm leading-5 text-slate-400">{q.rationale}</p>}</div>)}</div></section> }
+function Questions({ questions }: { questions: Question[] }) { return <section className="rounded-2xl border border-[var(--border-color)] bg-[#F4F7FB] p-5"><h3 className="font-semibold text-[var(--text-primary)]">Что уточнить врачу</h3><div className="mt-4 grid gap-3">{questions.slice(0, 5).map(q => <div key={q.question} className="rounded-xl bg-[var(--surface)] p-4"><p className="font-medium text-[var(--text-primary)]">{q.question}</p>{q.rationale && <p className="mt-2 text-sm leading-5 text-[var(--text-tertiary)]">{q.rationale}</p>}</div>)}</div></section> }
