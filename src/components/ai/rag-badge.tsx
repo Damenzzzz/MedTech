@@ -35,17 +35,17 @@ export function RagBadge({
 
   const shell = fromProtocols
     ? tone === 'dark'
-      ? 'border-emerald-400/40 bg-emerald-400/10 text-emerald-100'
-      : 'border-emerald-300 bg-emerald-50 text-emerald-900'
+      ? 'border-[#3BC3B3]/40 bg-[#3BC3B3]/10 text-[#D2F1EC]'
+      : 'border-[#6CD6C9] bg-[#EAF9F7] text-[#084D47]'
     : tone === 'dark'
-    ? 'border-amber-400/30 bg-amber-400/10 text-amber-100'
-    : 'border-amber-300 bg-amber-50 text-amber-900';
+    ? 'border-[#E5A04A]/30 bg-[#E5A04A]/10 text-[#FAE3C4]'
+    : 'border-[#EAB165] bg-[#FDF3E7] text-[#6B4414]';
 
   const digit = fromProtocols
-    ? 'bg-emerald-600 text-white'
+    ? 'bg-[#0E9E92] text-white'
     : tone === 'dark'
-    ? 'bg-amber-400 text-amber-950'
-    : 'bg-amber-500 text-white';
+    ? 'bg-[#E5A04A] text-[#4A2F0E]'
+    : 'bg-[#E0912A] text-white';
 
   const Icon = fromProtocols ? BookOpen : Sparkles;
 

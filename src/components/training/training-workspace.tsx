@@ -248,7 +248,7 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
   const latestPatientMessage = [...patientDialogue].reverse().find((m) => m.role === 'patient');
 
   return (
-    <div className="min-h-screen bg-[color:var(--canvas)] flex flex-col font-sans">
+    <div className="spatial-bg min-h-screen flex flex-col font-sans">
       {/* Clinical Header */}
       <TrainingHeader
         patient={patient}
@@ -268,7 +268,7 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
         />
 
         {/* Center: Patient Visual Stage */}
-        <div className="flex-1 p-4 sm:p-6 flex flex-col border-b xl:border-b-0 xl:border-r border-slate-200/80">
+        <div className="flex-1 p-4 sm:p-6 flex flex-col border-b xl:border-b-0 xl:border-r border-[var(--border-color)]">
           <PatientStage
             patient={patient}
             visualState={visualState}
@@ -279,36 +279,36 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
         </div>
 
         {/* Right Side: Active Stage Medical Panel */}
-        <aside className="w-full xl:w-[440px] bg-white p-4 sm:p-6 flex flex-col justify-between shrink-0 shadow-xs">
+        <aside className="glass-strong w-full xl:w-[440px] !rounded-none p-4 sm:p-6 flex flex-col justify-between shrink-0">
           {/* Stage 0: Patient Chart Overview */}
           {currentStage === 0 && (
             <div className="space-y-5 flex-1 flex flex-col">
-              <div className="flex items-center gap-2.5 border-b border-slate-200 pb-3">
-                <div className="grid size-9 place-items-center rounded-xl bg-teal-100 text-teal-700">
+              <div className="flex items-center gap-2.5 border-b border-[var(--border-color)] pb-3">
+                <div className="grid size-9 place-items-center rounded-xl bg-[#D6E5FD] text-[#1A5FD0]">
                   <ClipboardList size={18} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">
+                  <h3 className="text-sm font-bold text-[var(--text-primary)]">
                     {t('stages.0')}
                   </h3>
-                  <p className="text-[11px] font-medium text-slate-500">
+                  <p className="text-[11px] font-medium text-[var(--text-tertiary)]">
                     {t('patientState')}
                   </p>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-teal-200 bg-teal-50/70 p-4 space-y-2">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-teal-800">
+              <div className="rounded-2xl border border-[#AFCBFB] bg-[#EAF2FE]/70 p-4 space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-[#124F8C]">
                   {t('queue')}:
                 </p>
-                <p className="text-xs font-semibold text-teal-950 leading-relaxed">
+                <p className="text-xs font-semibold text-[#0B1C33] leading-relaxed">
                   {typeof patient.complaint === 'object' ? patient.complaint.ru : patient.complaint}
                 </p>
               </div>
 
               <button
                 onClick={handleNextStage}
-                className="focus-ring mt-auto w-full rounded-xl bg-teal-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all flex items-center justify-center gap-1.5"
+                className="focus-ring mt-auto w-full rounded-xl bg-[#1F6FEB] py-3 text-xs font-bold text-white shadow-sm hover:bg-[#1A5FD0] transition-all flex items-center justify-center gap-1.5"
               >
                 <span>{t('start')}</span>
                 <ArrowRight size={16} />

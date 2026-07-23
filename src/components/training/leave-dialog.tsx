@@ -29,8 +29,8 @@ export function LeaveDialog({ isOpen, onClose }: LeaveDialogProps) {
             aria-modal="true"
             className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4"
           >
-            <div className="flex items-center gap-3 text-amber-600">
-              <div className="grid size-10 place-items-center rounded-2xl bg-amber-50">
+            <div className="flex items-center gap-3 text-[#C77A1E]">
+              <div className="grid size-10 place-items-center rounded-2xl bg-[#FDF3E7]">
                 <ShieldAlert size={22} />
               </div>
               <h3 className="text-base font-bold text-slate-900">

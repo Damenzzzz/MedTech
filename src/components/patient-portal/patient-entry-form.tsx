@@ -45,13 +45,13 @@ export function PatientEntryForm() {
   };
 
   return (
-    <form className="card w-full max-w-md rounded-3xl p-7 sm:p-9" onSubmit={handleSubmit(onSubmit)}>
-      <p className="label text-teal-700">{t('patientEyebrow')}</p>
-      <h1 className="mt-3 text-3xl font-semibold">{t('patientTitle')}</h1>
-      <p className="mt-3 text-slate-600 dark:text-slate-300">{t('patientLead')}</p>
+    <form className="glass w-full max-w-md p-7 sm:p-9" onSubmit={handleSubmit(onSubmit)}>
+      <p className="label">{t('patientEyebrow')}</p>
+      <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text-primary)]">{t('patientTitle')}</h1>
+      <p className="mt-3 text-[var(--text-secondary)]">{t('patientLead')}</p>
 
-      <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-900">
-        <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
+      <div className="mt-5 flex items-start gap-2.5 rounded-xl border border-[rgba(224,145,42,0.35)] bg-[rgba(224,145,42,0.1)] px-4 py-3 text-xs font-semibold text-[#a3661d] dark:text-[#f0b35c]">
+        <AlertTriangle size={16} className="mt-0.5 shrink-0 text-[#E0912A]" />
         <span>{t('demoNotice')}</span>
       </div>
 

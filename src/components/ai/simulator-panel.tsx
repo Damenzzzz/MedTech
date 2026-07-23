@@ -71,7 +71,7 @@ export function SimulatorPanel({ cases, locale }: SimulatorPanelProps) {
       {/* Left Column: Scenarios List & Filter */}
       <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-4 shadow-xs">
         <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-          <Stethoscope size={18} className="text-teal-600" />
+          <Stethoscope size={18} className="text-[#1F6FEB]" />
           <h3 className="text-sm font-bold text-slate-900">
             Сценарии пациентов ({filteredCases.length})
           </h3>
@@ -97,7 +97,7 @@ export function SimulatorPanel({ cases, locale }: SimulatorPanelProps) {
               onClick={() => setDifficultyFilter(d as typeof difficultyFilter)}
               className={`rounded-lg px-2.5 py-1 ${
                 difficultyFilter === d
-                  ? 'bg-teal-600 text-white font-bold'
+                  ? 'bg-[#1F6FEB] text-white font-bold'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
@@ -121,7 +121,7 @@ export function SimulatorPanel({ cases, locale }: SimulatorPanelProps) {
                 }}
                 className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-all ${
                   isSelected
-                    ? 'bg-teal-50 border border-teal-200 text-teal-950 font-bold shadow-xs'
+                    ? 'bg-[#EAF2FE] border border-[#AFCBFB] text-[#0B1C33] font-bold shadow-xs'
                     : 'bg-slate-50 border border-slate-100 text-slate-700 hover:bg-slate-100'
                 }`}
               >
@@ -142,13 +142,13 @@ export function SimulatorPanel({ cases, locale }: SimulatorPanelProps) {
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col space-y-4">
         {/* Scenario Header */}
         <div className="flex items-center gap-4 border-b border-slate-100 pb-4">
-          <div className="relative size-14 shrink-0 overflow-hidden rounded-2xl border-2 border-teal-200 bg-slate-100 shadow-sm">
+          <div className="relative size-14 shrink-0 overflow-hidden rounded-2xl border-2 border-[#AFCBFB] bg-slate-100 shadow-sm">
             <FallbackImage key={selectedCase.id} src={selectedCase.patient.avatar} alt={patientName} fill className="object-cover" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-base font-bold text-slate-900">{patientName}</h3>
-              <span className="rounded-md bg-teal-50 px-2 py-0.5 text-[10px] font-bold text-teal-800 border border-teal-200">
+              <span className="rounded-md bg-[#EAF2FE] px-2 py-0.5 text-[10px] font-bold text-[#124F8C] border border-[#AFCBFB]">
                 Учебный симулятор
               </span>
             </div>
@@ -172,14 +172,14 @@ export function SimulatorPanel({ cases, locale }: SimulatorPanelProps) {
               className={`flex items-start gap-2.5 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {m.role === 'patient' && (
-                <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-teal-600 text-white text-xs font-bold">
+                <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-[#1F6FEB] text-white text-xs font-bold">
                   П
                 </div>
               )}
               <div
                 className={`max-w-[80%] p-3 text-xs leading-relaxed rounded-2xl ${
                   m.role === 'user'
-                    ? 'bg-teal-600 text-white rounded-tr-none'
+                    ? 'bg-[#1F6FEB] text-white rounded-tr-none'
                     : 'bg-white border border-slate-200 text-slate-900 rounded-tl-none shadow-xs'
                 }`}
               >
@@ -190,7 +190,7 @@ export function SimulatorPanel({ cases, locale }: SimulatorPanelProps) {
 
           {isThinking && (
             <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
-              <Bot size={14} className="animate-spin text-teal-600" />
+              <Bot size={14} className="animate-spin text-[#1F6FEB]" />
               <span>Пациент думает...</span>
             </div>
           )}
@@ -204,12 +204,12 @@ export function SimulatorPanel({ cases, locale }: SimulatorPanelProps) {
             onChange={(e) => setInputMsg(e.target.value)}
             disabled={isThinking}
             placeholder="Задать вопрос пациенту..."
-            className="input text-xs border-slate-200 focus:border-teal-600 h-11 flex-1"
+            className="input text-xs border-slate-200 focus:border-[#1F6FEB] h-11 flex-1"
           />
           <button
             type="submit"
             disabled={!inputMsg.trim() || isThinking}
-            className="focus-ring grid size-11 shrink-0 place-items-center rounded-xl bg-teal-600 text-white shadow-md hover:bg-teal-700 disabled:opacity-40"
+            className="focus-ring grid size-11 shrink-0 place-items-center rounded-xl bg-[#1F6FEB] text-white shadow-md hover:bg-[#1A5FD0] disabled:opacity-40"
           >
             <Send size={17} />
           </button>

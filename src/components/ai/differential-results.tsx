@@ -87,11 +87,11 @@ export function DifferentialResults({
   return (
     <div className="space-y-6">
       {/* Educational & Clinical Disclaimer */}
-      <div className="flex items-start gap-3 rounded-2xl border border-teal-200 bg-teal-50/80 p-4 text-xs font-semibold text-teal-950 leading-relaxed shadow-xs">
-        <ShieldAlert size={20} className="text-teal-600 shrink-0 mt-0.5" />
+      <div className="flex items-start gap-3 rounded-2xl border border-[#AFCBFB] bg-[#EAF2FE]/80 p-4 text-xs font-semibold text-[#0B1C33] leading-relaxed shadow-xs">
+        <ShieldAlert size={20} className="text-[#1F6FEB] shrink-0 mt-0.5" />
         <div>
           <p className="font-bold text-sm">Важное клиническое предупреждение</p>
-          <p className="mt-0.5 text-teal-900 font-medium">
+          <p className="mt-0.5 text-[#0D3A73] font-medium">
             Ответ сформирован алгоритмами AI на основе клинических протоколов. AI не является настоящим врачом. Результат носит ориентировочный учебный характер и требует обязательной проверки врачом.
           </p>
         </div>
@@ -99,9 +99,9 @@ export function DifferentialResults({
 
       {/* RAG Status Banner */}
       {ragStatus === 'fallback' && (
-        <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs font-semibold text-amber-900 shadow-xs">
+        <div className="flex items-center justify-between rounded-2xl border border-[#F3CA8D] bg-[#FDF3E7] p-3.5 text-xs font-semibold text-[#6B4414] shadow-xs">
           <div className="flex items-center gap-2">
-            <AlertCircle size={16} className="text-amber-600 shrink-0" />
+            <AlertCircle size={16} className="text-[#C77A1E] shrink-0" />
             <span>Ответ сформирован в автономном режиме без обращения к RAG-базе (Провайдер LLM: {generationProvider}).</span>
           </div>
         </div>
@@ -111,11 +111,11 @@ export function DifferentialResults({
       <div className="space-y-4">
         <h3 className="text-base font-bold text-slate-900 flex items-center justify-between">
           <span className="flex items-center gap-2">
-            <Activity size={18} className="text-teal-600" />
+            <Activity size={18} className="text-[#1F6FEB]" />
             Дифференциально-диагностический ряд ({diagnoses.length})
           </span>
           <span className="text-xs font-medium text-slate-500">
-            LLM: <span className="font-bold text-teal-700">{generationProvider}</span>
+            LLM: <span className="font-bold text-[#1A5FD0]">{generationProvider}</span>
           </span>
         </h3>
 
@@ -124,9 +124,9 @@ export function DifferentialResults({
             const conf = item.confidence || 'medium';
             const confBg =
               conf === 'high'
-                ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                ? 'bg-[#D2F1EC] text-[#084D47] border-[#6CD6C9]'
                 : conf === 'medium'
-                ? 'bg-amber-100 text-amber-900 border-amber-300'
+                ? 'bg-[#FAE3C4] text-[#6B4414] border-[#EAB165]'
                 : 'bg-slate-100 text-slate-700 border-slate-300';
 
             const confLabel =
@@ -154,12 +154,12 @@ export function DifferentialResults({
                 key={item.icd10_code + item.rank + idx}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs space-y-4 hover:border-teal-200 transition-colors"
+                className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs space-y-4 hover:border-[#AFCBFB] transition-colors"
               >
                 {/* Header line */}
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-3">
                   <div className="flex items-center gap-3">
-                    <span className="grid size-8 place-items-center rounded-xl bg-teal-600 text-white font-extrabold text-xs">
+                    <span className="grid size-8 place-items-center rounded-xl bg-[#1F6FEB] text-white font-extrabold text-xs">
                       #{item.rank}
                     </span>
                     <div>
@@ -181,7 +181,7 @@ export function DifferentialResults({
                         type="button"
                         onClick={() => handleInsertDiagnosis(item, idx)}
                         disabled={!canInsert}
-                        className="focus-ring flex items-center gap-1 rounded-lg border border-teal-300 bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-800 hover:bg-teal-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                        className="focus-ring flex items-center gap-1 rounded-lg border border-[#7CA9F2] bg-[#EAF2FE] px-2.5 py-1 text-[11px] font-bold text-[#124F8C] hover:bg-[#D6E5FD] disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
                       >
                         {insertedDiagnosisIdxs.has(idx) ? <Check size={13} /> : <ClipboardPlus size={13} />}
                         <span>{insertedDiagnosisIdxs.has(idx) ? 'В протоколе' : 'В протокол'}</span>
@@ -194,10 +194,10 @@ export function DifferentialResults({
                 <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
-                      <Sparkles size={14} className="text-teal-600" />
+                      <Sparkles size={14} className="text-[#1F6FEB]" />
                       Почему выбран этот вариант
                     </span>
-                    <span className="text-[11px] font-semibold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-md">
+                    <span className="text-[11px] font-semibold text-[#855518] bg-[#FAE3C4]/80 px-2 py-0.5 rounded-md">
                       AI-обоснование — требует проверки врачом
                     </span>
                   </div>
@@ -210,13 +210,13 @@ export function DifferentialResults({
                   {/* Main supporting & missing factors (Collapsed View) */}
                   <div className="grid gap-2 text-xs sm:grid-cols-2 pt-1 border-t border-slate-200/60">
                     {mainSupporting && (
-                      <div className="flex items-start gap-1.5 text-emerald-900 bg-emerald-50/70 p-2 rounded-xl border border-emerald-100/80">
-                        <CheckCircle2 size={13} className="text-emerald-600 shrink-0 mt-0.5" />
+                      <div className="flex items-start gap-1.5 text-[#084D47] bg-[#EAF9F7]/70 p-2 rounded-xl border border-[#D2F1EC]/80">
+                        <CheckCircle2 size={13} className="text-[#0E9E92] shrink-0 mt-0.5" />
                         <div>
                           <span className="font-bold">Главный факт: </span>
                           <span>{mainSupporting.fact}</span>
                           {mainSupporting.patient_evidence && (
-                            <span className="block text-[11px] text-emerald-700 italic">
+                            <span className="block text-[11px] text-[#0E7D72] italic">
                               «{mainSupporting.patient_evidence}»
                             </span>
                           )}
@@ -225,8 +225,8 @@ export function DifferentialResults({
                     )}
 
                     {mainMissing && (
-                      <div className="flex items-start gap-1.5 text-amber-900 bg-amber-50/70 p-2 rounded-xl border border-amber-100/80">
-                        <HelpCircle size={13} className="text-amber-600 shrink-0 mt-0.5" />
+                      <div className="flex items-start gap-1.5 text-[#6B4414] bg-[#FDF3E7]/70 p-2 rounded-xl border border-[#FAE3C4]/80">
+                        <HelpCircle size={13} className="text-[#C77A1E] shrink-0 mt-0.5" />
                         <div>
                           <span className="font-bold">Главный неизвестный фактор: </span>
                           <span>{mainMissing}</span>
@@ -240,7 +240,7 @@ export function DifferentialResults({
                     <button
                       type="button"
                       onClick={() => toggleExpandDiagnosis(idx)}
-                      className="focus-ring flex items-center gap-1 text-xs font-bold text-teal-700 hover:text-teal-900 hover:underline"
+                      className="focus-ring flex items-center gap-1 text-xs font-bold text-[#1A5FD0] hover:text-[#0D3A73] hover:underline"
                     >
                       <span>{isExpanded ? 'Свернуть' : 'Подробнее'}</span>
                       {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -253,13 +253,13 @@ export function DifferentialResults({
                       {/* All Supporting Patient Facts */}
                       {rationale.supporting_patient_facts.length > 0 && (
                         <div>
-                          <span className="font-bold text-emerald-900 block mb-1.5 flex items-center gap-1">
-                            <CheckCircle2 size={13} className="text-emerald-600" /> Подтверждающие факты из текста пациента:
+                          <span className="font-bold text-[#084D47] block mb-1.5 flex items-center gap-1">
+                            <CheckCircle2 size={13} className="text-[#0E9E92]" /> Подтверждающие факты из текста пациента:
                           </span>
                           <ul className="space-y-1.5">
                             {rationale.supporting_patient_facts.map((factItem, fIdx) => (
-                              <li key={fIdx} className="bg-emerald-50 p-2.5 rounded-xl border border-emerald-100">
-                                <div className="font-bold text-emerald-950">• {factItem.fact}</div>
+                              <li key={fIdx} className="bg-[#EAF9F7] p-2.5 rounded-xl border border-[#D2F1EC]">
+                                <div className="font-bold text-[#052B27]">• {factItem.fact}</div>
                                 {factItem.patient_evidence && (
                                   <div className="text-[11px] text-slate-600 mt-0.5">
                                     Свидетельство в тексте: <span className="italic font-medium text-slate-800">«{factItem.patient_evidence}»</span>
@@ -274,10 +274,10 @@ export function DifferentialResults({
                       {/* Missing or Conflicting Facts */}
                       {rationale.missing_or_conflicting_facts.length > 0 && (
                         <div>
-                          <span className="font-bold text-amber-900 block mb-1.5 flex items-center gap-1">
-                            <HelpCircle size={13} className="text-amber-600" /> Недостающие критерии и вопросы:
+                          <span className="font-bold text-[#6B4414] block mb-1.5 flex items-center gap-1">
+                            <HelpCircle size={13} className="text-[#C77A1E]" /> Недостающие критерии и вопросы:
                           </span>
-                          <ul className="space-y-1 bg-amber-50 p-2.5 rounded-xl border border-amber-100 text-amber-950">
+                          <ul className="space-y-1 bg-[#FDF3E7] p-2.5 rounded-xl border border-[#FAE3C4] text-[#4A2F0E]">
                             {rationale.missing_or_conflicting_facts.map((mf, mfIdx) => (
                               <li key={mfIdx}>• {mf}</li>
                             ))}
@@ -295,7 +295,7 @@ export function DifferentialResults({
 
                       {/* Next Discriminator */}
                       {rationale.next_discriminator && (
-                        <div className="bg-cyan-50 p-3 rounded-xl border border-cyan-100 text-cyan-950">
+                        <div className="bg-[#E8F7FA] p-3 rounded-xl border border-[#CDEFF5] text-[#082F38]">
                           <span className="font-bold block mb-0.5">Ключевое дифференциальное обследование:</span>
                           <p>{rationale.next_discriminator}</p>
                         </div>
@@ -306,7 +306,7 @@ export function DifferentialResults({
                         <div className="flex flex-wrap items-center gap-1.5 pt-1">
                           <span className="font-bold text-slate-700">RAG Источники:</span>
                           {rationale.source_ids.map((srcId) => (
-                            <span key={srcId} className="rounded-lg bg-teal-100 px-2 py-0.5 text-[10px] font-bold text-teal-900 border border-teal-300">
+                            <span key={srcId} className="rounded-lg bg-[#D6E5FD] px-2 py-0.5 text-[10px] font-bold text-[#0D3A73] border border-[#7CA9F2]">
                               {srcId}
                             </span>
                           ))}
@@ -325,13 +325,13 @@ export function DifferentialResults({
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-            <BookOpen size={18} className="text-teal-600" />
+            <BookOpen size={18} className="text-[#1F6FEB]" />
             <span>Источники клинических протоколов МЗ РК</span>
           </div>
           <span
             className={`rounded-full px-2.5 py-1 text-[11px] font-bold border ${
               hasSources
-                ? 'bg-teal-50 text-teal-800 border-teal-200'
+                ? 'bg-[#EAF2FE] text-[#124F8C] border-[#AFCBFB]'
                 : 'bg-slate-100 text-slate-600 border-slate-200'
             }`}
           >
@@ -350,7 +350,7 @@ export function DifferentialResults({
                     <div>
                       <h5 className="text-xs font-bold text-slate-900">{src.title}</h5>
                       {src.protocolId && (
-                        <p className="text-[11px] font-semibold text-teal-700 mt-0.5">
+                        <p className="text-[11px] font-semibold text-[#1A5FD0] mt-0.5">
                           ID Протокола: {src.protocolId}
                         </p>
                       )}
@@ -361,7 +361,7 @@ export function DifferentialResults({
                         <button
                           type="button"
                           onClick={() => setViewerSource(src)}
-                          className="focus-ring flex items-center gap-1 rounded-lg border border-teal-300 bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-800 hover:bg-teal-100"
+                          className="focus-ring flex items-center gap-1 rounded-lg border border-[#7CA9F2] bg-[#EAF2FE] px-2.5 py-1 text-[11px] font-bold text-[#124F8C] hover:bg-[#D6E5FD]"
                         >
                           <BookOpen size={13} />
                           <span>Протокол</span>
@@ -372,7 +372,7 @@ export function DifferentialResults({
                         onClick={() => handleCopyCitation(src, idx)}
                         className="focus-ring flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-100"
                       >
-                        {copiedIdx === idx ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                        {copiedIdx === idx ? <Check size={13} className="text-[#0E9E92]" /> : <Copy size={13} />}
                         <span>{copiedIdx === idx ? 'Скопировано' : 'Цитата'}</span>
                       </button>
                       {onInsertSource && (
@@ -380,7 +380,7 @@ export function DifferentialResults({
                           type="button"
                           onClick={() => handleInsertSource(src, idx)}
                           disabled={!canInsert}
-                          className="focus-ring flex items-center gap-1 rounded-lg border border-teal-300 bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-teal-800 hover:bg-teal-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                          className="focus-ring flex items-center gap-1 rounded-lg border border-[#7CA9F2] bg-[#EAF2FE] px-2.5 py-1 text-[11px] font-bold text-[#124F8C] hover:bg-[#D6E5FD] disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
                         >
                           {insertedSourceIdxs.has(idx) ? <Check size={13} /> : <FilePlus2 size={13} />}
                           <span>{insertedSourceIdxs.has(idx) ? 'В протоколе' : 'В протокол'}</span>
@@ -395,7 +395,7 @@ export function DifferentialResults({
                       <button
                         type="button"
                         onClick={() => setExpandedSourceIdx(isExpanded ? null : idx)}
-                        className="mt-1 text-[11px] font-bold text-teal-700 hover:underline flex items-center gap-0.5"
+                        className="mt-1 text-[11px] font-bold text-[#1A5FD0] hover:underline flex items-center gap-0.5"
                       >
                         <span>{isExpanded ? 'Свернуть' : 'Раскрыть фрагмент'}</span>
                         <ChevronDown size={13} className={isExpanded ? 'rotate-180' : ''} />

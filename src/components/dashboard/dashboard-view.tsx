@@ -123,28 +123,28 @@ export function DashboardView({ cases = [], recommended: initialRecommended }: D
   if (analytics.completedCount === 0) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-8">
-        <div className="border-b border-slate-200 pb-6 space-y-2">
+        <div className="border-b border-[var(--border-color)] pb-6 space-y-2">
           {userName && (
-            <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800">
-              <Sparkles size={14} className="text-teal-600" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#AFCBFB] bg-[#EAF2FE] px-3 py-1 text-xs font-semibold text-[#124F8C]">
+              <Sparkles size={14} className="text-[#1F6FEB]" />
               <span>{navT('greeting', { name: userName })}</span>
             </div>
           )}
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight sm:text-4xl">
+          <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight sm:text-4xl">
             {t('title')}
           </h1>
         </div>
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-12 shadow-xs text-center space-y-6">
-          <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-teal-100 text-teal-700">
+        <div className="glass p-12 text-center space-y-6">
+          <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-[#D6E5FD] text-[#1A5FD0]">
             <BookOpen size={28} />
           </div>
 
           <div className="space-y-2">
-            <h2 className="text-xl font-extrabold text-slate-900">
+            <h2 className="text-xl font-extrabold text-[var(--text-primary)]">
               {t('emptyTitle')}
             </h2>
-            <p className="text-sm text-slate-600 max-w-md mx-auto">
+            <p className="text-sm text-[var(--text-secondary)] max-w-md mx-auto">
               {t('emptyDescription')}
             </p>
           </div>
@@ -152,15 +152,15 @@ export function DashboardView({ cases = [], recommended: initialRecommended }: D
           {recommendedCase && (
             <Link
               href={`/training/${recommendedCase.id}`}
-              className="focus-ring inline-flex h-12 items-center gap-2 rounded-2xl bg-teal-600 px-8 font-bold text-sm text-white shadow-md shadow-teal-600/20 hover:bg-teal-700 transition-all hover:scale-[1.01]"
+              className="focus-ring inline-flex h-12 items-center gap-2 rounded-2xl bg-[#1F6FEB] px-8 font-bold text-sm text-white shadow-md shadow-[#1F6FEB]/20 hover:bg-[#1A5FD0] transition-all hover:scale-[1.01]"
             >
               <span>{t('startFirst')}</span>
               <ArrowRight size={16} />
             </Link>
           )}
 
-          <p className="text-xs text-slate-500">
-            {t('recommended')}: <strong className="text-slate-700">{recName}</strong>
+          <p className="text-xs text-[var(--text-tertiary)]">
+            {t('recommended')}: <strong className="text-[var(--text-secondary)]">{recName}</strong>
           </p>
         </div>
       </div>
@@ -170,19 +170,19 @@ export function DashboardView({ cases = [], recommended: initialRecommended }: D
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 space-y-8">
       {/* Top Header */}
-      <div className="border-b border-slate-200 pb-6 space-y-2">
+      <div className="border-b border-[var(--border-color)] pb-6 space-y-2">
         {userName && (
-          <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800">
-            <Sparkles size={14} className="text-teal-600" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#AFCBFB] bg-[#EAF2FE] px-3 py-1 text-xs font-semibold text-[#124F8C]">
+            <Sparkles size={14} className="text-[#1F6FEB]" />
             <span>{navT('greeting', { name: userName })}</span>
           </div>
         )}
 
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight sm:text-4xl">
+        <h1 className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight sm:text-4xl">
           {t('title')}
         </h1>
 
-        <p className="text-xs font-medium text-slate-600 max-w-2xl leading-relaxed">
+        <p className="text-xs font-medium text-[var(--text-secondary)] max-w-2xl leading-relaxed">
           {t('subtitle')}
         </p>
       </div>
@@ -221,28 +221,28 @@ export function DashboardView({ cases = [], recommended: initialRecommended }: D
 
       {/* Recommended Next Case Card */}
       {recommendedCase && (
-        <section className="rounded-3xl border border-teal-200 bg-gradient-to-br from-teal-50/80 via-white to-teal-50/30 p-6 shadow-xs space-y-4">
+        <section className="glass p-6 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-teal-900 font-bold text-sm">
-              <Target size={18} className="text-teal-600" />
+            <div className="flex items-center gap-2 text-[#0D3A73] font-bold text-sm">
+              <Target size={18} className="text-[#1F6FEB]" />
               <span>Рекомендуемый следующий случай</span>
             </div>
-            <span className="rounded-full bg-teal-100 px-3 py-1 text-[11px] font-extrabold text-teal-900 border border-teal-300">
+            <span className="rounded-full bg-[#D6E5FD] px-3 py-1 text-[11px] font-extrabold text-[#0D3A73] border border-[#7CA9F2]">
               {recommendedCase.validationTier === 'core' ? 'Core (Verified)' : 'Beta (Unreviewed)'}
             </span>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h3 className="text-lg font-bold text-slate-900">{recName}</h3>
-              <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                Специальность: <strong className="text-slate-800">{recommendedCase.specialty}</strong> · Сложность: <strong className="text-slate-800">{recommendedCase.difficulty}</strong>
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">{recName}</h3>
+              <p className="text-xs font-semibold text-[var(--text-tertiary)] mt-0.5">
+                Специальность: <strong className="text-[var(--text-secondary)]">{recommendedCase.specialty}</strong> · Сложность: <strong className="text-[var(--text-secondary)]">{recommendedCase.difficulty}</strong>
               </p>
             </div>
 
             <Link
               href={`/training/${recommendedCase.id}`}
-              className="focus-ring inline-flex h-11 items-center gap-2 rounded-xl bg-teal-600 px-6 font-bold text-xs text-white shadow-md shadow-teal-600/20 hover:bg-teal-700 transition-all shrink-0"
+              className="focus-ring inline-flex h-11 items-center gap-2 rounded-xl bg-[#1F6FEB] px-6 font-bold text-xs text-white shadow-md shadow-[#1F6FEB]/20 hover:bg-[#1A5FD0] transition-all shrink-0"
             >
               <span>Начать разбор</span>
               <ArrowRight size={15} />
@@ -272,24 +272,24 @@ function MetricCard({
   color: 'teal' | 'emerald' | 'amber' | 'cyan';
 }) {
   const colorClasses = {
-    teal: 'bg-teal-50 text-teal-700 border-teal-200',
-    emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    amber: 'bg-amber-50 text-amber-700 border-amber-200',
-    cyan: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+    teal: 'bg-[#EAF2FE] text-[#1A5FD0] border-[#AFCBFB]',
+    emerald: 'bg-[#EAF9F7] text-[#0E7D72] border-[#A6E3DA]',
+    amber: 'bg-[#FDF3E7] text-[#A3661D] border-[#F3CA8D]',
+    cyan: 'bg-[#E8F7FA] text-[#167E90] border-[#9DE0EC]',
   };
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-xs space-y-3">
+    <div className="glass p-5 space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold text-slate-600">{title}</span>
+        <span className="text-xs font-bold text-[var(--text-secondary)]">{title}</span>
         <div className={`grid size-9 place-items-center rounded-xl border ${colorClasses[color]}`}>
           <Icon size={18} />
         </div>
       </div>
 
       <div>
-        <div className="text-2xl font-extrabold text-slate-900">{value}</div>
-        <p className="text-[11px] font-medium text-slate-500 mt-0.5">{subtitle}</p>
+        <div className="mono text-2xl font-extrabold text-[var(--text-primary)]">{value}</div>
+        <p className="text-[11px] font-medium text-[var(--text-tertiary)] mt-0.5">{subtitle}</p>
       </div>
     </div>
   );

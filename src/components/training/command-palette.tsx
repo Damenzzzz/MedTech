@@ -37,7 +37,7 @@ export function CommandPalette({
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                <Command size={18} className="text-teal-600" />
+                <Command size={18} className="text-[#1F6FEB]" />
                 <span>Быстрый переход по этапам (Cmd+K)</span>
               </div>
               <button
@@ -58,14 +58,14 @@ export function CommandPalette({
                   }}
                   className={`flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all ${
                     currentStage === i
-                      ? 'bg-teal-600 text-white shadow-xs'
-                      : 'bg-slate-50 text-slate-700 hover:bg-teal-50 hover:text-teal-900'
+                      ? 'bg-[#1F6FEB] text-white shadow-xs'
+                      : 'bg-slate-50 text-slate-700 hover:bg-[#EAF2FE] hover:text-[#0D3A73]'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <span
                       className={`grid size-5 place-items-center rounded-md text-[10px] ${
-                        currentStage === i ? 'bg-white text-teal-800' : 'bg-slate-200 text-slate-700'
+                        currentStage === i ? 'bg-white text-[#124F8C]' : 'bg-slate-200 text-slate-700'
                       }`}
                     >
                       {i + 1}

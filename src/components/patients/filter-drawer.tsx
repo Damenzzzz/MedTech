@@ -46,7 +46,7 @@ export function FilterDrawer({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs md:hidden"
+            className="fixed inset-0 z-50 bg-[rgba(16,32,43,0.4)] backdrop-blur-xs md:hidden"
           />
 
           {/* Bottom Sheet Drawer */}
@@ -55,15 +55,15 @@ export function FilterDrawer({
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-3xl border-t border-slate-200 bg-white p-6 shadow-2xl md:hidden"
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-3xl border-t border-[var(--glass-border)] bg-[var(--surface-glass-strong)] backdrop-blur-xl p-6 shadow-2xl md:hidden"
           >
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
-              <h3 className="text-base font-bold text-slate-900">
+            <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-4 mb-5">
+              <h3 className="text-base font-bold text-[var(--text-primary)]">
                 Фильтры каталога
               </h3>
               <button
                 onClick={onClose}
-                className="rounded-full bg-slate-100 p-2 text-slate-500 hover:text-slate-900"
+                className="rounded-full bg-[var(--surface)] p-2 text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
               >
                 <X size={18} />
               </button>
@@ -72,13 +72,13 @@ export function FilterDrawer({
             <div className="space-y-5">
               {/* Specialty */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">
                   {t('specialty')}
                 </label>
                 <select
                   value={filters.specialty}
                   onChange={(e) => onFilterChange({ specialty: e.target.value })}
-                  className="input text-xs border-slate-200"
+                  className="input text-xs"
                 >
                   <option value="all">{t('specialty')}: {c('all')}</option>
                   {specialties.map((s) => (
@@ -91,7 +91,7 @@ export function FilterDrawer({
 
               {/* Urgency */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">
                   {t('urgency')}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -101,8 +101,8 @@ export function FilterDrawer({
                       onClick={() => onFilterChange({ urgency: u })}
                       className={`rounded-xl border p-2.5 text-xs font-bold transition-all ${
                         filters.urgency === u
-                          ? 'border-teal-600 bg-teal-50 text-teal-800'
-                          : 'border-slate-200 bg-white text-slate-700'
+                          ? 'border-[#1F6FEB] bg-[#EAF2FE] text-[#124F8C]'
+                          : 'border-[var(--border-color)] bg-[var(--surface)]/70 text-[var(--text-secondary)]'
                       }`}
                     >
                       {u === 'all' ? c('all') : t(u)}
@@ -113,7 +113,7 @@ export function FilterDrawer({
 
               {/* Difficulty */}
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)] mb-2">
                   {t('difficulty')}
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -123,8 +123,8 @@ export function FilterDrawer({
                       onClick={() => onFilterChange({ difficulty: d })}
                       className={`rounded-xl border p-2.5 text-xs font-bold transition-all ${
                         filters.difficulty === d
-                          ? 'border-cyan-600 bg-cyan-50 text-cyan-800'
-                          : 'border-slate-200 bg-white text-slate-700'
+                          ? 'border-[#1A9DB4] bg-[#E8F7FA] text-[#126374]'
+                          : 'border-[var(--border-color)] bg-[var(--surface)]/70 text-[var(--text-secondary)]'
                       }`}
                     >
                       {d === 'all' ? c('all') : t(d)}
@@ -139,7 +139,7 @@ export function FilterDrawer({
                 className={`flex w-full items-center justify-between rounded-xl border p-3.5 text-xs font-bold transition-all ${
                   filters.onlyFavorites
                     ? 'border-red-300 bg-red-50 text-red-700'
-                    : 'border-slate-200 bg-white text-slate-700'
+                    : 'border-[var(--border-color)] bg-[var(--surface)]/70 text-[var(--text-secondary)]'
                 }`}
               >
                 <span className="flex items-center gap-2">
@@ -155,8 +155,8 @@ export function FilterDrawer({
                 aria-pressed={filters.hideCompleted}
                 className={`flex w-full items-center justify-between rounded-xl border p-3.5 text-xs font-bold transition-all ${
                   filters.hideCompleted
-                    ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                    : 'border-slate-200 bg-white text-slate-700'
+                    ? 'border-[#6CD6C9] bg-[#EAF9F7] text-[#0B645C]'
+                    : 'border-[var(--border-color)] bg-[var(--surface)]/70 text-[var(--text-secondary)]'
                 }`}
               >
                 <span className="flex items-center gap-2">
@@ -170,14 +170,14 @@ export function FilterDrawer({
               <div className="pt-4 flex gap-3">
                 <button
                   onClick={onResetFilters}
-                  className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-3 text-xs font-bold text-slate-700"
+                  className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-[var(--border-color)] py-3 text-xs font-bold text-[var(--text-secondary)]"
                 >
                   <RotateCcw size={14} />
                   {t('reset')}
                 </button>
                 <button
                   onClick={onClose}
-                  className="flex-1 rounded-xl bg-teal-600 py-3 text-xs font-bold text-white shadow-md"
+                  className="flex-1 rounded-xl bg-[#1F6FEB] py-3 text-xs font-bold text-white shadow-md"
                 >
                   Показать ({totalResults})
                 </button>

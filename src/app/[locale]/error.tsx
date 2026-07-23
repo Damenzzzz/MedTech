@@ -34,7 +34,7 @@ export default function Error({
 
         <button
           onClick={() => reset()}
-          className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 font-bold text-xs text-white shadow-sm hover:bg-teal-700 transition-all"
+          className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1F6FEB] px-6 font-bold text-xs text-white shadow-sm hover:bg-[#1A5FD0] transition-all"
         >
           <RotateCcw size={16} />
           <span>{t('retry')}</span>

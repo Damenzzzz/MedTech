@@ -59,15 +59,15 @@ export function ExaminationPanel({
 
   const vitals = patient.vitals;
 
-  const getHeartRateColor = (hr: number) => (hr < 60 || hr > 100 ? 'text-amber-600' : 'text-slate-900');
+  const getHeartRateColor = (hr: number) => (hr < 60 || hr > 100 ? 'text-[#C77A1E]' : 'text-slate-900');
   const getSpo2Color = (spo2: number) => (spo2 < 95 ? 'text-red-600 font-bold' : 'text-slate-900');
-  const getTempColor = (temp: number) => (temp >= 38 ? 'text-amber-600 font-bold' : 'text-slate-900');
+  const getTempColor = (temp: number) => (temp >= 38 ? 'text-[#C77A1E] font-bold' : 'text-slate-900');
 
   return (
     <div className="flex flex-col h-full space-y-5">
       {/* Header */}
       <div className="flex items-center gap-2.5 border-b border-slate-200 pb-3">
-        <div className="grid size-9 place-items-center rounded-xl bg-cyan-100 text-cyan-700">
+        <div className="grid size-9 place-items-center rounded-xl bg-[#CDEFF5] text-[#167E90]">
           <Stethoscope size={18} />
         </div>
         <div>
@@ -99,7 +99,7 @@ export function ExaminationPanel({
         <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-xs">
           <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider">
             <span>ЧСС</span>
-            <HeartPulse size={14} className="text-teal-600" />
+            <HeartPulse size={14} className="text-[#1F6FEB]" />
           </div>
           <div className={`mt-1 text-lg font-black ${getHeartRateColor(vitals.heartRate)}`}>
             {vitals.heartRate} <span className="text-[10px] font-normal text-slate-500">уд/мин</span>
@@ -109,7 +109,7 @@ export function ExaminationPanel({
         <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-xs">
           <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider">
             <span>АД</span>
-            <Activity size={14} className="text-teal-600" />
+            <Activity size={14} className="text-[#1F6FEB]" />
           </div>
           <div className="mt-1 text-base font-black text-slate-900">
             {vitals.bloodPressure} <span className="text-[10px] font-normal text-slate-500">мм рт.ст.</span>
@@ -119,7 +119,7 @@ export function ExaminationPanel({
         <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-xs">
           <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider">
             <span>SpO₂</span>
-            <span className="text-[10px] font-bold text-teal-600">%</span>
+            <span className="text-[10px] font-bold text-[#1F6FEB]">%</span>
           </div>
           <div className={`mt-1 text-lg font-black ${getSpo2Color(vitals.spo2)}`}>
             {vitals.spo2}%
@@ -129,7 +129,7 @@ export function ExaminationPanel({
         <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-xs">
           <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider">
             <span>ЧДД</span>
-            <Activity size={14} className="text-cyan-600" />
+            <Activity size={14} className="text-[#1A9DB4]" />
           </div>
           <div className="mt-1 text-lg font-black text-slate-900">
             {vitals.respiratoryRate} <span className="text-[10px] font-normal text-slate-500">min⁻¹</span>
@@ -139,7 +139,7 @@ export function ExaminationPanel({
         <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-xs">
           <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider">
             <span>t°</span>
-            <Thermometer size={14} className="text-amber-600" />
+            <Thermometer size={14} className="text-[#C77A1E]" />
           </div>
           <div className={`mt-1 text-lg font-black ${getTempColor(vitals.temperature)}`}>
             {vitals.temperature}°C
@@ -179,7 +179,7 @@ export function ExaminationPanel({
               key={exam.id}
               className={`rounded-2xl border p-4 transition-all ${
                 isDone
-                  ? 'border-emerald-200 bg-emerald-50/50'
+                  ? 'border-[#A6E3DA] bg-[#EAF9F7]/50'
                   : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >
@@ -193,8 +193,8 @@ export function ExaminationPanel({
                   disabled={isDone || isLoading}
                   className={`focus-ring inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
                     isDone
-                      ? 'bg-emerald-100 text-emerald-800 cursor-default'
-                      : 'bg-teal-600 text-white hover:bg-teal-700 shadow-xs'
+                      ? 'bg-[#D2F1EC] text-[#0B645C] cursor-default'
+                      : 'bg-[#1F6FEB] text-white hover:bg-[#1A5FD0] shadow-xs'
                   }`}
                 >
                   {isDone ? (
@@ -228,9 +228,9 @@ export function ExaminationPanel({
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
-                    className="mt-3 pt-3 border-t border-emerald-200/80 text-xs font-medium text-slate-800 leading-relaxed"
+                    className="mt-3 pt-3 border-t border-[#A6E3DA]/80 text-xs font-medium text-slate-800 leading-relaxed"
                   >
-                    <p className="font-semibold text-emerald-950">{t('resultReady')}:</p>
+                    <p className="font-semibold text-[#052B27]">{t('resultReady')}:</p>
                     <p className="mt-1">{performedEntry.result}</p>
                   </motion.div>
                 )}
@@ -243,7 +243,7 @@ export function ExaminationPanel({
       {/* Next Stage Button */}
       <button
         onClick={onNextStage}
-        className="focus-ring mt-auto w-full rounded-xl bg-teal-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all"
+        className="focus-ring mt-auto w-full rounded-xl bg-[#1F6FEB] py-3 text-xs font-bold text-white shadow-sm hover:bg-[#1A5FD0] transition-all"
       >
         Перейти к исследованиям →
       </button>

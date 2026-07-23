@@ -581,7 +581,7 @@ export function SttEncounterWorkspace() {
             <Button onClick={() => window.print()} variant="secondary"><Printer size={16} />Печать</Button>
             <Button onClick={() => setPrintMode(false)} variant="secondary">Назад к редактору</Button>
           </div>
-          <div className="rounded-lg bg-amber-50 p-3 text-xs text-amber-800 border border-amber-200">{protocol.warning}</div>
+          <div className="rounded-lg bg-[#FDF3E7] p-3 text-xs text-[#855518] border border-[#F3CA8D]">{protocol.warning}</div>
           <PrintProtocolView protocol={protocol} />
         </div>
       </div>
@@ -591,19 +591,19 @@ export function SttEncounterWorkspace() {
   return (
     <div className="space-y-6 py-6">
       {/* 1. Privacy & Patient Consent Banner */}
-      <div className="rounded-2xl border border-amber-400/20 bg-amber-400/8 p-4 text-sm leading-6 text-amber-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="rounded-2xl border border-[#E5A04A]/20 bg-[#E5A04A]/8 p-4 text-sm leading-6 text-[#FAE3C4] flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
-          <ShieldAlert className="mt-0.5 shrink-0 text-amber-300" size={20} />
+          <ShieldAlert className="mt-0.5 shrink-0 text-[#EAB165]" size={20} />
           <div>
-            <span className="font-semibold text-amber-200">Требуется согласие пациента:</span> Запись разговора и формирование черновика протокола выполняется только с согласия пациента. Данное демо не сохраняет персональные идентифицируемые медицинские данные в публичное хранилище. Ответственность за проверку и утверждение протокола лежит на лечащем враче.
+            <span className="font-semibold text-[#F3CA8D]">Требуется согласие пациента:</span> Запись разговора и формирование черновика протокола выполняется только с согласия пациента. Данное демо не сохраняет персональные идентифицируемые медицинские данные в публичное хранилище. Ответственность за проверку и утверждение протокола лежит на лечащем враче.
           </div>
         </div>
-        <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs font-semibold text-amber-200 hover:bg-amber-400/20">
+        <label className="flex shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-[#E5A04A]/30 bg-[#E5A04A]/10 px-3 py-2 text-xs font-semibold text-[#F3CA8D] hover:bg-[#E5A04A]/20">
           <input
             type="checkbox"
             checked={hasConsent}
             onChange={(e) => setHasConsent(e.target.checked)}
-            className="rounded text-teal-400 focus:ring-0"
+            className="rounded text-[#5B9EEA] focus:ring-0"
           />
           <span>Согласие получено</span>
         </label>
@@ -613,7 +613,7 @@ export function SttEncounterWorkspace() {
       <div className="rounded-2xl border border-white/10 bg-[#162320] p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <FileAudio className="text-teal-300" size={22} />
+            <FileAudio className="text-[#7CA9F2]" size={22} />
             <div>
               <h2 className="font-semibold text-white">Запись и STT (OpenAI Speech-to-Text)</h2>
               <p className="text-xs text-slate-400">OpenAI используется исключительно для распознавания речи (POST /v1/audio/transcriptions).</p>
@@ -640,7 +640,7 @@ export function SttEncounterWorkspace() {
               <Button
                 onClick={startRecording}
                 disabled={!hasConsent || state === 'uploading' || state === 'transcribing'}
-                className="h-10 gap-2 bg-teal-500 font-semibold text-slate-950 hover:bg-teal-400"
+                className="h-10 gap-2 bg-[#2E86E0] font-semibold text-slate-950 hover:bg-[#5B9EEA]"
               >
                 <Mic size={16} /> Записать приём
               </Button>
@@ -663,7 +663,7 @@ export function SttEncounterWorkspace() {
                 onClick={runTranscription}
                 disabled={state === 'transcribing' || state === 'uploading'}
                 size="sm"
-                className="h-9 gap-1 bg-teal-500 text-slate-950 hover:bg-teal-400 font-medium"
+                className="h-9 gap-1 bg-[#2E86E0] text-slate-950 hover:bg-[#5B9EEA] font-medium"
               >
                 {state === 'transcribing' || state === 'uploading' ? (
                   <>
@@ -698,11 +698,11 @@ export function SttEncounterWorkspace() {
           <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <div>
               <h3 className="font-semibold text-white flex items-center gap-2">
-                <FileText className="text-teal-300" size={18} /> Расшифровка разговора
+                <FileText className="text-[#7CA9F2]" size={18} /> Расшифровка разговора
               </h3>
               {sttData && (
                 <p className="mt-1 text-xs text-slate-400">
-                  Провайдер: <span className="text-teal-300">{sttData.provider}</span> ({sttData.model}) · Длительность: {sttData.durationSeconds.toFixed(1)}s
+                  Провайдер: <span className="text-[#7CA9F2]">{sttData.provider}</span> ({sttData.model}) · Длительность: {sttData.durationSeconds.toFixed(1)}s
                 </p>
               )}
             </div>
@@ -714,7 +714,7 @@ export function SttEncounterWorkspace() {
           </div>
 
           {sttData?.provider === 'mock' && (
-            <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 text-sm font-semibold text-amber-200">
+            <div className="mt-4 flex items-start gap-2 rounded-xl border border-[#E5A04A]/40 bg-[#E0912A]/10 p-3 text-sm font-semibold text-[#F3CA8D]">
               <ShieldAlert size={18} className="mt-0.5 shrink-0" />
               <span>Это демо-текст (mock STT), не настоящая транскрибация записи.</span>
             </div>
@@ -737,11 +737,11 @@ export function SttEncounterWorkspace() {
               <label className="block text-xs font-semibold text-slate-300">Разделение по спикерам (Diarization)</label>
               <div className="flex items-center gap-1">
                 {turns.length > 0 && (
-                  <Button onClick={swapAllRoles} variant="ghost" size="sm" className="h-7 text-xs text-teal-300">
+                  <Button onClick={swapAllRoles} variant="ghost" size="sm" className="h-7 text-xs text-[#7CA9F2]">
                     <RefreshCw size={13} className="mr-1" /> Поменять роли местами
                   </Button>
                 )}
-                <Button onClick={addTurn} variant="ghost" size="sm" className="h-7 text-xs text-teal-300">
+                <Button onClick={addTurn} variant="ghost" size="sm" className="h-7 text-xs text-[#7CA9F2]">
                   <Plus size={14} className="mr-1" /> Добавить реплику
                 </Button>
               </div>
@@ -750,24 +750,24 @@ export function SttEncounterWorkspace() {
             {/* Role provenance: AI-assigned, and whether manual edits made the protocol stale */}
             {rolesFromAi && (
               <div className="space-y-2">
-                <div className="flex items-start gap-2 rounded-xl border border-teal-400/25 bg-teal-400/5 p-2.5 text-[11px] leading-5 text-teal-100">
-                  <Sparkles size={14} className="mt-0.5 shrink-0 text-teal-300" />
+                <div className="flex items-start gap-2 rounded-xl border border-[#5B9EEA]/25 bg-[#5B9EEA]/5 p-2.5 text-[11px] leading-5 text-[#D6E5FD]">
+                  <Sparkles size={14} className="mt-0.5 shrink-0 text-[#7CA9F2]" />
                   <span>
-                    <span className="font-semibold text-teal-200">Роли расставлены ИИ</span> по смыслу диалога, а не по номеру спикера. Проверьте и при необходимости исправьте вручную.
+                    <span className="font-semibold text-[#AFCBFB]">Роли расставлены ИИ</span> по смыслу диалога, а не по номеру спикера. Проверьте и при необходимости исправьте вручную.
                   </span>
                 </div>
 
                 {rolesEditedManually && (
-                  <div className="flex flex-col gap-2 rounded-xl border border-amber-400/30 bg-amber-500/10 p-2.5 text-[11px] leading-5 text-amber-100 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-col gap-2 rounded-xl border border-[#E5A04A]/30 bg-[#E0912A]/10 p-2.5 text-[11px] leading-5 text-[#FAE3C4] sm:flex-row sm:items-center sm:justify-between">
                     <span className="flex items-start gap-2">
-                      <ShieldAlert size={14} className="mt-0.5 shrink-0 text-amber-300" />
+                      <ShieldAlert size={14} className="mt-0.5 shrink-0 text-[#EAB165]" />
                       Роли изменены вручную — текущий протокол собран по прежним ролям.
                     </span>
                     <Button
                       onClick={rebuildProtocolFromTurns}
                       size="sm"
                       disabled={state === 'generating-protocol'}
-                      className="h-7 shrink-0 gap-1 bg-amber-500 text-[11px] font-semibold text-slate-950 hover:bg-amber-400"
+                      className="h-7 shrink-0 gap-1 bg-[#E0912A] text-[11px] font-semibold text-slate-950 hover:bg-[#E5A04A]"
                     >
                       {state === 'generating-protocol' ? <Loader2 className="animate-spin" size={12} /> : <RefreshCw size={12} />}
                       Пересобрать протокол
@@ -783,7 +783,7 @@ export function SttEncounterWorkspace() {
                   <div key={idx} className="rounded-xl border border-white/10 bg-white/5 p-3 text-xs space-y-2">
                     <div className="flex items-center justify-between gap-2">
                       <select
-                        className="input h-7 border-white/10 bg-white/10 text-xs font-bold text-teal-200"
+                        className="input h-7 border-white/10 bg-white/10 text-xs font-bold text-[#AFCBFB]"
                         value={turn.speaker}
                         onChange={(e) => updateTurnSpeaker(idx, e.target.value as SttSpeaker)}
                       >
@@ -798,7 +798,7 @@ export function SttEncounterWorkspace() {
                         <button
                           type="button"
                           onClick={() => seekAudio(turn.start)}
-                          className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-teal-300"
+                          className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-[#7CA9F2]"
                         >
                           <Play size={10} /> {turn.start.toFixed(1)}s - {turn.end?.toFixed(1)}s
                         </button>
@@ -830,7 +830,7 @@ export function SttEncounterWorkspace() {
               onClick={() => generateProtocol(false)}
               disabled={state === 'generating-protocol' || (!transcriptText.trim() && !turns.length)}
               aria-busy={state === 'generating-protocol'}
-              className="w-full h-11 bg-teal-500 text-slate-950 font-semibold hover:bg-teal-400 gap-2"
+              className="w-full h-11 bg-[#2E86E0] text-slate-950 font-semibold hover:bg-[#5B9EEA] gap-2"
             >
               {state === 'generating-protocol' ? (
                 <>
@@ -855,10 +855,10 @@ export function SttEncounterWorkspace() {
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
                       protocol.status === 'reviewed'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        ? 'bg-[#12B5A6]/20 text-[#6CD6C9] border border-[#12B5A6]/30'
                         : protocol.status === 'edited'
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                        : 'bg-teal-500/20 text-teal-300 border border-teal-500/30'
+                        ? 'bg-[#E0912A]/20 text-[#EAB165] border border-[#E0912A]/30'
+                        : 'bg-[#2E86E0]/20 text-[#7CA9F2] border border-[#2E86E0]/30'
                     }`}
                   >
                     {protocol.status === 'reviewed' ? 'Утверждён врачом' : protocol.status === 'edited' ? 'Отредактирован' : 'Черновик AI'}
@@ -870,7 +870,7 @@ export function SttEncounterWorkspace() {
               </div>
               {protocol && (
                 <p className="mt-1 text-xs text-slate-400">
-                  Модель: <span className="text-teal-300">{protocol.provenance.generationModel}</span> ({protocol.provenance.generationProvider}) · Версия v{protocol.version}
+                  Модель: <span className="text-[#7CA9F2]">{protocol.provenance.generationModel}</span> ({protocol.provenance.generationProvider}) · Версия v{protocol.version}
                 </p>
               )}
             </div>
@@ -886,11 +886,11 @@ export function SttEncounterWorkspace() {
                     <Save size={13} /> Сохранить правки
                   </Button>
                   {protocol.status !== 'reviewed' && (
-                    <Button onClick={approveProtocol} size="sm" className="h-8 text-xs gap-1 bg-emerald-600 hover:bg-emerald-500 text-white">
+                    <Button onClick={approveProtocol} size="sm" className="h-8 text-xs gap-1 bg-[#0E9E92] hover:bg-[#12B5A6] text-white">
                       <UserCheck size={13} /> Утвердить
                     </Button>
                   )}
-                  <Button onClick={() => setSaveOpen(true)} size="sm" className="h-8 gap-1 bg-teal-500 text-xs text-slate-950 hover:bg-teal-400">
+                  <Button onClick={() => setSaveOpen(true)} size="sm" className="h-8 gap-1 bg-[#2E86E0] text-xs text-slate-950 hover:bg-[#5B9EEA]">
                     <Save size={13} /> Сохранить приём
                   </Button>
                 </>
@@ -901,7 +901,7 @@ export function SttEncounterWorkspace() {
           {!protocol && (
             <div className="grid min-h-[460px] place-items-center rounded-xl border border-dashed border-white/10 p-8 text-center text-slate-500">
               <div>
-                <Sparkles className="mx-auto text-teal-400/50 mb-3" size={36} />
+                <Sparkles className="mx-auto text-[#5B9EEA]/50 mb-3" size={36} />
                 <p className="text-sm font-medium text-slate-300">{'Протокол ещё не сформирован'}</p>
                 <p className="mt-1 text-xs text-slate-500 max-w-xs">
                   {'Нажмите кнопку сформировать черновик.'}
@@ -913,7 +913,7 @@ export function SttEncounterWorkspace() {
           {protocol && (
             <div className="space-y-4 max-h-[580px] overflow-y-auto pr-1">
               {/* Disclaimer */}
-              <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 text-xs text-amber-200">
+              <div className="rounded-xl bg-[#E0912A]/10 border border-[#E0912A]/20 p-3 text-xs text-[#F3CA8D]">
                 {protocol.warning}
               </div>
 
@@ -935,7 +935,7 @@ export function SttEncounterWorkspace() {
                   onClick={() => setConfirmRegenerateOpen(true)}
                   size="sm"
                   variant="ghost"
-                  className="h-8 text-xs text-amber-300 hover:text-amber-200 gap-1"
+                  className="h-8 text-xs text-[#EAB165] hover:text-[#F3CA8D] gap-1"
                 >
                   <RefreshCw size={13} /> {'Regenerate'}
                 </Button>
@@ -943,9 +943,9 @@ export function SttEncounterWorkspace() {
 
               {/* Confirmation Modal for Regenerate */}
               {confirmRegenerateOpen && (
-                <div className="rounded-xl border border-amber-400/30 bg-amber-500/10 p-3 text-xs space-y-2 text-amber-100">
+                <div className="rounded-xl border border-[#E5A04A]/30 bg-[#E0912A]/10 p-3 text-xs space-y-2 text-[#FAE3C4]">
                   <p className="font-semibold">{'Перегенерировать черновик?'}</p>
-                  <p className="text-amber-200/80">
+                  <p className="text-[#F3CA8D]/80">
                     {'Система создаст новую версию протокола.'}
                   </p>
                   <div className="flex justify-end gap-2 pt-1">
@@ -958,7 +958,7 @@ export function SttEncounterWorkspace() {
                         generateProtocol(true);
                       }}
                       size="sm"
-                      className="h-7 text-xs bg-amber-500 text-slate-950 font-semibold"
+                      className="h-7 text-xs bg-[#E0912A] text-slate-950 font-semibold"
                     >
                       Да, перегенерировать
                     </Button>
@@ -970,7 +970,7 @@ export function SttEncounterWorkspace() {
               <div className="space-y-4 text-xs">
                 {/* 1. History of Present Illness */}
                 <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2">
-                  <label className="font-semibold text-teal-200 block">{'Анамнез заболевания (HPI)'}</label>
+                  <label className="font-semibold text-[#AFCBFB] block">{'Анамнез заболевания (HPI)'}</label>
                   <textarea
                     className="input min-h-20 w-full border-white/10 bg-black/20 text-xs leading-5 text-slate-200"
                     value={protocol.sections.historyOfPresentIllness.text}
@@ -985,7 +985,7 @@ export function SttEncounterWorkspace() {
 
                 {/* 2. Assessment Summary & Preliminary Diagnosis */}
                 <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2">
-                  <label className="font-semibold text-teal-200 block">{'Предварительный диагноз'}</label>
+                  <label className="font-semibold text-[#AFCBFB] block">{'Предварительный диагноз'}</label>
                   <div className="grid gap-2 sm:grid-cols-3">
                     <div className="sm:col-span-2">
                       <label className="text-[11px] text-slate-400 block mb-1">{'Диагноз'}</label>
@@ -1016,7 +1016,7 @@ export function SttEncounterWorkspace() {
 
                 {/* 3. Chief Complaints */}
                 <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2">
-                  <label className="font-semibold text-teal-200 block">{'Жалобы пациента'}</label>
+                  <label className="font-semibold text-[#AFCBFB] block">{'Жалобы пациента'}</label>
                   <ul className="space-y-1">
                     {protocol.sections.chiefComplaints.map((item, i) => (
                       <li key={i} className="rounded bg-black/20 p-2 text-slate-200">
@@ -1032,16 +1032,16 @@ export function SttEncounterWorkspace() {
                 {/* 4. Differential Diagnoses */}
                 {protocol.sections.assessment.differentialDiagnoses.length > 0 && (
                   <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2">
-                    <label className="font-semibold text-teal-200 block">{'Дифференциальный диагноз'}</label>
+                    <label className="font-semibold text-[#AFCBFB] block">{'Дифференциальный диагноз'}</label>
                     <div className="space-y-2">
                       {protocol.sections.assessment.differentialDiagnoses.map((diff, i) => (
                         <div key={i} className="rounded bg-black/20 p-2 space-y-1">
                           <div className="font-semibold text-slate-200">{diff.diagnosis} {diff.icd10Code ? `(${diff.icd10Code})` : ''}</div>
                           {diff.supportingEvidence.length > 0 && (
-                            <div className="text-[11px] text-emerald-300">За: {diff.supportingEvidence.join(', ')}</div>
+                            <div className="text-[11px] text-[#6CD6C9]">За: {diff.supportingEvidence.join(', ')}</div>
                           )}
                           {diff.missingEvidence.length > 0 && (
-                            <div className="text-[11px] text-amber-300">Не хватает: {diff.missingEvidence.join(', ')}</div>
+                            <div className="text-[11px] text-[#EAB165]">Не хватает: {diff.missingEvidence.join(', ')}</div>
                           )}
                         </div>
                       ))}
@@ -1051,7 +1051,7 @@ export function SttEncounterWorkspace() {
 
                 {/* 5. Plan */}
                 <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2">
-                  <label className="font-semibold text-teal-200 block">{'Черновик плана ведения'}</label>
+                  <label className="font-semibold text-[#AFCBFB] block">{'Черновик плана ведения'}</label>
                   <div className="space-y-2">
                     {protocol.sections.plan.treatmentDraft.length > 0 && (
                       <div>
@@ -1075,8 +1075,8 @@ export function SttEncounterWorkspace() {
                     )}
                     {protocol.sections.plan.safetyNetting.length > 0 && (
                       <div>
-                        <span className="text-amber-300 block mb-1">{'Красные флаги и предостережения:'}</span>
-                        <ul className="list-disc list-inside space-y-0.5 text-amber-100">
+                        <span className="text-[#EAB165] block mb-1">{'Красные флаги и предостережения:'}</span>
+                        <ul className="list-disc list-inside space-y-0.5 text-[#FAE3C4]">
                           {protocol.sections.plan.safetyNetting.map((s, i) => (
                             <li key={i}>{s}</li>
                           ))}
@@ -1088,9 +1088,9 @@ export function SttEncounterWorkspace() {
 
                 {/* 6. Unresolved Questions */}
                 {protocol.sections.unresolvedQuestions.length > 0 && (
-                  <div className="rounded-xl border border-amber-400/20 bg-amber-500/5 p-3 space-y-1">
-                    <label className="font-semibold text-amber-200 block">{'Невыясненные вопросы для уточнения'}</label>
-                    <ul className="list-disc list-inside space-y-1 text-amber-100/90">
+                  <div className="rounded-xl border border-[#E5A04A]/20 bg-[#E0912A]/5 p-3 space-y-1">
+                    <label className="font-semibold text-[#F3CA8D] block">{'Невыясненные вопросы для уточнения'}</label>
+                    <ul className="list-disc list-inside space-y-1 text-[#FAE3C4]/90">
                       {protocol.sections.unresolvedQuestions.map((q, i) => (
                         <li key={i}>{q}</li>
                       ))}
@@ -1118,22 +1118,22 @@ export function SttEncounterWorkspace() {
           <div role="dialog" aria-modal="true" aria-labelledby="save-encounter-title" className="w-full max-w-lg rounded-3xl border border-white/10 bg-[#162320] p-6 text-slate-100 shadow-2xl">
             {savedPatientIin ? (
               <div className="space-y-4 text-center">
-                <UserCheck className="mx-auto text-emerald-300" size={38} />
+                <UserCheck className="mx-auto text-[#6CD6C9]" size={38} />
                 <h2 id="save-encounter-title" className="text-xl font-semibold">Приём сохранён</h2>
                 <p className="text-sm text-slate-400">Запись добавлена в историю пациента. Локальный черновик удалён.</p>
                 <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
                   <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">ИИН пациента</p>
-                  <p className="mt-1 font-mono text-lg font-bold tracking-widest text-teal-300">{savedPatientIin}</p>
+                  <p className="mt-1 font-mono text-lg font-bold tracking-widest text-[#7CA9F2]">{savedPatientIin}</p>
                 </div>
                 <div className="flex justify-center gap-3">
-                  <Link href={`/patient-portal/${savedPatientIin}`} className="focus-ring inline-flex h-10 items-center rounded-xl bg-teal-500 px-4 text-sm font-semibold text-slate-950 hover:bg-teal-400">Открыть кабинет пациента</Link>
+                  <Link href={`/patient-portal/${savedPatientIin}`} className="focus-ring inline-flex h-10 items-center rounded-xl bg-[#2E86E0] px-4 text-sm font-semibold text-slate-950 hover:bg-[#5B9EEA]">Открыть кабинет пациента</Link>
                   <Button variant="secondary" onClick={() => setSaveOpen(false)}>Закрыть</Button>
                 </div>
               </div>
             ) : needsDoctorLogin ? (
               <div className="space-y-5">
                 <div className="flex items-start gap-3">
-                  <Stethoscope className="mt-0.5 shrink-0 text-amber-300" size={26} />
+                  <Stethoscope className="mt-0.5 shrink-0 text-[#EAB165]" size={26} />
                   <div>
                     <h2 id="save-encounter-title" className="text-xl font-semibold">Войдите как врач</h2>
                     <p className="mt-1 text-sm text-slate-400">
@@ -1141,7 +1141,7 @@ export function SttEncounterWorkspace() {
                     </p>
                   </div>
                 </div>
-                <div className="rounded-xl border border-teal-400/20 bg-teal-400/5 p-3 text-xs text-teal-100">
+                <div className="rounded-xl border border-[#5B9EEA]/20 bg-[#5B9EEA]/5 p-3 text-xs text-[#D6E5FD]">
                   Черновик протокола и введённый ИИН сохранены в этом браузере — после входа ничего вводить заново не придётся.
                 </div>
                 <div className="flex flex-wrap justify-end gap-3">
@@ -1149,7 +1149,7 @@ export function SttEncounterWorkspace() {
                   <Button variant="secondary" onClick={() => setNeedsDoctorLogin(false)}>Повторить сохранение</Button>
                   <Link
                     href="/patient-portal/doctor"
-                    className="focus-ring inline-flex h-10 items-center rounded-xl bg-teal-500 px-4 text-sm font-semibold text-slate-950 hover:bg-teal-400"
+                    className="focus-ring inline-flex h-10 items-center rounded-xl bg-[#2E86E0] px-4 text-sm font-semibold text-slate-950 hover:bg-[#5B9EEA]"
                   >
                     Войти как врач
                   </Link>
@@ -1158,7 +1158,7 @@ export function SttEncounterWorkspace() {
             ) : (
               <div className="space-y-5">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-teal-300">Перед сохранением</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[#7CA9F2]">Перед сохранением</p>
                   <h2 id="save-encounter-title" className="mt-2 text-xl font-semibold">Укажите пациента</h2>
                   <p className="mt-1 text-sm text-slate-400">Если ИИН ещё нет в базе, пациент будет создан автоматически.</p>
                 </div>
@@ -1171,7 +1171,7 @@ export function SttEncounterWorkspace() {
                 {saveError && <div role="alert" className="rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">{saveError}<p className="mt-1 text-xs text-red-300">Черновик сохранён локально, данные не потеряны.</p></div>}
                 <div className="flex justify-end gap-3">
                   <Button variant="secondary" onClick={() => setSaveOpen(false)} disabled={savingEncounter}>Отмена</Button>
-                  <Button onClick={saveEncounter} disabled={savingEncounter || patientIin.length !== 12} className="bg-teal-500 text-slate-950 hover:bg-teal-400">
+                  <Button onClick={saveEncounter} disabled={savingEncounter || patientIin.length !== 12} className="bg-[#2E86E0] text-slate-950 hover:bg-[#5B9EEA]">
                     {savingEncounter ? <Loader2 className="animate-spin" size={15} /> : <Save size={15} />}
                     {savingEncounter ? 'Сохранение…' : 'Сохранить приём'}
                   </Button>

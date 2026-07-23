@@ -42,10 +42,10 @@ export function DoctorEntryForm() {
   };
 
   return (
-    <form className="card w-full max-w-md rounded-3xl p-7 sm:p-9" onSubmit={handleSubmit(onSubmit)}>
-      <p className="label text-teal-700">{t('doctorEyebrow')}</p>
-      <h1 className="mt-3 text-3xl font-semibold">{t('doctorTitle')}</h1>
-      <p className="mt-3 text-slate-600 dark:text-slate-300">{t('doctorLead')}</p>
+    <form className="glass w-full max-w-md p-7 sm:p-9" onSubmit={handleSubmit(onSubmit)}>
+      <p className="label">{t('doctorEyebrow')}</p>
+      <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text-primary)]">{t('doctorTitle')}</h1>
+      <p className="mt-3 text-[var(--text-secondary)]">{t('doctorLead')}</p>
 
       <label htmlFor="doctor-full-name" className="mt-7 block text-sm font-semibold">
         {t('nameLabel')}

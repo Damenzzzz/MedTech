@@ -29,7 +29,7 @@ export function ManagementPanel({
     <div className="flex flex-col h-full space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2.5 border-b border-slate-200 pb-3">
-        <div className="grid size-9 place-items-center rounded-xl bg-teal-100 text-teal-700">
+        <div className="grid size-9 place-items-center rounded-xl bg-[#D6E5FD] text-[#1A5FD0]">
           <ClipboardList size={18} />
         </div>
         <div>
@@ -60,9 +60,9 @@ export function ManagementPanel({
                   key={opt.id}
                   type="button"
                   onClick={() => onAppendNoteItem(val, opt.id)}
-                  className="focus-ring flex w-full items-start gap-2 rounded-xl border border-slate-200 bg-white p-2.5 text-left text-xs font-medium text-slate-700 hover:border-teal-300 hover:bg-teal-50 hover:text-teal-900 transition-all"
+                  className="focus-ring flex w-full items-start gap-2 rounded-xl border border-slate-200 bg-white p-2.5 text-left text-xs font-medium text-slate-700 hover:border-[#7CA9F2] hover:bg-[#EAF2FE] hover:text-[#0D3A73] transition-all"
                 >
-                  <Plus size={14} className="text-teal-600 shrink-0 mt-0.5" />
+                  <Plus size={14} className="text-[#1F6FEB] shrink-0 mt-0.5" />
                   <span className="line-clamp-2">{val}</span>
                 </button>
               );
@@ -79,16 +79,16 @@ export function ManagementPanel({
             value={managementNotes}
             onChange={(e) => onSetManagementNotes(e.target.value)}
             placeholder={t('managementPlaceholder')}
-            className="input text-xs border-slate-200 focus:border-teal-600 min-h-[140px] leading-relaxed p-3"
+            className="input text-xs border-slate-200 focus:border-[#1F6FEB] min-h-[140px] leading-relaxed p-3"
           />
         </div>
 
         {/* Educational Medication Warning */}
-        <div className="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50/80 p-3.5 text-xs text-amber-900 font-medium leading-relaxed">
-          <ShieldAlert size={18} className="text-amber-600 shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2.5 rounded-2xl border border-[#F3CA8D] bg-[#FDF3E7]/80 p-3.5 text-xs text-[#6B4414] font-medium leading-relaxed">
+          <ShieldAlert size={18} className="text-[#C77A1E] shrink-0 mt-0.5" />
           <div>
             <p className="font-bold">{t('management')}</p>
-            <p className="mt-0.5 text-amber-800">{t('medicationWarning')}</p>
+            <p className="mt-0.5 text-[#855518]">{t('medicationWarning')}</p>
           </div>
         </div>
       </div>
@@ -96,7 +96,7 @@ export function ManagementPanel({
       {/* Next Stage Button */}
       <button
         onClick={onNextStage}
-        className="focus-ring mt-auto w-full rounded-xl bg-teal-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all"
+        className="focus-ring mt-auto w-full rounded-xl bg-[#1F6FEB] py-3 text-xs font-bold text-white shadow-sm hover:bg-[#1A5FD0] transition-all"
       >
         {t('next')}
       </button>

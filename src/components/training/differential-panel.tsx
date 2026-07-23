@@ -75,7 +75,7 @@ export function DifferentialPanel({
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => onToggleDifferential(diff.code)}
-                  className="size-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                  className="size-4 rounded border-slate-300 text-[#1F6FEB] focus:ring-[#2E86E0]"
                 />
                 <span>
                   <strong className="font-bold">{diff.code}</strong> — {name}
@@ -126,7 +126,7 @@ export function DifferentialPanel({
       {/* Next Stage Button */}
       <button
         onClick={onNextStage}
-        className="focus-ring mt-auto w-full rounded-xl bg-teal-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all"
+        className="focus-ring mt-auto w-full rounded-xl bg-[#1F6FEB] py-3 text-xs font-bold text-white shadow-sm hover:bg-[#1A5FD0] transition-all"
       >
         Перейти к основному диагнозу →
       </button>

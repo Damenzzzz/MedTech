@@ -59,7 +59,7 @@ export function FinishPanel({
     <div className="flex flex-col h-full space-y-5">
       {/* Header */}
       <div className="flex items-center gap-2.5 border-b border-slate-200 pb-3">
-        <div className="grid size-9 place-items-center rounded-xl bg-emerald-100 text-emerald-700">
+        <div className="grid size-9 place-items-center rounded-xl bg-[#D2F1EC] text-[#0E7D72]">
           <Award size={18} />
         </div>
         <div>
@@ -86,17 +86,17 @@ export function FinishPanel({
 
         {/* Missing Required Sections Warning */}
         {missingSections.length > 0 && !errorMessage && (
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-2 text-xs">
-            <div className="flex items-center gap-2 text-amber-900 font-bold">
-              <AlertCircle size={16} className="text-amber-600" />
+          <div className="rounded-2xl border border-[#F3CA8D] bg-[#FDF3E7] p-4 space-y-2 text-xs">
+            <div className="flex items-center gap-2 text-[#6B4414] font-bold">
+              <AlertCircle size={16} className="text-[#C77A1E]" />
               <span>{t('leaveTitle')}</span>
             </div>
-            <ul className="space-y-1.5 pl-6 list-disc text-amber-950 font-medium">
+            <ul className="space-y-1.5 pl-6 list-disc text-[#4A2F0E] font-medium">
               {missingSections.map((sec) => (
                 <li key={sec.label}>
                   <button
                     onClick={() => onSelectStage(sec.stageIdx)}
-                    className="underline text-amber-900 hover:text-amber-950 font-bold text-left"
+                    className="underline text-[#6B4414] hover:text-[#4A2F0E] font-bold text-left"
                   >
                     {sec.label} (→)
                   </button>
@@ -112,37 +112,37 @@ export function FinishPanel({
             {t('stage')}:
           </p>
           <div className="grid grid-cols-1 gap-2 text-xs font-semibold">
-            <div className={`flex items-center justify-between p-2 rounded-xl border ${hasDialogue ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+            <div className={`flex items-center justify-between p-2 rounded-xl border ${hasDialogue ? 'bg-[#EAF9F7]/70 border-[#A6E3DA] text-[#084D47]' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
               <span>1. {t('stages.1')} ({session?.dialogue?.length || 0})</span>
-              {hasDialogue ? <CheckCircle2 size={16} className="text-emerald-600" /> : <span className="text-[11px]">0</span>}
+              {hasDialogue ? <CheckCircle2 size={16} className="text-[#0E9E92]" /> : <span className="text-[11px]">0</span>}
             </div>
 
-            <div className={`flex items-center justify-between p-2 rounded-xl border ${hasExams ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+            <div className={`flex items-center justify-between p-2 rounded-xl border ${hasExams ? 'bg-[#EAF9F7]/70 border-[#A6E3DA] text-[#084D47]' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
               <span>2. {t('stages.2')} ({session?.performedExaminations?.length || 0})</span>
-              {hasExams ? <CheckCircle2 size={16} className="text-emerald-600" /> : <span className="text-[11px]">0</span>}
+              {hasExams ? <CheckCircle2 size={16} className="text-[#0E9E92]" /> : <span className="text-[11px]">0</span>}
             </div>
 
-            <div className={`flex items-center justify-between p-2 rounded-xl border ${hasTests ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+            <div className={`flex items-center justify-between p-2 rounded-xl border ${hasTests ? 'bg-[#EAF9F7]/70 border-[#A6E3DA] text-[#084D47]' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
               <span>3. {t('stages.3')} ({session?.selectedInvestigations?.length || 0})</span>
-              {hasTests ? <CheckCircle2 size={16} className="text-emerald-600" /> : <span className="text-[11px]">0</span>}
+              {hasTests ? <CheckCircle2 size={16} className="text-[#0E9E92]" /> : <span className="text-[11px]">0</span>}
             </div>
 
-            <div className={`flex items-center justify-between p-2 rounded-xl border ${hasDiffs ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+            <div className={`flex items-center justify-between p-2 rounded-xl border ${hasDiffs ? 'bg-[#EAF9F7]/70 border-[#A6E3DA] text-[#084D47]' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
               <span>4. {t('stages.4')} ({session?.differentials?.length || 0})</span>
-              {hasDiffs ? <CheckCircle2 size={16} className="text-emerald-600" /> : <span className="text-[11px]">0</span>}
+              {hasDiffs ? <CheckCircle2 size={16} className="text-[#0E9E92]" /> : <span className="text-[11px]">0</span>}
             </div>
 
-            <div className={`flex items-center justify-between p-2 rounded-xl border ${hasFinal && hasReasoning ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-amber-50 border-amber-200 text-amber-900'}`}>
+            <div className={`flex items-center justify-between p-2 rounded-xl border ${hasFinal && hasReasoning ? 'bg-[#EAF9F7]/70 border-[#A6E3DA] text-[#084D47]' : 'bg-[#FDF3E7] border-[#F3CA8D] text-[#6B4414]'}`}>
               <span>5. {t('final')}</span>
-              {hasFinal && hasReasoning ? <CheckCircle2 size={16} className="text-emerald-600" /> : <AlertTriangle size={16} className="text-amber-600" />}
+              {hasFinal && hasReasoning ? <CheckCircle2 size={16} className="text-[#0E9E92]" /> : <AlertTriangle size={16} className="text-[#C77A1E]" />}
             </div>
           </div>
         </div>
 
         {/* Info Banner */}
-        <div className="rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-50 to-emerald-50 p-4 space-y-2">
-          <div className="flex items-center gap-2 text-teal-900 font-bold text-xs">
-            <ShieldCheck size={16} className="text-teal-600" />
+        <div className="rounded-2xl border border-[#AFCBFB] bg-gradient-to-br from-[#EAF2FE] to-[#EAF9F7] p-4 space-y-2">
+          <div className="flex items-center gap-2 text-[#0D3A73] font-bold text-xs">
+            <ShieldCheck size={16} className="text-[#1F6FEB]" />
             <span>{t('finish')}</span>
           </div>
           <p className="text-xs text-slate-600 leading-relaxed font-medium">
@@ -155,7 +155,7 @@ export function FinishPanel({
       <button
         onClick={handleFinish}
         disabled={isFinishing}
-        className="focus-ring w-full rounded-2xl bg-emerald-600 py-3.5 text-xs font-bold text-white shadow-md shadow-emerald-600/30 hover:bg-emerald-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-auto"
+        className="focus-ring w-full rounded-2xl bg-[#0E9E92] py-3.5 text-xs font-bold text-white shadow-md shadow-[#0E9E92]/30 hover:bg-[#0E7D72] disabled:opacity-50 transition-all flex items-center justify-center gap-2 mt-auto"
       >
         {isFinishing ? (
           <span>...</span>

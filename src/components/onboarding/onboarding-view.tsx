@@ -74,10 +74,10 @@ export function OnboardingView() {
       <div className="mb-8 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="grid size-8 place-items-center rounded-lg bg-teal-100 text-teal-700">
+            <div className="grid size-8 place-items-center rounded-lg bg-[#D6E5FD] text-[#1A5FD0]">
               <Sparkles size={16} />
             </div>
-            <span className="text-xs font-bold uppercase tracking-wider text-teal-700">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#1A5FD0]">
               {t('stepCount', { current: step + 1, total: totalSteps })}
             </span>
           </div>
@@ -93,7 +93,7 @@ export function OnboardingView() {
         {/* Progress Bar Container */}
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200/80 p-0.5">
           <motion.div
-            className="h-full rounded-full bg-gradient-to-r from-teal-500 to-cyan-500 shadow-xs"
+            className="h-full rounded-full bg-gradient-to-r from-[#2E86E0] to-[#1FB6D0] shadow-xs"
             initial={{ width: 0 }}
             animate={{ width: `${((step + 1) / totalSteps) * 100}%` }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
@@ -115,14 +115,14 @@ export function OnboardingView() {
               className="space-y-6"
             >
               <div className="flex items-center gap-3">
-                <div className="grid size-12 place-items-center rounded-2xl bg-teal-50 text-teal-600 border border-teal-100">
+                <div className="grid size-12 place-items-center rounded-2xl bg-[#EAF2FE] text-[#1F6FEB] border border-[#D6E5FD]">
                   <MessageSquare size={24} />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-slate-900">
                     1. {t('step1Title')}
                   </h2>
-                  <p className="text-xs font-semibold text-teal-700">
+                  <p className="text-xs font-semibold text-[#1A5FD0]">
                     Анамнез · Диалог с виртуальным пациентом
                   </p>
                 </div>
@@ -142,7 +142,7 @@ export function OnboardingView() {
                     onClick={() => setSelectedQuestion(1)}
                     className={`focus-ring text-left rounded-xl border p-3.5 text-xs font-semibold transition-all ${
                       selectedQuestion === 1
-                        ? 'border-teal-600 bg-teal-50 text-teal-900 shadow-sm'
+                        ? 'border-[#1F6FEB] bg-[#EAF2FE] text-[#0D3A73] shadow-sm'
                         : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                     }`}
                   >
@@ -153,7 +153,7 @@ export function OnboardingView() {
                     onClick={() => setSelectedQuestion(2)}
                     className={`focus-ring text-left rounded-xl border p-3.5 text-xs font-semibold transition-all ${
                       selectedQuestion === 2
-                        ? 'border-teal-600 bg-teal-50 text-teal-900 shadow-sm'
+                        ? 'border-[#1F6FEB] bg-[#EAF2FE] text-[#0D3A73] shadow-sm'
                         : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
                     }`}
                   >
@@ -168,10 +168,10 @@ export function OnboardingView() {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
-                      className="mt-3 rounded-2xl border border-teal-200 bg-white p-4 shadow-sm"
+                      className="mt-3 rounded-2xl border border-[#AFCBFB] bg-white p-4 shadow-sm"
                     >
                       <div className="flex items-center gap-2 mb-1.5">
-                        <span className="grid size-6 place-items-center rounded-md bg-teal-600 text-[10px] font-bold text-white">
+                        <span className="grid size-6 place-items-center rounded-md bg-[#1F6FEB] text-[10px] font-bold text-white">
                           П
                         </span>
                         <span className="text-xs font-bold text-slate-900">
@@ -201,14 +201,14 @@ export function OnboardingView() {
               className="space-y-6"
             >
               <div className="flex items-center gap-3">
-                <div className="grid size-12 place-items-center rounded-2xl bg-cyan-50 text-cyan-600 border border-cyan-100">
+                <div className="grid size-12 place-items-center rounded-2xl bg-[#E8F7FA] text-[#1A9DB4] border border-[#CDEFF5]">
                   <Stethoscope size={24} />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-slate-900">
                     2. {t('step2Title')}
                   </h2>
-                  <p className="text-xs font-semibold text-cyan-700">
+                  <p className="text-xs font-semibold text-[#167E90]">
                     Физикальный осмотр & Жизненные показатели
                   </p>
                 </div>
@@ -243,8 +243,8 @@ export function OnboardingView() {
                   onClick={() => setExamDone(true)}
                   className={`focus-ring flex items-center gap-2 rounded-xl px-4 py-3 text-xs font-bold transition-all ${
                     examDone
-                      ? 'bg-emerald-600 text-white shadow-sm'
-                      : 'bg-teal-600 text-white hover:bg-teal-700 shadow-md shadow-teal-600/20'
+                      ? 'bg-[#0E9E92] text-white shadow-sm'
+                      : 'bg-[#1F6FEB] text-white hover:bg-[#1A5FD0] shadow-md shadow-[#1F6FEB]/20'
                   }`}
                 >
                   <Stethoscope size={16} />
@@ -255,7 +255,7 @@ export function OnboardingView() {
                   <motion.div
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-3.5 text-xs font-semibold text-emerald-900"
+                    className="rounded-xl border border-[#A6E3DA] bg-[#EAF9F7]/80 p-3.5 text-xs font-semibold text-[#084D47]"
                   >
                     {t('step2Result')}
                   </motion.div>
@@ -275,14 +275,14 @@ export function OnboardingView() {
               className="space-y-6"
             >
               <div className="flex items-center gap-3">
-                <div className="grid size-12 place-items-center rounded-2xl bg-amber-50 text-amber-600 border border-amber-100">
+                <div className="grid size-12 place-items-center rounded-2xl bg-[#FDF3E7] text-[#C77A1E] border border-[#FAE3C4]">
                   <TestTube size={24} />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-slate-900">
                     3. {t('step3Title')}
                   </h2>
-                  <p className="text-xs font-semibold text-amber-700">
+                  <p className="text-xs font-semibold text-[#A3661D]">
                     Лабораторная & Инструментальная диагностика
                   </p>
                 </div>
@@ -298,7 +298,7 @@ export function OnboardingView() {
                   onClick={() => setSelectedTest('useful')}
                   className={`focus-ring flex items-start gap-3 rounded-2xl border p-4 text-left transition-all ${
                     selectedTest === 'useful'
-                      ? 'border-emerald-500 bg-emerald-50/80 ring-2 ring-emerald-500/20'
+                      ? 'border-[#12B5A6] bg-[#EAF9F7]/80 ring-2 ring-[#12B5A6]/20'
                       : 'border-slate-200 bg-white hover:border-slate-300'
                   }`}
                 >
@@ -306,7 +306,7 @@ export function OnboardingView() {
                     size={20}
                     className={
                       selectedTest === 'useful'
-                        ? 'text-emerald-600'
+                        ? 'text-[#0E9E92]'
                         : 'text-slate-400'
                     }
                   />
@@ -324,7 +324,7 @@ export function OnboardingView() {
                   onClick={() => setSelectedTest('extra')}
                   className={`focus-ring flex items-start gap-3 rounded-2xl border p-4 text-left transition-all ${
                     selectedTest === 'extra'
-                      ? 'border-amber-500 bg-amber-50/80 ring-2 ring-amber-500/20'
+                      ? 'border-[#E0912A] bg-[#FDF3E7]/80 ring-2 ring-[#E0912A]/20'
                       : 'border-slate-200 bg-white hover:border-slate-300'
                   }`}
                 >
@@ -332,7 +332,7 @@ export function OnboardingView() {
                     size={20}
                     className={
                       selectedTest === 'extra'
-                        ? 'text-amber-600'
+                        ? 'text-[#C77A1E]'
                         : 'text-slate-400'
                     }
                   />
@@ -370,14 +370,14 @@ export function OnboardingView() {
               className="space-y-6"
             >
               <div className="flex items-center gap-3">
-                <div className="grid size-12 place-items-center rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+                <div className="grid size-12 place-items-center rounded-2xl bg-[#EAF9F7] text-[#0E9E92] border border-[#D2F1EC]">
                   <Award size={24} />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-slate-900">
                     4. {t('step4Title')}
                   </h2>
-                  <p className="text-xs font-semibold text-emerald-700">
+                  <p className="text-xs font-semibold text-[#0E7D72]">
                     Оценка компетенций & Разбор приёма
                   </p>
                 </div>
@@ -396,21 +396,21 @@ export function OnboardingView() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between rounded-xl bg-white p-3 text-xs font-semibold border border-slate-200">
                     <span className="text-slate-700">{t('step4ScoreItem1')}</span>
-                    <span className="rounded-md bg-emerald-100 px-2 py-0.5 text-emerald-800 font-bold">
+                    <span className="rounded-md bg-[#D2F1EC] px-2 py-0.5 text-[#0B645C] font-bold">
                       95%
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between rounded-xl bg-white p-3 text-xs font-semibold border border-slate-200">
                     <span className="text-slate-700">{t('step4ScoreItem2')}</span>
-                    <span className="rounded-md bg-teal-100 px-2 py-0.5 text-teal-800 font-bold">
+                    <span className="rounded-md bg-[#D6E5FD] px-2 py-0.5 text-[#124F8C] font-bold">
                       ✓ Выявлен
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between rounded-xl bg-white p-3 text-xs font-semibold border border-slate-200">
                     <span className="text-slate-700">{t('step4ScoreItem3')}</span>
-                    <span className="rounded-md bg-amber-100 px-2 py-0.5 text-amber-800 font-bold">
+                    <span className="rounded-md bg-[#FAE3C4] px-2 py-0.5 text-[#855518] font-bold">
                       -5 баллов
                     </span>
                   </div>
@@ -418,14 +418,14 @@ export function OnboardingView() {
               </div>
 
               {/* Final Greeting & Call To Action */}
-              <div className="rounded-2xl border border-teal-200 bg-gradient-to-r from-teal-50 to-emerald-50 p-6 text-center space-y-4">
-                <h3 className="text-lg font-bold text-teal-950">
+              <div className="rounded-2xl border border-[#AFCBFB] bg-gradient-to-r from-[#EAF2FE] to-[#EAF9F7] p-6 text-center space-y-4">
+                <h3 className="text-lg font-bold text-[#0B1C33]">
                   {t('finishGreeting', { name: userName })}
                 </h3>
 
                 <button
                   onClick={finishOnboarding}
-                  className="focus-ring inline-flex items-center gap-2.5 rounded-xl bg-teal-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-teal-600/30 hover:bg-teal-700 transition-all hover:scale-105"
+                  className="focus-ring inline-flex items-center gap-2.5 rounded-xl bg-[#1F6FEB] px-6 py-3 text-sm font-bold text-white shadow-md shadow-[#1F6FEB]/30 hover:bg-[#1A5FD0] transition-all hover:scale-105"
                 >
                   {t('selectPatient')}
                   <ArrowRight size={18} />
@@ -454,7 +454,7 @@ export function OnboardingView() {
         {step < totalSteps - 1 ? (
           <button
             onClick={() => setStep((s) => Math.min(totalSteps - 1, s + 1))}
-            className="focus-ring flex items-center gap-1.5 rounded-xl bg-teal-600 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all"
+            className="focus-ring flex items-center gap-1.5 rounded-xl bg-[#1F6FEB] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#1A5FD0] transition-all"
           >
             {t('next')}
             <ChevronRight size={16} />
@@ -462,7 +462,7 @@ export function OnboardingView() {
         ) : (
           <button
             onClick={finishOnboarding}
-            className="focus-ring flex items-center gap-1.5 rounded-xl bg-emerald-600 px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-emerald-700 transition-all"
+            className="focus-ring flex items-center gap-1.5 rounded-xl bg-[#0E9E92] px-5 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#0E7D72] transition-all"
           >
             {t('selectPatient')}
             <ArrowRight size={16} />
