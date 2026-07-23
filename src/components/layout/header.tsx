@@ -1,18 +1,37 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useTranslations } from 'next-intl';
-import { Activity, Menu, X, User, BookOpen, LogOut, ChevronDown, FileText, MessageCircleHeart } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
+import {
+  Activity,
+  Home,
+  Users,
+  LineChart,
+  Bot,
+  FileText,
+  MessageCircleHeart,
+  User,
+  BookOpen,
+  LogOut,
+  ChevronDown,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { useUserStore } from '@/stores/user-store';
 
 export type HeaderRole = 'doctor' | 'patient' | null;
 
+type NavIcon = typeof Home;
+
 /**
  * `minimal` renders brand + language only — used on the role picker and every
  * sign-in screen. An anonymous visitor always collapses to `minimal`, so no
  * navigation can leak before a role is chosen.
+ *
+ * Shell shape follows the Spatial design: one floating glass pill holds the
+ * brand, primary nav and language switcher on desktop. Below 640px the pill
+ * shrinks to brand + language only and primary nav moves into a fixed bottom
+ * bar, so the two never duplicate the same links at once.
  */
 export function Header({
   role = null,
@@ -26,35 +45,29 @@ export function Header({
   const t = useTranslations('Nav');
   const path = usePathname();
   const router = useRouter();
+  const locale = useLocale();
 
   const profile = useUserStore((s) => s.profile);
   const hydrated = useUserStore((s) => s.hydrated);
   const clearProfile = useUserStore((s) => s.clearProfile);
   const resetOnboarding = useUserStore((s) => s.resetOnboarding);
 
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false);
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close mobile menu on Escape key press
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        setMobileOpen(false);
-        setDropdownOpen(false);
-      }
+      if (e.key === 'Escape') setMenuOpen(false);
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -64,18 +77,18 @@ export function Header({
   const isDoctor = !isMinimal && role === 'doctor';
   const isPatient = !isMinimal && role === 'patient';
 
-  const doctorNavItems = [
-    { href: '/', label: t('home') },
-    { href: '/patients', label: t('patients') },
-    { href: '/dashboard', label: t('dashboard') },
-    { href: '/ai-assistant', label: t('ai') },
+  const doctorNavItems: { href: string; label: string; icon: NavIcon }[] = [
+    { href: '/', label: t('home'), icon: Home },
+    { href: '/patients', label: t('patients'), icon: Users },
+    { href: '/dashboard', label: t('dashboard'), icon: LineChart },
+    { href: '/ai-assistant', label: t('ai'), icon: Bot },
   ];
 
   // A patient only ever sees their own portal — never patients/dashboard/ai-assistant/builder.
-  const patientNavItems = patientIin
+  const patientNavItems: { href: string; label: string; icon: NavIcon }[] = patientIin
     ? [
-        { href: `/patient-portal/${patientIin}`, label: t('myCard') },
-        { href: `/patient-portal/${patientIin}/assistant`, label: t('visitAssistant') },
+        { href: `/patient-portal/${patientIin}`, label: t('myCard'), icon: FileText },
+        { href: `/patient-portal/${patientIin}/assistant`, label: t('visitAssistant'), icon: MessageCircleHeart },
       ]
     : [];
 
@@ -86,8 +99,7 @@ export function Header({
     href === '/' ? path === '/' || path === '' : path === href || path.startsWith(`${href}/`);
 
   const handleSignOut = async () => {
-    setDropdownOpen(false);
-    setMobileOpen(false);
+    setMenuOpen(false);
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
     } catch {
@@ -97,7 +109,6 @@ export function Header({
     router.refresh();
   };
 
-  // Helper to extract initials
   const initials = profile?.name
     ? profile.name
         .split(' ')
@@ -109,19 +120,20 @@ export function Header({
 
   const languageSwitcher = (
     <div
-      className="flex items-center rounded-xl border border-[var(--border-color)] bg-[var(--surface)]/70 p-1"
+      className="flex items-center gap-0.5 rounded-full bg-[rgba(16,32,43,0.05)] p-[3px] dark:bg-[rgba(244,247,251,0.06)]"
       role="group"
       aria-label={t('languageLabel')}
     >
-      {(['ru', 'kk', 'en'] as const).map((locale) => (
+      {(['ru', 'kk', 'en'] as const).map((loc) => (
         <button
-          key={locale}
+          key={loc}
           type="button"
-          onClick={() => router.replace(path, { locale })}
-          aria-label={t('switchLanguage', { locale: locale.toUpperCase() })}
-          className="focus-ring rounded-lg px-2.5 py-1 text-xs font-bold uppercase text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface)] hover:text-[#1F6FEB] hover:shadow-xs"
+          onClick={() => router.replace(path, { locale: loc })}
+          aria-label={t('switchLanguage', { locale: loc.toUpperCase() })}
+          data-active={loc === locale}
+          className="focus-ring rounded-full px-2.5 py-[5px] text-[11px] font-bold uppercase text-[var(--text-secondary)] transition-all data-[active=true]:bg-[var(--surface)] data-[active=true]:text-[var(--text-primary)] data-[active=true]:shadow-xs"
         >
-          {locale}
+          {loc}
         </button>
       ))}
     </div>
@@ -130,308 +142,175 @@ export function Header({
   const brand = (
     <Link
       href={isPatient && patientIin ? `/patient-portal/${patientIin}` : '/'}
-      className="focus-ring flex items-center gap-2.5 rounded-xl transition-transform hover:scale-[1.01]"
+      className="focus-ring flex shrink-0 items-center gap-2.5 rounded-full pr-3 transition-transform hover:scale-[1.01]"
     >
-      <div className="brand-mark grid size-10 place-items-center rounded-xl shadow-[0_4px_12px_-2px_rgba(31,111,235,0.5)]">
-        <Activity size={20} strokeWidth={2.5} />
+      <div className="brand-mark grid size-[30px] shrink-0 place-items-center rounded-[10px] shadow-[0_4px_12px_-2px_rgba(31,111,235,0.5)]">
+        <Activity size={16} strokeWidth={2.75} />
       </div>
-      <div className="flex flex-col">
-        <span className="font-bold tracking-tight text-[var(--text-primary)] leading-tight text-base">
-          КазМедСим
-        </span>
-        <span className="text-[10px] font-semibold tracking-wider text-[#12B5A6] uppercase">
-          MedTech
-        </span>
-      </div>
+      <span className="hidden flex-col leading-[1.05] sm:flex">
+        <span className="text-sm font-bold tracking-tight text-[var(--text-primary)]">КазМедСим</span>
+        <span className="text-[10px] font-semibold tracking-wider text-[#12B5A6]">MedTech</span>
+      </span>
     </Link>
   );
 
-  // Minimal: brand + language only. No nav, no profile menu, no burger.
-  if (isMinimal) {
-    return (
-      <header className="sticky top-0 z-40 border-b border-[var(--glass-border)] bg-[var(--surface-glass)] backdrop-blur-xl transition-shadow duration-200 shadow-xs">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-          {brand}
-          {languageSwitcher}
-        </div>
-      </header>
-    );
-  }
+  const profileMenu = (isDoctor || isPatient) && (
+    <div className="relative" ref={menuRef}>
+      <button
+        type="button"
+        onClick={() => setMenuOpen((v) => !v)}
+        aria-label={t('openProfileMenu')}
+        aria-haspopup="menu"
+        aria-expanded={menuOpen}
+        className="focus-ring flex items-center gap-1 rounded-full py-1 pl-1 pr-2 text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface)]"
+      >
+        {isDoctor && hydrated && profile ? (
+          <span className="brand-mark grid size-7 place-items-center rounded-full text-[11px] font-bold shadow-xs">
+            {initials}
+          </span>
+        ) : (
+          <span className="grid size-7 place-items-center rounded-full bg-[rgba(18,181,166,0.12)] text-[#0E9E92]">
+            <User size={14} />
+          </span>
+        )}
+        <ChevronDown size={13} className="text-[var(--text-tertiary)]" />
+      </button>
+
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.96 }}
+            transition={{ duration: 0.15 }}
+            role="menu"
+            className="glass-strong absolute right-0 top-[calc(100%+10px)] w-60 p-2"
+          >
+            {isDoctor && hydrated && profile && (
+              <div className="border-b border-[var(--border-color)] px-3 py-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">
+                  {t('profile')}
+                </p>
+                <p className="truncate text-sm font-bold text-[var(--text-primary)]">{profile.name}</p>
+              </div>
+            )}
+
+            <div className="py-1">
+              {isDoctor && (
+                <>
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      resetOnboarding();
+                      router.push('/intro');
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[rgba(18,181,166,0.1)] hover:text-[#0E7D72]"
+                  >
+                    <BookOpen size={15} className="text-[#12B5A6]" />
+                    {t('reintro')}
+                  </button>
+                  <button
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      clearProfile();
+                      router.push('/');
+                    }}
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface)]"
+                  >
+                    <User size={15} className="text-[var(--text-tertiary)]" />
+                    {t('changeName')}
+                  </button>
+                </>
+              )}
+              <button
+                role="menuitem"
+                onClick={handleSignOut}
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-500/10"
+              >
+                <LogOut size={15} />
+                {t('switchRole')}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--glass-border)] bg-[var(--surface-glass)] backdrop-blur-xl transition-shadow duration-200 shadow-xs">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        {brand}
+    <>
+      <div className="sticky top-3.5 z-[200] flex justify-center px-3">
+        <div className="flex max-w-full items-center gap-1 rounded-full border border-[var(--glass-border)] bg-[var(--surface-glass)] p-1.5 pl-3.5 shadow-[var(--shadow-md)] backdrop-blur-2xl">
+          <div className="flex items-center border-r border-[var(--glass-border)]">{brand}</div>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden items-center gap-1 md:flex">
+          {!isMinimal && navItems.length > 0 && (
+            <nav aria-label={t('menu')} className="hidden items-center gap-0.5 min-[641px]:flex">
+              {navItems.map((item) => {
+                const isActive = isNavActive(item.href);
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`focus-ring relative flex h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[12.5px] font-semibold transition-colors min-[1181px]:px-3.5 ${
+                      isActive
+                        ? 'bg-[rgba(31,111,235,0.1)] text-[#1F6FEB]'
+                        : 'text-[var(--text-secondary)] hover:bg-[var(--surface)]/70 hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    <Icon size={14} />
+                    <span className="hidden min-[1181px]:inline">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          )}
+
+          <div className="ml-1 flex items-center gap-2 pl-2">
+            {languageSwitcher}
+            {profileMenu}
+            {!isDoctor && !isPatient && (
+              <Link
+                href="/patient-portal"
+                className="brand-mark focus-ring inline-flex h-8 items-center gap-1.5 rounded-full px-3.5 text-xs font-semibold shadow-[0_4px_12px_-2px_rgba(31,111,235,0.5)] transition-all hover:brightness-105"
+              >
+                <User size={13} />
+                <span className="hidden sm:inline">{t('login')}</span>
+              </Link>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile primary nav — fixed bottom bar, only when there is something to navigate to. */}
+      {!isMinimal && navItems.length > 0 && (
+        <nav
+          data-bottomnav
+          aria-label={t('menu')}
+          className="fixed inset-x-0 bottom-0 z-[250] flex border-t border-[var(--glass-border)] bg-[var(--surface-glass-strong)] px-1 pb-[calc(6px+env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-10px_26px_-12px_rgba(16,32,43,0.2)] backdrop-blur-xl min-[641px]:hidden"
+        >
           {navItems.map((item) => {
             const isActive = isNavActive(item.href);
-
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 aria-current={isActive ? 'page' : undefined}
-                className={`focus-ring relative rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'text-[#1F6FEB] bg-[rgba(31,111,235,0.08)] font-semibold'
-                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)]/70'
+                className={`flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 transition-colors ${
+                  isActive ? 'text-[#1F6FEB]' : 'text-[var(--text-tertiary)]'
                 }`}
               >
-                {item.label}
-                {isActive && (
-                  <motion.div
-                    layoutId="activeNav"
-                    className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[linear-gradient(135deg,#1F6FEB,#12B5A6)]"
-                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                  />
-                )}
+                <Icon size={18} />
+                <span className="max-w-full truncate text-[9px] font-semibold">{item.label}</span>
               </Link>
             );
           })}
         </nav>
-
-        {/* Desktop Controls (Lang + User Dropdown) */}
-        <div className="hidden items-center gap-3 md:flex">
-          {languageSwitcher}
-
-          {isPatient ? (
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="focus-ring inline-flex items-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--surface)]/80 px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] shadow-xs hover:border-red-200 hover:bg-red-50 hover:text-red-700 transition-all"
-            >
-              <LogOut size={15} />
-              {t('switchRole')}
-            </button>
-          ) : hydrated && profile ? (
-            <div className="relative" ref={dropdownRef}>
-              <button
-                type="button"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                aria-label={t('openProfileMenu')}
-                aria-haspopup="menu"
-                aria-expanded={dropdownOpen}
-                className="focus-ring flex items-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--surface)]/80 px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] shadow-xs hover:border-[var(--border-color-hover)] hover:bg-[var(--surface)] transition-all"
-              >
-                <div className="brand-mark grid size-7 place-items-center rounded-lg text-xs font-bold shadow-xs">
-                  {initials}
-                </div>
-                <span className="max-w-[120px] truncate text-xs font-semibold text-[var(--text-primary)]">
-                  {profile.name}
-                </span>
-                <ChevronDown size={14} className="text-[var(--text-tertiary)]" />
-              </button>
-
-              <AnimatePresence>
-                {dropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                    transition={{ duration: 0.15 }}
-                    className="glass-strong absolute right-0 mt-2 w-56 p-2"
-                  >
-                    <div className="border-b border-[var(--border-color)] px-3 py-2">
-                      <p className="text-[11px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
-                        {t('profile')}
-                      </p>
-                      <p className="truncate text-sm font-bold text-[var(--text-primary)]">
-                        {profile.name}
-                      </p>
-                    </div>
-
-                    <div className="py-1">
-                      <button
-                        onClick={() => {
-                          setDropdownOpen(false);
-                          resetOnboarding();
-                          router.push('/intro');
-                        }}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[rgba(18,181,166,0.1)] hover:text-[#0E7D72] transition-colors text-left"
-                      >
-                        <BookOpen size={15} className="text-[#12B5A6]" />
-                        {t('reintro')}
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setDropdownOpen(false);
-                          clearProfile();
-                          router.push('/');
-                        }}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface)] transition-colors text-left"
-                      >
-                        <User size={15} className="text-[var(--text-tertiary)]" />
-                        {t('changeName')}
-                      </button>
-
-                      <button
-                        onClick={handleSignOut}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors text-left"
-                      >
-                        <LogOut size={15} />
-                        {t('switchRole')}
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : (
-            <Link
-              href="/"
-              className="brand-mark focus-ring inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold shadow-[0_4px_12px_-2px_rgba(31,111,235,0.5)] hover:brightness-105 transition-all"
-            >
-              <User size={15} />
-              {t('login')}
-            </Link>
-          )}
-        </div>
-
-        {/* Mobile Hamburger Button */}
-        <button
-          type="button"
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="focus-ring grid size-10 place-items-center rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] md:hidden hover:bg-[var(--surface)]"
-          aria-label={mobileOpen ? t('closeMenu') : t('openMenu')}
-          aria-expanded={mobileOpen}
-          aria-controls="mobile-nav"
-        >
-          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
-      </div>
-
-      {/* Mobile Animated Drawer */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 top-16 z-40 bg-[rgba(16,32,43,0.35)] backdrop-blur-xs md:hidden"
-            />
-
-            {/* Drawer */}
-            <motion.div
-              id="mobile-nav"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.25, ease: 'easeInOut' }}
-              className="fixed inset-x-0 top-16 z-50 overflow-hidden border-b border-[var(--glass-border)] bg-[var(--surface-glass-strong)] backdrop-blur-xl px-4 py-6 shadow-2xl md:hidden"
-            >
-              <div className="flex flex-col gap-3">
-                {/* User Header if logged in */}
-                {isDoctor && hydrated && profile && (
-                  <div className="flex items-center gap-3 rounded-2xl bg-[rgba(31,111,235,0.08)] p-3 border border-[rgba(31,111,235,0.18)] mb-2">
-                    <div className="brand-mark grid size-10 place-items-center rounded-xl font-bold">
-                      {initials}
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-[var(--text-tertiary)]">
-                        {t('greeting', { name: profile.name })}
-                      </p>
-                      <p className="text-sm font-bold text-[var(--text-primary)]">
-                        {profile.name}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Nav Links */}
-                {navItems.map((item, index) => {
-                  const isActive = isNavActive(item.href);
-                  const Icon = isPatient ? (index === 0 ? FileText : MessageCircleHeart) : null;
-
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileOpen(false)}
-                      aria-current={isActive ? 'page' : undefined}
-                      className={`focus-ring flex items-center justify-between rounded-xl px-4 py-3 text-base font-semibold transition-colors ${
-                        isActive
-                          ? 'bg-[linear-gradient(135deg,#1F6FEB,#12B5A6)] text-white'
-                          : 'bg-[var(--surface)]/70 text-[var(--text-secondary)] hover:bg-[var(--surface)]'
-                      }`}
-                    >
-                      <span className="flex items-center gap-2">
-                        {Icon && <Icon size={18} />}
-                        {item.label}
-                      </span>
-                    </Link>
-                  );
-                })}
-
-                {/* Additional profile options if logged in */}
-                {isDoctor && hydrated && profile && (
-                  <div className="mt-2 grid gap-2 border-t border-[var(--border-color)] pt-3">
-                    <button
-                      onClick={() => {
-                        setMobileOpen(false);
-                        resetOnboarding();
-                        router.push('/intro');
-                      }}
-                      className="flex items-center gap-2 rounded-xl border border-[rgba(18,181,166,0.35)] bg-[rgba(18,181,166,0.08)] px-4 py-2.5 text-xs font-semibold text-[#0E7D72]"
-                    >
-                      <BookOpen size={16} />
-                      {t('reintro')}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setMobileOpen(false);
-                        clearProfile();
-                        router.push('/');
-                      }}
-                      className="flex items-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--surface)]/70 px-4 py-2.5 text-xs font-semibold text-[var(--text-secondary)]"
-                    >
-                      <User size={16} />
-                      {t('changeName')}
-                    </button>
-                  </div>
-                )}
-
-                {/* Sign out / switch role — available to every signed-in role */}
-                <button
-                  onClick={handleSignOut}
-                  className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700"
-                >
-                  <LogOut size={16} />
-                  {t('switchRole')}
-                </button>
-
-                {/* Mobile Language Switcher */}
-                <div className="mt-4 flex items-center justify-between rounded-xl border border-[var(--border-color)] bg-[var(--surface)]/70 p-2">
-                  <span className="text-xs font-medium text-[var(--text-tertiary)] pl-2">
-                    {t('languageLabel')}
-                  </span>
-                  <div className="flex gap-1" role="group" aria-label={t('languageLabel')}>
-                    {(['ru', 'kk', 'en'] as const).map((locale) => (
-                      <button
-                        key={locale}
-                        type="button"
-                        onClick={() => {
-                          setMobileOpen(false);
-                          router.replace(path, { locale });
-                        }}
-                        aria-label={t('switchLanguage', { locale: locale.toUpperCase() })}
-                        className="focus-ring rounded-lg bg-[var(--surface)] px-3 py-1.5 text-xs font-bold uppercase text-[var(--text-secondary)] shadow-xs hover:text-[#1F6FEB]"
-                      >
-                        {locale}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </header>
+      )}
+    </>
   );
 }
