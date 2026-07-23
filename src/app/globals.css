@@ -254,6 +254,12 @@ body {
   }
 }
 
+@media (max-width: 640px) {
+  body:has([data-bottomnav]) {
+    padding-bottom: 76px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
