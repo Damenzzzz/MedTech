@@ -82,19 +82,33 @@ function getLevel(c: StudentCaseDTO): string {
 export function ClinicalAIWorkspace(props: { cases?: StudentCaseDTO[]; locale?: string } = {}) {
   const cases = props.cases || [];
   const [tab, setTab] = useState<'advice' | 'sim' | 'voice'>('voice');
-  return <main className="noise min-h-[calc(100vh-4rem)] bg-[#0f1917] text-slate-100">
+  return <main className="min-h-[calc(100vh-4rem)]">
     <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-      <div className="flex flex-col gap-5 border-b border-white/10 pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="flex flex-wrap items-end justify-between gap-3 mb-4.5">
         <div>
-          <p className="label text-[#7CA9F2]">AI Clinical Platform</p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Клинический AI-ассистент</h1>
+          <h1 className="text-[26px] font-bold tracking-tight text-[var(--text-primary)]">Клинический ассистент</h1>
+          <p className="mt-0.5 text-[13.5px] font-medium text-[var(--text-secondary)]">
+            Ответы по протоколам с указанием источников · дополненная генерация (RAG)
+          </p>
         </div>
-        <div className="grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-white/5 p-1">
-          <Tab active={tab === 'voice'} onClick={() => setTab('voice')} icon={Mic} label="STT" />
-          <Tab active={tab === 'advice'} onClick={() => setTab('advice')} icon={ShieldAlert} label="Срочный совет" />
-          <Tab active={tab === 'sim'} onClick={() => setTab('sim')} icon={Brain} label="Симулятор" />
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1.5 rounded-full border border-[rgba(31,111,235,0.2)] bg-[rgba(31,111,235,0.09)] px-3 py-1.5 text-xs font-semibold text-[#1F6FEB]">
+            <span className="size-4 rounded-md" style={{ background: 'linear-gradient(135deg,#1F6FEB,#12B5A6)' }} />
+            AlemLLM
+          </span>
+          <span className="flex items-center gap-1.5 rounded-full border border-[rgba(18,181,166,0.22)] bg-[rgba(18,181,166,0.1)] px-3 py-1.5 text-xs font-semibold text-[#0E7D72]">
+            <span className="size-[7px] rounded-full bg-[#12B5A6]" />
+            Заземлено на источники
+          </span>
         </div>
       </div>
+
+      <div className="mb-5 grid grid-cols-3 gap-1.5 rounded-2xl border border-[var(--glass-border)] bg-[var(--surface)] p-1.5 shadow-[0_1px_2px_rgba(16,32,43,0.04),0_12px_30px_-16px_rgba(16,32,43,0.2)]">
+        <Tab active={tab === 'voice'} onClick={() => setTab('voice')} icon={Mic} label="STT" />
+        <Tab active={tab === 'advice'} onClick={() => setTab('advice')} icon={ShieldAlert} label="Срочный совет" />
+        <Tab active={tab === 'sim'} onClick={() => setTab('sim')} icon={Brain} label="Симулятор" />
+      </div>
+
       {tab === 'advice' && <AdvicePanel />}
       {tab === 'sim' && <SimulatorPanel cases={cases} />}
       {tab === 'voice' && <VoicePanel />}
@@ -103,7 +117,7 @@ export function ClinicalAIWorkspace(props: { cases?: StudentCaseDTO[]; locale?: 
 }
 
 function Tab({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: typeof Mic; label: string }) {
-  return <button onClick={onClick} className={`focus-ring flex h-10 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold ${active ? 'bg-[#2E86E0] text-slate-950' : 'text-slate-300 hover:bg-white/8'}`}>
+  return <button onClick={onClick} className={`focus-ring flex h-11 items-center justify-center gap-2 rounded-xl px-3 text-sm font-semibold transition-all ${active ? 'bg-[linear-gradient(135deg,#1F6FEB,#12B5A6)] text-white shadow-xs' : 'text-[var(--text-secondary)] hover:bg-[#F4F7FB]'}`}>
     <Icon size={16} />{label}
   </button>;
 }
@@ -184,14 +198,14 @@ export function RagPanel() {
 
   return (
     <div className="grid gap-5 py-6 lg:grid-cols-[420px_minmax(0,1fr)]">
-      <aside className="rounded-2xl border border-white/10 bg-[#162320] p-5">
-        <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-          <Stethoscope className="text-[#7CA9F2]" />
+      <aside className="rounded-2xl border border-[var(--glass-border)] bg-[var(--surface)] shadow-[0_1px_2px_rgba(16,32,43,0.04),0_12px_30px_-16px_rgba(16,32,43,0.2)] p-5">
+        <div className="flex items-center gap-3 border-b border-[var(--border-color)] pb-4">
+          <Stethoscope className="text-[#1F6FEB]" />
           <h2 className="font-semibold">Клинический запрос</h2>
         </div>
-        <label className="mt-5 block text-sm font-semibold text-slate-300">Жалобы, анамнез, осмотр, анализы</label>
+        <label className="mt-5 block text-sm font-semibold text-[var(--text-secondary)]">Жалобы, анамнез, осмотр, анализы</label>
         <textarea
-          className="input mt-2 min-h-72 border-white/10 bg-white/5 text-lg leading-8 text-white"
+          className="input mt-2 min-h-72 border-[var(--border-color)] bg-[#F4F7FB] text-lg leading-8"
           value={symptoms}
           onChange={(e) => setSymptoms(e.target.value)}
         />
@@ -204,9 +218,9 @@ export function RagPanel() {
             Demo case
           </Button>
         </div>
-        <label className="mt-6 block text-sm font-semibold text-slate-300">Ответы пациента на уточнения</label>
+        <label className="mt-6 block text-sm font-semibold text-[var(--text-secondary)]">Ответы пациента на уточнения</label>
         <textarea
-          className="input mt-2 min-h-36 border-white/10 bg-white/5 text-white"
+          className="input mt-2 min-h-36 border-[var(--border-color)] bg-[#F4F7FB]"
           value={additional}
           onChange={(e) => setAdditional(e.target.value)}
           placeholder={refineSample}
@@ -215,16 +229,16 @@ export function RagPanel() {
           <RefreshCw size={17} />
           Уточнить без нового поиска
         </Button>
-        <p className="mt-4 rounded-xl border border-[#E5A04A]/20 bg-[#E5A04A]/8 p-3 text-xs leading-5 text-[#FAE3C4]">
+        <p className="mt-4 rounded-xl border border-[rgba(224,145,42,0.3)] bg-[rgba(224,145,42,0.08)] p-3 text-xs leading-5 text-[#6B4414]">
           Результат поддерживает решение врача и не заменяет очную диагностику.
         </p>
       </aside>
 
       <section className="space-y-5">
         {error && (
-          <div className="flex items-center justify-between rounded-2xl border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-100">
+          <div className="flex items-center justify-between rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
             <span>{error}</span>
-            <Button onClick={refine} size="sm" variant="secondary" className="h-8 text-xs border-red-400/40 text-red-100">
+            <Button onClick={refine} size="sm" variant="secondary" className="h-8 text-xs border-red-300 text-red-800">
               <RefreshCw size={13} className="mr-1" /> Повторить (Retry)
             </Button>
           </div>
@@ -238,7 +252,7 @@ export function RagPanel() {
               ragStatus={data.rag_status}
               sourcesCount={data.sources?.length ?? 0}
               elapsedMs={elapsedMs}
-              tone="dark"
+              tone="light"
             />
             <DifferentialResults
               diagnoses={data.diagnoses}
@@ -279,8 +293,8 @@ async function waitDiagnoseJob(jobId: string) {
 }
 
 function EmptyState({ loading }: { loading: boolean }) {
-  return <div className="grid min-h-[520px] place-items-center rounded-2xl border border-white/10 bg-white/[.03] p-8 text-center">
-    <div>{loading ? <Loader2 className="mx-auto animate-spin text-[#7CA9F2]" size={38} /> : <Bot className="mx-auto text-[#7CA9F2]" size={42} />}<h2 className="mt-5 text-xl font-semibold">{loading ? 'Идёт анализ протоколов' : 'Готов к анализу'}</h2><p className="mt-2 max-w-md text-sm leading-6 text-slate-400">RAG сопоставит запрос с протоколами, вернёт top-3 диагнозов, объяснения и уточняющие вопросы.</p></div>
+  return <div className="grid min-h-[520px] place-items-center rounded-2xl border border-[var(--border-color)] bg-[#F4F7FB] p-8 text-center">
+    <div>{loading ? <Loader2 className="mx-auto animate-spin text-[#1F6FEB]" size={38} /> : <Bot className="mx-auto text-[#1F6FEB]" size={42} />}<h2 className="mt-5 text-xl font-semibold">{loading ? 'Идёт анализ протоколов' : 'Готов к анализу'}</h2><p className="mt-2 max-w-md text-sm leading-6 text-[var(--text-tertiary)]">RAG сопоставит запрос с протоколами, вернёт top-3 диагнозов, объяснения и уточняющие вопросы.</p></div>
   </div>
 }
 
@@ -322,53 +336,53 @@ function AdvicePanel() {
     finally { setElapsedMs(performance.now() - started); setLoading(false); }
   }
   return <div className="grid gap-5 py-6 lg:grid-cols-[430px_minmax(0,1fr)]">
-    <aside className="rounded-2xl border border-white/10 bg-[#162320] p-5">
-      <div className="flex items-center gap-3 border-b border-white/10 pb-4"><ShieldAlert className="text-[#7CA9F2]" /><h2 className="font-semibold">Срочный совет врачу</h2></div>
-      <div className="mt-5 rounded-xl border border-[#E5A04A]/20 bg-[#E5A04A]/8 p-4 text-sm leading-6 text-[#FAE3C4]">AI-ассистент помогает сориентироваться по протоколам. Последнее клиническое решение принимает врач или ответственный медработник на месте.</div>
-      <label className="mt-5 block text-sm font-semibold text-slate-300">Кто спрашивает</label>
-      <input className="input mt-2 border-white/10 bg-white/5 text-white" value={role} onChange={e => setRole(e.target.value)} placeholder="Врач, медсестра, фельдшер" />
-      <label className="mt-4 block text-sm font-semibold text-slate-300">Что есть на месте</label>
-      <textarea className="input mt-2 min-h-28 border-white/10 bg-white/5 text-sm leading-6 text-white" value={resources} onChange={e => setResources(e.target.value)} />
-      <label className="mt-4 block text-sm font-semibold text-slate-300">Ситуация, жалобы, витальные показатели</label>
-      <textarea className="input mt-2 min-h-64 border-white/10 bg-white/5 text-lg leading-8 text-white" value={scenario} onChange={e => setScenario(e.target.value)} />
+    <aside className="rounded-2xl border border-[var(--glass-border)] bg-[var(--surface)] shadow-[0_1px_2px_rgba(16,32,43,0.04),0_12px_30px_-16px_rgba(16,32,43,0.2)] p-5">
+      <div className="flex items-center gap-3 border-b border-[var(--border-color)] pb-4"><ShieldAlert className="text-[#1F6FEB]" /><h2 className="font-semibold">Срочный совет врачу</h2></div>
+      <div className="mt-5 rounded-xl border border-[rgba(224,145,42,0.3)] bg-[rgba(224,145,42,0.08)] p-4 text-sm leading-6 text-[#6B4414]">AI-ассистент помогает сориентироваться по протоколам. Последнее клиническое решение принимает врач или ответственный медработник на месте.</div>
+      <label className="mt-5 block text-sm font-semibold text-[var(--text-secondary)]">Кто спрашивает</label>
+      <input className="input mt-2 border-[var(--border-color)] bg-[#F4F7FB]" value={role} onChange={e => setRole(e.target.value)} placeholder="Врач, медсестра, фельдшер" />
+      <label className="mt-4 block text-sm font-semibold text-[var(--text-secondary)]">Что есть на месте</label>
+      <textarea className="input mt-2 min-h-28 border-[var(--border-color)] bg-[#F4F7FB] text-sm leading-6" value={resources} onChange={e => setResources(e.target.value)} />
+      <label className="mt-4 block text-sm font-semibold text-[var(--text-secondary)]">Ситуация, жалобы, витальные показатели</label>
+      <textarea className="input mt-2 min-h-64 border-[var(--border-color)] bg-[#F4F7FB] text-lg leading-8" value={scenario} onChange={e => setScenario(e.target.value)} />
       <Button onClick={askAdvice} disabled={loading || !scenario.trim()} className="mt-4 h-12 w-full"><Search size={18} />{loading ? 'Сверяю с протоколами...' : 'Дать действия'}</Button>
     </aside>
     <section className="space-y-5">
-      {error && <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-4 text-red-100">{error}</div>}
-      <div className="rounded-2xl border border-white/10 bg-[#162320] p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4"><div><h2 className="text-2xl font-semibold">Быстрый чат</h2><p className="mt-1 text-sm text-slate-400">Короткие уточнения идут без тяжелого RAG. Для плана действий LLM сам решит, нужен ли долгий протокольный поиск.</p></div><Button onClick={askAdvice} disabled={loading || !scenario.trim()} variant="secondary"><ShieldAlert size={17} />{loading ? 'Анализ...' : 'Дать действия'}</Button></div>
-        <div className="mt-5 max-h-[360px] space-y-3 overflow-y-auto pr-1">{chat.map((turn, index) => <div key={`${index}-${turn.content}`} className={`max-w-[86%] whitespace-pre-line rounded-2xl p-4 text-sm leading-6 ${turn.role === 'clinician' ? 'ml-auto bg-[#2E86E0]/15 text-[#EAF2FE]' : 'bg-white/7 text-slate-200'}`}><span className="mb-1 block text-xs font-bold uppercase text-slate-500">{turn.role === 'clinician' ? 'Медработник' : 'AI'}</span>{turn.content}</div>)}{chatLoading && <div className="rounded-2xl bg-white/7 p-4 text-sm text-slate-400">AI думает быстро...</div>}</div>
-        <div className="mt-5 flex gap-2"><input className="input border-white/10 bg-white/5 text-white" value={message} placeholder="Спросите, что уточнить или что делать..." onChange={e => setMessage(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') sendAdviceMessage() }} /><Button onClick={sendAdviceMessage} disabled={chatLoading}><Send size={17} /></Button></div>
-        <p className="mt-4 rounded-xl border border-[#E5A04A]/20 bg-[#E5A04A]/8 p-3 text-xs leading-5 text-[#FAE3C4]">Если нужна конкретная тактика, нажмите “Дать действия”: лёгкий вопрос вернётся быстро, а глубокий RAG по протоколам может занять до 2-3 минут.</p>
+      {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800">{error}</div>}
+      <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--surface)] shadow-[0_1px_2px_rgba(16,32,43,0.04),0_12px_30px_-16px_rgba(16,32,43,0.2)] p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-color)] pb-4"><div><h2 className="text-2xl font-semibold">Быстрый чат</h2><p className="mt-1 text-sm text-[var(--text-tertiary)]">Короткие уточнения идут без тяжелого RAG. Для плана действий LLM сам решит, нужен ли долгий протокольный поиск.</p></div><Button onClick={askAdvice} disabled={loading || !scenario.trim()} variant="secondary"><ShieldAlert size={17} />{loading ? 'Анализ...' : 'Дать действия'}</Button></div>
+        <div className="mt-5 max-h-[360px] space-y-3 overflow-y-auto pr-1">{chat.map((turn, index) => <div key={`${index}-${turn.content}`} className={`max-w-[86%] whitespace-pre-line rounded-2xl p-4 text-sm leading-6 ${turn.role === 'clinician' ? 'ml-auto bg-[rgba(31,111,235,0.1)] text-[#0D3A73]' : 'bg-[#F4F7FB] text-[var(--text-primary)]'}`}><span className="mb-1 block text-xs font-bold uppercase text-[var(--text-tertiary)]">{turn.role === 'clinician' ? 'Медработник' : 'AI'}</span>{turn.content}</div>)}{chatLoading && <div className="rounded-2xl bg-[#F4F7FB] p-4 text-sm text-[var(--text-tertiary)]">AI думает быстро...</div>}</div>
+        <div className="mt-5 flex gap-2"><input className="input border-[var(--border-color)] bg-[#F4F7FB]" value={message} placeholder="Спросите, что уточнить или что делать..." onChange={e => setMessage(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') sendAdviceMessage() }} /><Button onClick={sendAdviceMessage} disabled={chatLoading}><Send size={17} /></Button></div>
+        <p className="mt-4 rounded-xl border border-[rgba(224,145,42,0.3)] bg-[rgba(224,145,42,0.08)] p-3 text-xs leading-5 text-[#6B4414]">Если нужна конкретная тактика, нажмите “Дать действия”: лёгкий вопрос вернётся быстро, а глубокий RAG по протоколам может занять до 2-3 минут.</p>
       </div>
-      {!data && <div className="grid min-h-60 place-items-center rounded-2xl border border-white/10 bg-white/[.03] p-8 text-center"><div>{loading ? <Loader2 className="mx-auto animate-spin text-[#7CA9F2]" size={38} /> : <ShieldAlert className="mx-auto text-[#7CA9F2]" size={42} />}<h2 className="mt-5 text-xl font-semibold">{loading ? 'Формирую план действий' : 'План действий появится здесь'}</h2><p className="mt-2 max-w-md text-sm leading-6 text-slate-400">LLM сначала решит, нужен ли RAG. Если нужен глубокий протокольный анализ, ожидание может быть до 2-3 минут.</p></div></div>}
-      {data && <><RagBadge ragStatus={data.rag_status} sourcesCount={data.sources?.length ?? 0} elapsedMs={elapsedMs} tone="dark" /><div className="rounded-2xl border border-[#E5A04A]/20 bg-[#E5A04A]/8 p-4 text-sm leading-6 text-[#FAE3C4]">{data.safety_notice}</div><div className="rounded-2xl border border-white/10 bg-[#162320] p-5"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-2xl font-semibold">Тактика сейчас</h2>{data.urgency && <span className="rounded-full bg-red-500/15 px-3 py-1 text-sm font-semibold text-red-100">{data.urgency}</span>}</div>{data.rag_decision && <p className="mt-3 rounded-xl bg-white/5 p-3 text-xs leading-5 text-slate-400">Решение LLM-router: {data.rag_decision}</p>}<AdviceList title="Главные риски" items={data.most_likely_risks ?? []} /><StepList title="Что сделать сразу" steps={data.do_now ?? []} /><AdviceList title="Что уточнить или измерить" items={data.ask_or_measure_next ?? []} /></div><div className="grid gap-5 xl:grid-cols-2"><OptionList title="Варианты лечения" options={data.treatment_options ?? []} /><section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">Маршрутизация</h3><p className="mt-3 rounded-xl bg-white/5 p-4 text-sm leading-6 text-slate-200">{data.referral?.decision ?? 'Уточнить по тяжести и доступности помощи.'}</p>{data.referral?.reason && <p className="mt-3 text-sm leading-6 text-slate-400">{data.referral.reason}</p>}<AdviceList title="Чего не делать" items={data.what_not_to_do ?? []} /></section></div><SourcesList sources={data.sources ?? []} status={data.rag_status} /></>}
+      {!data && <div className="grid min-h-60 place-items-center rounded-2xl border border-[var(--border-color)] bg-[#F4F7FB] p-8 text-center"><div>{loading ? <Loader2 className="mx-auto animate-spin text-[#1F6FEB]" size={38} /> : <ShieldAlert className="mx-auto text-[#1F6FEB]" size={42} />}<h2 className="mt-5 text-xl font-semibold">{loading ? 'Формирую план действий' : 'План действий появится здесь'}</h2><p className="mt-2 max-w-md text-sm leading-6 text-[var(--text-tertiary)]">LLM сначала решит, нужен ли RAG. Если нужен глубокий протокольный анализ, ожидание может быть до 2-3 минут.</p></div></div>}
+      {data && <><RagBadge ragStatus={data.rag_status} sourcesCount={data.sources?.length ?? 0} elapsedMs={elapsedMs} tone="light" /><div className="rounded-2xl border border-[rgba(224,145,42,0.3)] bg-[rgba(224,145,42,0.08)] p-4 text-sm leading-6 text-[#6B4414]">{data.safety_notice}</div><div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--surface)] shadow-[0_1px_2px_rgba(16,32,43,0.04),0_12px_30px_-16px_rgba(16,32,43,0.2)] p-5"><div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-2xl font-semibold">Тактика сейчас</h2>{data.urgency && <span className="rounded-full bg-red-500/15 px-3 py-1 text-sm font-semibold text-red-800">{data.urgency}</span>}</div>{data.rag_decision && <p className="mt-3 rounded-xl bg-[#F4F7FB] p-3 text-xs leading-5 text-[var(--text-tertiary)]">Решение LLM-router: {data.rag_decision}</p>}<AdviceList title="Главные риски" items={data.most_likely_risks ?? []} /><StepList title="Что сделать сразу" steps={data.do_now ?? []} /><AdviceList title="Что уточнить или измерить" items={data.ask_or_measure_next ?? []} /></div><div className="grid gap-5 xl:grid-cols-2"><OptionList title="Варианты лечения" options={data.treatment_options ?? []} /><section className="rounded-2xl border border-[var(--border-color)] bg-[#F4F7FB] p-5"><h3 className="font-semibold">Маршрутизация</h3><p className="mt-3 rounded-xl bg-[#F4F7FB] p-4 text-sm leading-6 text-[var(--text-primary)]">{data.referral?.decision ?? 'Уточнить по тяжести и доступности помощи.'}</p>{data.referral?.reason && <p className="mt-3 text-sm leading-6 text-[var(--text-tertiary)]">{data.referral.reason}</p>}<AdviceList title="Чего не делать" items={data.what_not_to_do ?? []} /></section></div><SourcesList sources={data.sources ?? []} status={data.rag_status} /></>}
     </section>
   </div>;
 }
 
-function AdviceList({ title, items }: { title: string; items: string[] }) { return <section className="mt-5"><h3 className="text-sm font-semibold text-slate-300">{title}</h3><div className="mt-3 grid gap-2">{items.length ? items.slice(0, 8).map(item => <div key={item} className="rounded-xl bg-white/5 p-3 text-sm leading-5 text-slate-200">{item}</div>) : <div className="rounded-xl bg-white/5 p-3 text-sm text-slate-500">Недостаточно данных</div>}</div></section> }
+function AdviceList({ title, items }: { title: string; items: string[] }) { return <section className="mt-5"><h3 className="text-sm font-semibold text-[var(--text-secondary)]">{title}</h3><div className="mt-3 grid gap-2">{items.length ? items.slice(0, 8).map(item => <div key={item} className="rounded-xl bg-[#F4F7FB] p-3 text-sm leading-5 text-[var(--text-primary)]">{item}</div>) : <div className="rounded-xl bg-[#F4F7FB] p-3 text-sm text-[var(--text-tertiary)]">Недостаточно данных</div>}</div></section> }
 
-function StepList({ title, steps }: { title: string; steps: AdviceStep[] }) { return <section className="mt-5"><h3 className="text-sm font-semibold text-slate-300">{title}</h3><ol className="mt-3 space-y-2">{steps.length ? steps.slice(0, 8).map((step, index) => <li key={`${index}-${step.step ?? step.action}`} className="rounded-xl bg-white/5 p-3 text-sm leading-5 text-slate-200"><span className="font-semibold text-[#AFCBFB]">{index + 1}. {step.step ?? step.action}</span>{step.why && <p className="mt-1 text-slate-400">{step.why}</p>}</li>) : <li className="rounded-xl bg-white/5 p-3 text-sm text-slate-500">Недостаточно данных</li>}</ol></section> }
+function StepList({ title, steps }: { title: string; steps: AdviceStep[] }) { return <section className="mt-5"><h3 className="text-sm font-semibold text-[var(--text-secondary)]">{title}</h3><ol className="mt-3 space-y-2">{steps.length ? steps.slice(0, 8).map((step, index) => <li key={`${index}-${step.step ?? step.action}`} className="rounded-xl bg-[#F4F7FB] p-3 text-sm leading-5 text-[var(--text-primary)]"><span className="font-semibold text-[#124F8C]">{index + 1}. {step.step ?? step.action}</span>{step.why && <p className="mt-1 text-[var(--text-tertiary)]">{step.why}</p>}</li>) : <li className="rounded-xl bg-[#F4F7FB] p-3 text-sm text-[var(--text-tertiary)]">Недостаточно данных</li>}</ol></section> }
 
-function OptionList({ title, options }: { title: string; options: AdviceOption[] }) { return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">{title}</h3><div className="mt-4 grid gap-3">{options.length ? options.slice(0, 8).map((item, index) => <div key={`${index}-${item.option ?? item.treatment}`} className="rounded-xl bg-white/5 p-4 text-sm leading-6 text-slate-200"><p className="font-semibold text-[#D6E5FD]">{item.option ?? item.treatment}</p>{item.when && <p className="mt-1 text-slate-400">Когда: {item.when}</p>}{item.avoid_if && <p className="mt-1 text-[#FAE3C4]">Осторожно/не применять: {item.avoid_if}</p>}</div>) : <p className="rounded-xl bg-white/5 p-4 text-sm text-slate-500">Нет безопасных вариантов без уточнения данных.</p>}</div></section> }
+function OptionList({ title, options }: { title: string; options: AdviceOption[] }) { return <section className="rounded-2xl border border-[var(--border-color)] bg-[#F4F7FB] p-5"><h3 className="font-semibold">{title}</h3><div className="mt-4 grid gap-3">{options.length ? options.slice(0, 8).map((item, index) => <div key={`${index}-${item.option ?? item.treatment}`} className="rounded-xl bg-[#F4F7FB] p-4 text-sm leading-6 text-[var(--text-primary)]"><p className="font-semibold text-[#0D3A73]">{item.option ?? item.treatment}</p>{item.when && <p className="mt-1 text-[var(--text-tertiary)]">Когда: {item.when}</p>}{item.avoid_if && <p className="mt-1 text-[#6B4414]">Осторожно/не применять: {item.avoid_if}</p>}</div>) : <p className="rounded-xl bg-[#F4F7FB] p-4 text-sm text-[var(--text-tertiary)]">Нет безопасных вариантов без уточнения данных.</p>}</div></section> }
 
 function SourcesList({ sources, status }: { sources: AdviceSource[]; status?: string }) {
   const label = ragStatusLabel(status);
   const [viewerSource, setViewerSource] = useState<ProtocolSource | null>(null);
   return (
-    <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold">Источники RAG</h3>{label && <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-slate-400">{label}</span>}</div>
+    <section className="rounded-2xl border border-[var(--border-color)] bg-[#F4F7FB] p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-semibold">Источники RAG</h3>{label && <span className="rounded-full bg-[#F4F7FB] px-3 py-1 text-xs text-[var(--text-tertiary)]">{label}</span>}</div>
       <div className="mt-4 grid gap-3">
         {sources.length ? sources.slice(0, 5).map((source, index) => (
-          <div key={`${index}-${source.title ?? source.protocol_id}`} className="rounded-xl bg-white/5 p-4 text-sm leading-6">
+          <div key={`${index}-${source.title ?? source.protocol_id}`} className="rounded-xl bg-[#F4F7FB] p-4 text-sm leading-6">
             <div className="flex items-start justify-between gap-3">
-              <p className="font-semibold text-slate-200">{source.title ?? source.protocol_id ?? `Источник ${index + 1}`}</p>
-              {source.protocol_id && <button type="button" onClick={() => setViewerSource({ title: source.title || source.protocol_id!, protocolId: source.protocol_id, sourceFile: source.source_file, chunkText: source.chunk_text, excerpt: source.excerpt })} className="flex shrink-0 items-center gap-1 rounded-lg border border-[#5B9EEA]/30 bg-[#5B9EEA]/10 px-2.5 py-1 text-xs font-semibold text-[#AFCBFB] hover:bg-[#5B9EEA]/20"><BookOpen size={13} />Протокол</button>}
+              <p className="font-semibold text-[var(--text-primary)]">{source.title ?? source.protocol_id ?? `Источник ${index + 1}`}</p>
+              {source.protocol_id && <button type="button" onClick={() => setViewerSource({ title: source.title || source.protocol_id!, protocolId: source.protocol_id, sourceFile: source.source_file, chunkText: source.chunk_text, excerpt: source.excerpt })} className="flex shrink-0 items-center gap-1 rounded-lg border border-[rgba(31,111,235,0.3)] bg-[rgba(31,111,235,0.08)] px-2.5 py-1 text-xs font-semibold text-[#124F8C] hover:bg-[rgba(31,111,235,0.14)]"><BookOpen size={13} />Протокол</button>}
             </div>
-            {source.excerpt && <p className="mt-2 text-slate-400">{source.excerpt}</p>}
+            {source.excerpt && <p className="mt-2 text-[var(--text-tertiary)]">{source.excerpt}</p>}
           </div>
-        )) : <p className="rounded-xl bg-white/5 p-4 text-sm text-slate-500">{status === 'llm-direct-no-rag' ? 'LLM решил, что для этого лёгкого вопроса RAG не нужен.' : 'RAG сейчас недоступен или не успел вернуть источники. Совет помечен как ограниченный.'}</p>}
+        )) : <p className="rounded-xl bg-[#F4F7FB] p-4 text-sm text-[var(--text-tertiary)]">{status === 'llm-direct-no-rag' ? 'LLM решил, что для этого лёгкого вопроса RAG не нужен.' : 'RAG сейчас недоступен или не успел вернуть источники. Совет помечен как ограниченный.'}</p>}
       </div>
       <ProtocolViewer source={viewerSource} onClose={() => setViewerSource(null)} />
     </section>
@@ -376,7 +390,7 @@ function SourcesList({ sources, status }: { sources: AdviceSource[]; status?: st
 }
 
 function Questions({ questions }: { questions: Array<{ question: string; rationale?: string }> }) {
-  return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">Что уточнить врачу</h3><div className="mt-4 grid gap-3">{questions.slice(0, 5).map((question) => <div key={question.question} className="rounded-xl bg-white/5 p-4"><p className="font-medium">{question.question}</p>{question.rationale && <p className="mt-2 text-sm text-slate-400">{question.rationale}</p>}</div>)}</div></section>;
+  return <section className="rounded-2xl border border-[var(--border-color)] bg-[#F4F7FB] p-5"><h3 className="font-semibold">Что уточнить врачу</h3><div className="mt-4 grid gap-3">{questions.slice(0, 5).map((question) => <div key={question.question} className="rounded-xl bg-[#F4F7FB] p-4"><p className="font-medium">{question.question}</p>{question.rationale && <p className="mt-2 text-sm text-[var(--text-tertiary)]">{question.rationale}</p>}</div>)}</div></section>;
 }
 
 function ragStatusLabel(status?: string) {
@@ -499,39 +513,39 @@ function SimulatorPanel({ cases }: { cases: StudentCaseDTO[] }) {
   const clinicalText = useMemo(() => dialogue.map(x => `${roleLabel(x.speaker)}: ${x.text}`).join('\n'), [dialogue]);
 
   if (!scenario) {
-    return <div className="py-6 text-center text-slate-400">Нет доступных сценариев.</div>;
+    return <div className="py-6 text-center text-[var(--text-tertiary)]">Нет доступных сценариев.</div>;
   }
 
   const publicBrief = getBrief(scenario);
 
   return <div className="grid gap-5 py-6 xl:grid-cols-[360px_minmax(0,1fr)_420px]">
-    <aside className="rounded-2xl border border-white/10 bg-[#162320] p-5">
-      <div className="flex items-center gap-3 border-b border-white/10 pb-4"><Brain className="text-[#7CA9F2]" /><h2 className="font-semibold">Сценарий</h2></div>
-      <div className="mt-5 max-h-[430px] space-y-2 overflow-y-auto pr-1">{cases.map((item, index) => <button key={item.id} onClick={() => loadScenario(index)} className={`focus-ring w-full rounded-xl border px-3 py-3 text-left text-sm ${scenario.id === item.id ? 'border-[#5B9EEA]/40 bg-[#5B9EEA]/10 text-[#D6E5FD]' : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/8'}`}><span className="mb-1 block text-[11px] font-bold uppercase text-slate-500">{getLevel(item)} · {item.specialty}</span>{getText(item.title)}</button>)}</div>
-      <label className="mt-5 block text-sm font-semibold text-slate-300">Открытая вводная для студента</label>
-      <div className="mt-2 min-h-28 rounded-xl border border-white/10 bg-white/5 p-3 text-sm leading-6 text-slate-300">{publicBrief}</div>
+    <aside className="rounded-2xl border border-[var(--glass-border)] bg-[var(--surface)] shadow-[0_1px_2px_rgba(16,32,43,0.04),0_12px_30px_-16px_rgba(16,32,43,0.2)] p-5">
+      <div className="flex items-center gap-3 border-b border-[var(--border-color)] pb-4"><Brain className="text-[#1F6FEB]" /><h2 className="font-semibold">Сценарий</h2></div>
+      <div className="mt-5 max-h-[430px] space-y-2 overflow-y-auto pr-1">{cases.map((item, index) => <button key={item.id} onClick={() => loadScenario(index)} className={`focus-ring w-full rounded-xl border px-3 py-3 text-left text-sm ${scenario.id === item.id ? 'border-[#7CA9F2] bg-[rgba(31,111,235,0.08)] text-[#0D3A73]' : 'border-[var(--border-color)] bg-[#F4F7FB] text-[var(--text-secondary)] hover:bg-[#F4F7FB]'}`}><span className="mb-1 block text-[11px] font-bold uppercase text-[var(--text-tertiary)]">{getLevel(item)} · {item.specialty}</span>{getText(item.title)}</button>)}</div>
+      <label className="mt-5 block text-sm font-semibold text-[var(--text-secondary)]">Открытая вводная для студента</label>
+      <div className="mt-2 min-h-28 rounded-xl border border-[var(--border-color)] bg-[#F4F7FB] p-3 text-sm leading-6 text-[var(--text-secondary)]">{publicBrief}</div>
     </aside>
-    <section className="flex flex-col rounded-2xl border border-white/10 bg-[#162320] p-5">
-      <div className="flex items-center gap-3 border-b border-white/10 pb-4"><UserRound className="text-[#7CA9F2]" /><div><h2 className="font-semibold">Приём пациента</h2><p className="mt-1 text-xs text-slate-500">{publicBrief}</p></div></div>
-      {error && <div className="mt-3 rounded-xl bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
-      <div className="mt-5 flex-1 max-h-[520px] space-y-3 overflow-y-auto pr-1">{dialogue.map((m, i) => <div key={i} className={`max-w-[86%] rounded-2xl p-4 text-sm leading-6 ${m.speaker === 'doctor' ? 'ml-auto bg-[#2E86E0]/15 text-[#EAF2FE]' : 'bg-white/7 text-slate-200'}`}><span className="mb-1 block text-xs font-bold uppercase text-slate-500">{roleLabel(m.speaker)}</span>{m.text}</div>)}{loading && <div className="rounded-2xl bg-white/7 p-4 text-sm text-slate-400">Пациент отвечает...</div>}</div>
-      <div className="mt-5 flex gap-2"><input className="input border-white/10 bg-white/5 text-white" value={message} placeholder="Задайте любой вопрос пациенту..." onChange={e => setMessage(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') ask() }} /><Button onClick={ask} disabled={loading}><Send size={17} /></Button></div>
-      <textarea readOnly className="input mt-4 min-h-36 border-white/10 bg-white/5 text-sm leading-6 text-slate-200" value={clinicalText} />
+    <section className="flex flex-col rounded-2xl border border-[var(--glass-border)] bg-[var(--surface)] shadow-[0_1px_2px_rgba(16,32,43,0.04),0_12px_30px_-16px_rgba(16,32,43,0.2)] p-5">
+      <div className="flex items-center gap-3 border-b border-[var(--border-color)] pb-4"><UserRound className="text-[#1F6FEB]" /><div><h2 className="font-semibold">Приём пациента</h2><p className="mt-1 text-xs text-[var(--text-tertiary)]">{publicBrief}</p></div></div>
+      {error && <div className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+      <div className="mt-5 flex-1 max-h-[520px] space-y-3 overflow-y-auto pr-1">{dialogue.map((m, i) => <div key={i} className={`max-w-[86%] rounded-2xl p-4 text-sm leading-6 ${m.speaker === 'doctor' ? 'ml-auto bg-[rgba(31,111,235,0.1)] text-[#0D3A73]' : 'bg-[#F4F7FB] text-[var(--text-primary)]'}`}><span className="mb-1 block text-xs font-bold uppercase text-[var(--text-tertiary)]">{roleLabel(m.speaker)}</span>{m.text}</div>)}{loading && <div className="rounded-2xl bg-[#F4F7FB] p-4 text-sm text-[var(--text-tertiary)]">Пациент отвечает...</div>}</div>
+      <div className="mt-5 flex gap-2"><input className="input border-[var(--border-color)] bg-[#F4F7FB]" value={message} placeholder="Задайте любой вопрос пациенту..." onChange={e => setMessage(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') ask() }} /><Button onClick={ask} disabled={loading}><Send size={17} /></Button></div>
+      <textarea readOnly className="input mt-4 min-h-36 border-[var(--border-color)] bg-[#F4F7FB] text-sm leading-6 text-[var(--text-primary)]" value={clinicalText} />
     </section>
     <aside className="space-y-5">
       <ChoicePanel title="Диагнозы: выберите возможные" options={diagnosisOptions} selected={selectedDx} onToggle={value => toggle(value, selectedDx, setSelectedDx)} />
-      <div className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
+      <div className="rounded-2xl border border-[var(--border-color)] bg-[#F4F7FB] p-5">
         <h3 className="font-semibold">Свой диагноз (МКБ)</h3>
-        <input className="input mt-3 border-white/10 bg-white/5 text-sm text-white" value={customDiagnosis} onChange={e => setCustomDiagnosis(e.target.value)} placeholder="Например: J06.9 ОРВИ" />
+        <input className="input mt-3 border-[var(--border-color)] bg-[#F4F7FB] text-sm" value={customDiagnosis} onChange={e => setCustomDiagnosis(e.target.value)} placeholder="Например: J06.9 ОРВИ" />
       </div>
       <ChoicePanel title="Тактика и лечение" options={treatmentOptions} selected={selectedPlan} onToggle={value => toggle(value, selectedPlan, setSelectedPlan)} />
       <Button className="w-full" onClick={evaluate} disabled={evaluating}><ClipboardCheck size={17} />{evaluating ? 'Оцениваю...' : 'Проверить выбор'}</Button>
-      {feedback && <div className="rounded-2xl border border-[#5B9EEA]/20 bg-[#5B9EEA]/8 p-4 text-sm leading-6 text-[#EAF2FE] whitespace-pre-line">{feedback}</div>}
+      {feedback && <div className="rounded-2xl border border-[#5B9EEA]/20 bg-[#5B9EEA]/8 p-4 text-sm leading-6 text-[#0D3A73] whitespace-pre-line">{feedback}</div>}
     </aside>
   </div>;
 }
 
-function ChoicePanel({ title, options, selected, onToggle }: { title: string; options: string[]; selected: string[]; onToggle: (value: string) => void }) { return <section className="rounded-2xl border border-white/10 bg-white/[.03] p-5"><h3 className="font-semibold">{title}</h3><div className="mt-4 max-h-72 space-y-2 overflow-y-auto pr-1">{options.map(option => <label key={option} className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 text-sm leading-5 ${selected.includes(option) ? 'border-[#5B9EEA]/40 bg-[#5B9EEA]/10 text-[#EAF2FE]' : 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/8'}`}><input type="checkbox" className="mt-1" checked={selected.includes(option)} onChange={() => onToggle(option)} /><span>{option}</span></label>)}</div></section> }
+function ChoicePanel({ title, options, selected, onToggle }: { title: string; options: string[]; selected: string[]; onToggle: (value: string) => void }) { return <section className="rounded-2xl border border-[var(--border-color)] bg-[#F4F7FB] p-5"><h3 className="font-semibold">{title}</h3><div className="mt-4 max-h-72 space-y-2 overflow-y-auto pr-1">{options.map(option => <label key={option} className={`flex cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 text-sm leading-5 ${selected.includes(option) ? 'border-[#7CA9F2] bg-[rgba(31,111,235,0.08)] text-[#0D3A73]' : 'border-[var(--border-color)] bg-[#F4F7FB] text-[var(--text-secondary)] hover:bg-[#F4F7FB]'}`}><input type="checkbox" className="mt-1" checked={selected.includes(option)} onChange={() => onToggle(option)} /><span>{option}</span></label>)}</div></section> }
 
 function roleLabel(role: DialogueTurn['speaker']) { return { doctor: 'Врач', patient: 'Пациент', relative: 'Родственник', nurse: 'Медсестра', unknown: 'Спикер' }[role]; }
 
