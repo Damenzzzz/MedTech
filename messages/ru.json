@@ -216,7 +216,18 @@
     "resetProgress": "Сбросить прогресс",
     "resetProgressConfirm": "Сбросить весь прогресс тренировок? Это действие нельзя отменить.",
     "viewResult": "Результат",
-    "retry": "Повторить"
+    "retry": "Повторить",
+    "featuredBadge": "Неотложный · рекомендуем",
+    "yourProgress": "Ваш прогресс",
+    "ofTotalCases": "из {total} случаев",
+    "recommendedNext": "Рекомендовано далее",
+    "randomPatientDesc": "Подберём случай под вашу зону роста.",
+    "resultsFound": "Найдено",
+    "resumeLast": "Продолжить приём",
+    "clickToStart": "нажмите на карточку, чтобы начать приём",
+    "yearsOld": "лет",
+    "male": "Мужской",
+    "female": "Женский"
   },
   "Training": {
     "start": "Начать беседу с пациентом",

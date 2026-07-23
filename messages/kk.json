@@ -216,7 +216,18 @@
     "resetProgress": "Прогресті тастау",
     "resetProgressConfirm": "Барлық жаттығу прогресін тастау керек пе? Бұл әрекетті қайтару мүмкін емес.",
     "viewResult": "Нәтиже",
-    "retry": "Қайталау"
+    "retry": "Қайталау",
+    "featuredBadge": "Кезек күттірмейтін · ұсынамыз",
+    "yourProgress": "Сіздің прогресіңіз",
+    "ofTotalCases": "/ {total} жағдай",
+    "recommendedNext": "Келесіге ұсынылады",
+    "randomPatientDesc": "Сіздің даму аймағыңызға сай жағдайды таңдаймыз.",
+    "resultsFound": "Табылды",
+    "resumeLast": "Қабылдауды жалғастыру",
+    "clickToStart": "қабылдауды бастау үшін картаны басыңыз",
+    "yearsOld": "жаста",
+    "male": "Ер",
+    "female": "Әйел"
   },
   "Training": {
     "start": "Пациентпен сұхбатты бастау",
