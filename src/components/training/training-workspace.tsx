@@ -260,15 +260,9 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
       />
 
       {/* Main Workspace Body */}
-      <div className="flex-1 flex flex-col xl:flex-row min-h-[calc(100vh-4rem)]">
-        {/* Stage Navigation */}
-        <StageNavigation
-          currentStage={currentStage}
-          onSelectStage={(idx) => setStage(idx)}
-        />
-
-        {/* Center: Patient Visual Stage */}
-        <div className="flex-1 p-4 sm:p-6 flex flex-col border-b xl:border-b-0 xl:border-r border-[var(--border-color)]">
+      <div className="mx-auto grid w-full max-w-[1400px] grid-cols-1 gap-4 p-4 sm:p-6 min-[1041px]:grid-cols-[300px_minmax(0,1fr)]">
+        {/* Left: Patient Snapshot */}
+        <div className="min-[1041px]:order-1">
           <PatientStage
             patient={patient}
             visualState={visualState}
@@ -278,8 +272,37 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
           />
         </div>
 
-        {/* Right Side: Active Stage Medical Panel */}
-        <aside className="glass-strong w-full xl:w-[440px] !rounded-none p-4 sm:p-6 flex flex-col justify-between shrink-0">
+        {/* Right: Cardio monitor + stage timeline + active panel */}
+        <div className="flex min-w-0 flex-col gap-3.5 min-[1041px]:order-2">
+          <div
+            className="relative overflow-hidden rounded-3xl px-4.5 py-4"
+            style={{ background: 'linear-gradient(120deg,#12324F,#1F6FEB)' }}
+          >
+            <div
+              className="pointer-events-none absolute -right-8 -top-12 size-[200px] rounded-full"
+              style={{ background: 'radial-gradient(circle,rgba(18,181,166,0.4),transparent 62%)' }}
+            />
+            <div className="relative z-[2] flex items-center justify-between">
+              <span className="text-[13px] font-semibold text-white/85">Кардиомониторинг · в реальном времени</span>
+              <span className="mono rounded-full bg-white/15 px-2.5 py-0.5 text-xs text-white">II отв.</span>
+            </div>
+            <svg viewBox="0 0 900 60" preserveAspectRatio="none" className="relative z-[2] mt-2 block h-11 w-full">
+              <polyline
+                points="0,30 90,30 120,30 132,10 146,52 160,30 250,30 300,30 312,22 326,38 340,30 430,30 470,30 482,6 498,56 512,30 610,30 660,30 672,22 686,38 700,30 800,30 860,30 872,10 886,52 900,30"
+                fill="none"
+                stroke="rgba(255,255,255,0.95)"
+                strokeWidth="2.4"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                style={{ strokeDasharray: 900, animation: 'ecgDash 3s linear infinite' }}
+              />
+            </svg>
+          </div>
+
+          <StageNavigation currentStage={currentStage} onSelectStage={(idx) => setStage(idx)} />
+
+          {/* Active Stage Medical Panel */}
+          <div className="flex flex-1 flex-col justify-between rounded-3xl border border-[var(--glass-border)] bg-[var(--surface)] p-4 shadow-[0_1px_2px_rgba(16,32,43,0.04),0_12px_32px_-16px_rgba(16,32,43,0.2)] sm:p-5">
           {/* Stage 0: Patient Chart Overview */}
           {currentStage === 0 && (
             <div className="space-y-5 flex-1 flex flex-col">
@@ -405,7 +428,8 @@ export function TrainingWorkspace({ patient }: { patient: StudentCaseDTO }) {
               onSelectStage={(idx) => setStage(idx)}
             />
           )}
-        </aside>
+          </div>
+        </div>
       </div>
 
       {/* Leave Modal & Command Palette */}
