@@ -388,7 +388,10 @@
     "openEncounter": "Қабылдауға өту",
     "noName": "Аты-жөні жоқ пациент",
     "iin": "ЖСН",
-    "encounterCount": "Қабылдаулар: {count}"
+    "encounterCount": "Қабылдаулар: {count}",
+    "patientsLabel": "Пациенттер",
+    "totalEncountersLabel": "Барлық қабылдаулар",
+    "lastVisitLabel": "Соңғы қабылдау"
   },
   "AI": {
     "title": "Клиникалық AI-ассистент",

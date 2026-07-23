@@ -388,7 +388,10 @@
     "openEncounter": "Open encounter",
     "noName": "Patient without a name",
     "iin": "IIN",
-    "encounterCount": "Encounters: {count}"
+    "encounterCount": "Encounters: {count}",
+    "patientsLabel": "Patients",
+    "totalEncountersLabel": "Total encounters",
+    "lastVisitLabel": "Last visit"
   },
   "AI": {
     "title": "Clinical AI Assistant",

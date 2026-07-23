@@ -54,7 +54,7 @@ export function DebriefView({ caseId }: { caseId: string }) {
   if (!data) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-16 text-center space-y-4">
-        <div className="glass p-12 space-y-4">
+        <div className="rounded-3xl border border-[var(--glass-border)] bg-[var(--surface)] p-12 space-y-4 shadow-[0_1px_2px_rgba(16,32,43,0.04),0_12px_30px_-16px_rgba(16,32,43,0.2)]">
           <Activity size={32} className="text-[#1F6FEB] mx-auto animate-pulse" />
           <h3 className="text-xl font-bold text-[var(--text-primary)]">
             Загрузка результатов разбора сессии...
@@ -109,7 +109,7 @@ export function DebriefView({ caseId }: { caseId: string }) {
       )}
 
       {/* Top Header Card */}
-      <div className="glass p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+      <div className="rounded-3xl border border-[var(--glass-border)] bg-[var(--surface)] p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-[0_1px_2px_rgba(16,32,43,0.04),0_12px_30px_-16px_rgba(16,32,43,0.2)]">
         <div className="space-y-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EAF2FE] px-3 py-1 text-xs font-bold text-[#124F8C] border border-[#AFCBFB]">
             <Sparkles size={14} className="text-[#1F6FEB]" />
@@ -157,7 +157,7 @@ export function DebriefView({ caseId }: { caseId: string }) {
       </div>
 
       {/* Competencies Breakdown */}
-      <section className="glass p-6 space-y-6">
+      <section className="rounded-3xl border border-[var(--glass-border)] bg-[var(--surface)] p-6 space-y-6 shadow-[0_1px_2px_rgba(16,32,43,0.04),0_12px_30px_-16px_rgba(16,32,43,0.2)]">
         <h2 className="text-base font-bold text-[var(--text-primary)] border-b border-[var(--border-color)] pb-3">
           {t('rubric')}
         </h2>
@@ -204,7 +204,7 @@ export function DebriefView({ caseId }: { caseId: string }) {
       </div>
 
       {/* Timeline Section */}
-      <section className="glass p-6 space-y-4">
+      <section className="rounded-3xl border border-[var(--glass-border)] bg-[var(--surface)] p-6 space-y-4 shadow-[0_1px_2px_rgba(16,32,43,0.04),0_12px_30px_-16px_rgba(16,32,43,0.2)]">
         <h2 className="text-base font-bold text-[var(--text-primary)] border-b border-[var(--border-color)] pb-3">
           {t('timeline')}
         </h2>
@@ -321,7 +321,7 @@ function FeedbackCard({
   success?: boolean;
 }) {
   return (
-    <section className="glass p-5 space-y-3">
+    <section className="rounded-3xl border border-[var(--glass-border)] bg-[var(--surface)] p-5 space-y-3 shadow-[0_1px_2px_rgba(16,32,43,0.04),0_12px_30px_-16px_rgba(16,32,43,0.2)]">
       <div className="flex items-center gap-2 border-b border-[var(--border-color)] pb-3">
         <Icon size={18} className={warning ? 'text-[#C77A1E]' : success ? 'text-[#0E9E92]' : 'text-[#1F6FEB]'} />
         <h3 className="text-xs font-bold text-[var(--text-primary)]">{title}</h3>

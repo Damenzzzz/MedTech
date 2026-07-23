@@ -388,7 +388,10 @@
     "openEncounter": "Перейти к приёму",
     "noName": "Пациент без ФИО",
     "iin": "ИИН",
-    "encounterCount": "Приёмов: {count}"
+    "encounterCount": "Приёмов: {count}",
+    "patientsLabel": "Пациентов",
+    "totalEncountersLabel": "Всего приёмов",
+    "lastVisitLabel": "Последний приём"
   },
   "AI": {
     "title": "Клинический AI-ассистент",
