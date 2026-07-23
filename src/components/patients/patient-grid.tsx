@@ -30,7 +30,7 @@ export function PatientGrid({
   return (
     <div className="space-y-8">
       {/* Grid Layout */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(238px, 1fr))' }}>
         {visibleCases.map((item, idx) => (
           <PatientCard
             key={item.id}

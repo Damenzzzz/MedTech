@@ -216,7 +216,18 @@
     "resetProgress": "Reset progress",
     "resetProgressConfirm": "Reset all training progress? This cannot be undone.",
     "viewResult": "Result",
-    "retry": "Retry"
+    "retry": "Retry",
+    "featuredBadge": "Emergency · recommended",
+    "yourProgress": "Your progress",
+    "ofTotalCases": "of {total} cases",
+    "recommendedNext": "Recommended next",
+    "randomPatientDesc": "We'll pick a case for your growth area.",
+    "resultsFound": "Found",
+    "resumeLast": "Resume visit",
+    "clickToStart": "click a card to start the consultation",
+    "yearsOld": "yo",
+    "male": "Male",
+    "female": "Female"
   },
   "Training": {
     "start": "Start conversation with patient",

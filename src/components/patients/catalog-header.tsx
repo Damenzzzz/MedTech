@@ -1,11 +1,16 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { Shuffle, RotateCcw, Activity, Sparkles, Trophy, Trash2 } from 'lucide-react';
-import { motion } from 'motion/react';
-import { useUserStore } from '@/stores/user-store';
+import { Shuffle, RotateCcw, Trash2 } from 'lucide-react';
+import type { StudentCaseDTO } from '@/domain/schemas';
+import { Link } from '@/i18n/navigation';
+import { FallbackImage } from '@/components/ui/fallback-image';
 
 interface CatalogHeaderProps {
+  cases: StudentCaseDTO[];
+  locale: string;
+  completedIds: Set<string>;
   totalCases: number;
   completedCount: number;
   onSelectRandom: () => void;
@@ -14,7 +19,12 @@ interface CatalogHeaderProps {
   hasActiveSession: boolean;
 }
 
+const URGENCY_RANK: Record<StudentCaseDTO['urgency'], number> = { emergency: 0, urgent: 1, routine: 2 };
+
 export function CatalogHeader({
+  cases,
+  locale,
+  completedIds,
   totalCases,
   completedCount,
   onSelectRandom,
@@ -23,77 +33,123 @@ export function CatalogHeader({
   hasActiveSession,
 }: CatalogHeaderProps) {
   const t = useTranslations('Catalog');
-  const navT = useTranslations('Nav');
-  const profile = useUserStore((s) => s.profile);
-  const hydrated = useUserStore((s) => s.hydrated);
+  const loc = locale as 'ru' | 'kk' | 'en';
 
-  const userName = hydrated && profile?.name ? profile.name : 'Коллега';
+  const featured = useMemo(() => {
+    const pool = cases.filter((c) => !completedIds.has(c.id));
+    const source = pool.length > 0 ? pool : cases;
+    return [...source].sort((a, b) => URGENCY_RANK[a.urgency] - URGENCY_RANK[b.urgency])[0] ?? null;
+  }, [cases, completedIds]);
+
+  const progressPct = totalCases > 0 ? Math.round((completedCount / totalCases) * 100) : 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between border-b border-[var(--border-color)] pb-6"
-    >
-      <div className="space-y-3 max-w-2xl">
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#AFCBFB] bg-[#EAF2FE] px-3 py-1 text-xs font-semibold text-[#124F8C]">
-          <Sparkles size={14} className="text-[#1F6FEB]" />
-          <span>{navT('greeting', { name: userName })}</span>
-        </div>
-
-        <h1 className="text-3xl font-extrabold tracking-tight text-[var(--text-primary)] sm:text-4xl">
-          {t('title')}
-        </h1>
-
-        <p className="text-sm font-medium text-[var(--text-secondary)] leading-relaxed">
-          {t('lead')}
-        </p>
-
-        {/* Stats Badges */}
-        <div className="flex flex-wrap items-center gap-3 pt-1">
-          <div className="glass inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold text-[var(--text-secondary)]">
-            <Activity size={15} className="text-[#1F6FEB]" />
-            <span>Доступно: {totalCases} случаев</span>
+    <div className="grid grid-cols-1 gap-4.5 min-[881px]:grid-cols-[1.55fr_1fr]">
+      {/* Featured case */}
+      {featured ? (
+        <Link
+          href={`/training/${featured.id}`}
+          className="group relative flex min-h-[290px] flex-col justify-end overflow-hidden rounded-[32px] p-7 shadow-[0_26px_60px_-20px_rgba(16,44,80,0.6)]"
+          style={{ background: 'linear-gradient(130deg,#12324F 0%,#1F6FEB 130%)' }}
+        >
+          <FallbackImage
+            src={featured.patient.avatar}
+            alt=""
+            fill
+            sizes="(max-width: 880px) 100vw, 55vw"
+            className="object-cover object-center opacity-90"
+            style={{
+              maskImage: 'linear-gradient(to left, #000 40%, transparent)',
+              WebkitMaskImage: 'linear-gradient(to left, #000 40%, transparent)',
+              maskPosition: 'right',
+              WebkitMaskPosition: 'right',
+              maskSize: '52% 100%',
+              WebkitMaskSize: '52% 100%',
+              maskRepeat: 'no-repeat',
+              WebkitMaskRepeat: 'no-repeat',
+            }}
+          />
+          <div className="relative z-[2] max-w-[60%]">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold text-white ${
+                featured.urgency === 'emergency'
+                  ? 'bg-[rgba(240,86,63,0.9)]'
+                  : featured.urgency === 'urgent'
+                    ? 'bg-[rgba(224,145,42,0.9)]'
+                    : 'bg-[rgba(18,181,166,0.9)]'
+              }`}
+            >
+              {t('featuredBadge')}
+            </span>
+            <div className="mt-3 text-2xl font-bold tracking-tight text-white">
+              {(featured.patient.name[loc] || featured.patient.name.ru)}, {featured.patient.age}
+            </div>
+            <div className="mt-1.5 max-w-[340px] text-[13.5px] leading-relaxed text-white/85">
+              {featured.specialty} · {featured.complaint[loc] || featured.complaint.ru}
+            </div>
+            <span className="mt-4.5 inline-flex h-11 items-center rounded-2xl bg-white px-5.5 text-sm font-semibold text-[#12324F] shadow-[0_10px_24px_-6px_rgba(0,0,0,0.35)] transition-transform group-hover:-translate-y-0.5">
+              {t('start')} →
+            </span>
           </div>
+        </Link>
+      ) : (
+        <div className="rounded-[32px] border border-[var(--border-color)] bg-[var(--surface)]" />
+      )}
 
-          <div className="inline-flex items-center gap-1.5 rounded-xl border border-[#A6E3DA] bg-[#EAF9F7] px-3 py-1.5 text-xs font-bold text-[#0B645C] shadow-xs">
-            <Trophy size={15} className="text-[#0E9E92]" />
-            <span>Пройдено: {completedCount} из {totalCases}</span>
-          </div>
-
+      {/* Status widgets stacked */}
+      <div className="flex flex-col gap-4.5">
+        <div className="relative flex flex-1 flex-col justify-center rounded-3xl border border-[var(--glass-border)] bg-[var(--surface)] p-5 shadow-[0_1px_2px_rgba(16,32,43,0.04),0_12px_28px_-16px_rgba(16,32,43,0.18)]">
           {completedCount > 0 && onResetProgress && (
             <button
               type="button"
               onClick={onResetProgress}
-              className="glass focus-ring inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold text-[var(--text-tertiary)] transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+              aria-label={t('resetProgress')}
+              className="focus-ring absolute right-4 top-4 rounded-full p-1.5 text-[var(--text-tertiary)] transition-colors hover:bg-red-50 hover:text-red-600"
             >
               <Trash2 size={14} />
-              <span>{t('resetProgress')}</span>
+            </button>
+          )}
+          <div className="text-[13px] font-semibold text-[var(--text-secondary)]">{t('yourProgress')}</div>
+          <div className="mt-1.5 flex items-baseline gap-2">
+            <span className="mono text-[34px] font-semibold tracking-tight text-[var(--text-primary)] tabular-nums">
+              {completedCount}
+            </span>
+            <span className="text-sm font-medium text-[var(--text-tertiary)]">
+              {t('ofTotalCases', { total: totalCases })}
+            </span>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-[rgba(16,32,43,0.07)]">
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${progressPct}%`, background: 'linear-gradient(90deg,#1F6FEB,#12B5A6)' }}
+            />
+          </div>
+          {hasActiveSession && (
+            <button
+              type="button"
+              onClick={onResumeLast}
+              className="focus-ring mt-3 inline-flex items-center gap-1.5 self-start text-xs font-semibold text-[#1F6FEB] hover:underline"
+            >
+              <RotateCcw size={13} />
+              {t('resumeLast')}
             </button>
           )}
         </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex flex-wrap gap-2.5">
-        {hasActiveSession && (
-          <button
-            onClick={onResumeLast}
-            className="focus-ring inline-flex h-11 items-center gap-2 rounded-xl border border-[#EAB165] bg-[#FDF3E7] px-4 text-xs font-bold text-[#6B4414] shadow-xs hover:bg-[#FAE3C4] transition-all"
-          >
-            <RotateCcw size={16} className="text-[#A3661D]" />
-            <span>Продолжить приём</span>
-          </button>
-        )}
 
         <button
+          type="button"
           onClick={onSelectRandom}
-          className="focus-ring inline-flex h-11 items-center gap-2 rounded-xl bg-[#1F6FEB] px-5 text-xs font-bold text-white shadow-md shadow-[#1F6FEB]/20 hover:bg-[#1A5FD0] transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="flex flex-1 flex-col justify-center rounded-3xl p-5 text-left text-white shadow-[0_12px_30px_-14px_rgba(18,181,166,0.6)] transition-transform hover:-translate-y-0.5"
+          style={{ background: 'linear-gradient(135deg,#0E9E92,#12B5A6)' }}
         >
-          <Shuffle size={16} />
-          <span>{t('random')}</span>
+          <div className="flex items-center gap-2 text-[13px] font-medium text-white/85">
+            <Shuffle size={14} />
+            {t('recommendedNext')}
+          </div>
+          <div className="mt-1.5 text-lg font-semibold tracking-tight">{t('random')}</div>
+          <div className="mt-1 text-[12.5px] leading-relaxed text-white/85">{t('randomPatientDesc')}</div>
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }
