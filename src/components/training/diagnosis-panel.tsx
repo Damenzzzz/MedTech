@@ -59,7 +59,7 @@ export function DiagnosisPanel({
     <div className="flex flex-col h-full space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2.5 border-b border-slate-200 pb-3">
-        <div className="grid size-9 place-items-center rounded-xl bg-teal-100 text-teal-700">
+        <div className="grid size-9 place-items-center rounded-xl bg-[#D6E5FD] text-[#1A5FD0]">
           <Activity size={18} />
         </div>
         <div>
@@ -86,11 +86,11 @@ export function DiagnosisPanel({
 
         {/* Warning if no final diagnosis selected */}
         {!isSelected && !validationError && (
-          <div className="flex items-start gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 p-3.5 text-xs text-amber-900 font-medium leading-relaxed">
-            <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2.5 rounded-2xl border border-[#F3CA8D] bg-[#FDF3E7] p-3.5 text-xs text-[#6B4414] font-medium leading-relaxed">
+            <AlertTriangle size={18} className="text-[#C77A1E] shrink-0 mt-0.5" />
             <div>
               <p className="font-bold">Основной диагноз не выбран</p>
-              <p className="mt-0.5 text-amber-800">
+              <p className="mt-0.5 text-[#855518]">
                 Выберите итоговое заключение из предложенных вариантов или введите свой диагноз по МКБ-10.
               </p>
             </div>
@@ -108,7 +108,7 @@ export function DiagnosisPanel({
               onSetFinalDiagnosis(e.target.value);
               setValidationError(null);
             }}
-            className="input text-xs border-slate-200 focus:border-teal-600 h-11 bg-white font-semibold"
+            className="input text-xs border-slate-200 focus:border-[#1F6FEB] h-11 bg-white font-semibold"
           >
             <option value="">— Не выбран —</option>
             {patient.differentials.map((diff) => {
@@ -140,7 +140,7 @@ export function DiagnosisPanel({
             value={customFinal}
             onChange={(e) => setCustomFinal(e.target.value)}
             placeholder="Или введите альтернативный кодовый диагноз..."
-            className="input text-xs border-slate-200 focus:border-teal-600 h-10 flex-1"
+            className="input text-xs border-slate-200 focus:border-[#1F6FEB] h-10 flex-1"
           />
           <button
             onClick={handleAddCustomFinal}
@@ -164,12 +164,12 @@ export function DiagnosisPanel({
               setValidationError(null);
             }}
             placeholder={t('reasoningPlaceholder')}
-            className="input text-xs border-slate-200 focus:border-teal-600 min-h-[120px] leading-relaxed p-3"
+            className="input text-xs border-slate-200 focus:border-[#1F6FEB] min-h-[120px] leading-relaxed p-3"
           />
           <p className="text-[11px] text-slate-400">
             Укажите факты анамнеза, осмотра и результаты исследований, подтверждающие диагноз (минимум 20 символов).
             {reasoning.trim().length > 0 && (
-              <span className={`ml-2 font-bold ${reasoning.trim().length >= 20 ? 'text-emerald-700' : 'text-amber-700'}`}>
+              <span className={`ml-2 font-bold ${reasoning.trim().length >= 20 ? 'text-[#0E7D72]' : 'text-[#A3661D]'}`}>
                 ({reasoning.trim().length}/20)
               </span>
             )}
@@ -180,7 +180,7 @@ export function DiagnosisPanel({
       {/* Next Stage Button */}
       <button
         onClick={handleAttemptNext}
-        className="focus-ring mt-auto w-full rounded-xl bg-teal-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all"
+        className="focus-ring mt-auto w-full rounded-xl bg-[#1F6FEB] py-3 text-xs font-bold text-white shadow-sm hover:bg-[#1A5FD0] transition-all"
       >
         Перейти к плану ведения →
       </button>

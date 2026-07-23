@@ -18,7 +18,7 @@ export default async function Landing({
       <main className="flex-1 grid place-items-center px-4 py-12">
         <div className="w-full max-w-3xl space-y-10">
           <div className="space-y-3 text-center">
-            <p className="label text-teal-700">{t('introEyebrow')}</p>
+            <p className="label text-[#1A5FD0]">{t('introEyebrow')}</p>
             <h1 className="text-3xl font-semibold text-slate-900">
               {t('introTitle')}
             </h1>

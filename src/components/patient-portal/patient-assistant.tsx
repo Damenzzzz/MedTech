@@ -85,8 +85,8 @@ export function PatientAssistant() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 space-y-8">
       <header className="space-y-2">
-        <span className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800">
-          <Sparkles size={14} className="text-teal-600" />
+        <span className="inline-flex items-center gap-2 rounded-full border border-[#AFCBFB] bg-[#EAF2FE] px-3 py-1 text-xs font-semibold text-[#124F8C]">
+          <Sparkles size={14} className="text-[#1F6FEB]" />
           {t('eyebrow')}
         </span>
         <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">{t('title')}</h1>
@@ -111,7 +111,7 @@ export function PatientAssistant() {
             type="button"
             onClick={submit}
             disabled={loading || !symptoms.trim()}
-            className="focus-ring inline-flex h-11 items-center gap-2 rounded-xl bg-teal-600 px-6 text-xs font-bold text-white shadow-md shadow-teal-600/20 transition-all hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+            className="focus-ring inline-flex h-11 items-center gap-2 rounded-xl bg-[#1F6FEB] px-6 text-xs font-bold text-white shadow-md shadow-[#1F6FEB]/20 transition-all hover:bg-[#1A5FD0] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
             {loading ? t('submitLoading') : t('submit')}
@@ -123,13 +123,13 @@ export function PatientAssistant() {
           <div
             role="status"
             aria-live="polite"
-            className="flex items-center gap-3 rounded-2xl border border-teal-100 bg-teal-50/60 p-4"
+            className="flex items-center gap-3 rounded-2xl border border-[#D6E5FD] bg-[#EAF2FE]/60 p-4"
           >
-            <Loader2 size={18} className="shrink-0 animate-spin text-teal-600" aria-hidden />
+            <Loader2 size={18} className="shrink-0 animate-spin text-[#1F6FEB]" aria-hidden />
             <div className="space-y-1.5 w-full">
-              <p className="text-xs font-bold text-teal-900">{t('loadingTitle')}</p>
-              <div className="h-2 w-4/5 rounded-full bg-teal-200/60" aria-hidden />
-              <div className="h-2 w-3/5 rounded-full bg-teal-200/60" aria-hidden />
+              <p className="text-xs font-bold text-[#0D3A73]">{t('loadingTitle')}</p>
+              <div className="h-2 w-4/5 rounded-full bg-[#AFCBFB]/60" aria-hidden />
+              <div className="h-2 w-3/5 rounded-full bg-[#AFCBFB]/60" aria-hidden />
             </div>
           </div>
         )}
@@ -173,11 +173,11 @@ export function PatientAssistant() {
           )}
 
           {/* Disclaimer — always on top of the result */}
-          <div className="flex items-start gap-3 rounded-3xl border border-teal-200 bg-teal-50/80 p-5">
-            <ShieldAlert size={22} className="mt-0.5 shrink-0 text-teal-600" aria-hidden />
+          <div className="flex items-start gap-3 rounded-3xl border border-[#AFCBFB] bg-[#EAF2FE]/80 p-5">
+            <ShieldAlert size={22} className="mt-0.5 shrink-0 text-[#1F6FEB]" aria-hidden />
             <div>
-              <p className="text-sm font-extrabold text-teal-950">{t('disclaimerTitle')}</p>
-              <p className="mt-0.5 text-xs font-medium leading-relaxed text-teal-900">{data.disclaimer}</p>
+              <p className="text-sm font-extrabold text-[#0B1C33]">{t('disclaimerTitle')}</p>
+              <p className="mt-0.5 text-xs font-medium leading-relaxed text-[#0D3A73]">{data.disclaimer}</p>
             </div>
           </div>
 
@@ -200,16 +200,16 @@ export function PatientAssistant() {
           <section className="card rounded-3xl p-6 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
               <h2 className="flex items-center gap-2 text-base font-bold text-slate-900">
-                <MessageCircleQuestion size={18} className="text-teal-600" aria-hidden />
+                <MessageCircleQuestion size={18} className="text-[#1F6FEB]" aria-hidden />
                 {t('questionsTitle')}
               </h2>
               {data.questions_for_doctor.length > 0 && (
                 <button
                   type="button"
                   onClick={copyQuestions}
-                  className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-teal-300 bg-teal-50 px-3 py-1.5 text-[11px] font-bold text-teal-800 hover:bg-teal-100"
+                  className="focus-ring inline-flex items-center gap-1.5 rounded-lg border border-[#7CA9F2] bg-[#EAF2FE] px-3 py-1.5 text-[11px] font-bold text-[#124F8C] hover:bg-[#D6E5FD]"
                 >
-                  {copied ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                  {copied ? <Check size={13} className="text-[#0E9E92]" /> : <Copy size={13} />}
                   {copied ? t('copied') : t('copyQuestions')}
                 </button>
               )}
@@ -221,7 +221,7 @@ export function PatientAssistant() {
                     key={i}
                     className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-3.5 text-sm font-medium leading-relaxed text-slate-800"
                   >
-                    <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-teal-600 text-[11px] font-bold text-white">
+                    <span className="grid size-6 shrink-0 place-items-center rounded-lg bg-[#1F6FEB] text-[11px] font-bold text-white">
                       {i + 1}
                     </span>
                     <span>{question}</span>
@@ -255,7 +255,7 @@ function Section({
   tone?: 'teal' | 'amber';
 }) {
   const t = useTranslations('PatientAssistant');
-  const accent = tone === 'amber' ? 'text-amber-600' : 'text-teal-600';
+  const accent = tone === 'amber' ? 'text-[#C77A1E]' : 'text-[#1F6FEB]';
 
   return (
     <section className="card rounded-3xl p-6 space-y-3">
@@ -263,7 +263,7 @@ function Section({
         <Icon size={18} className={accent} aria-hidden />
         <h2 className="text-base font-bold text-slate-900">{title}</h2>
         {note && (
-          <span className="rounded-lg bg-amber-100/80 px-2 py-0.5 text-[11px] font-bold text-amber-900">{note}</span>
+          <span className="rounded-lg bg-[#FAE3C4]/80 px-2 py-0.5 text-[11px] font-bold text-[#6B4414]">{note}</span>
         )}
       </div>
       {items.length > 0 ? (

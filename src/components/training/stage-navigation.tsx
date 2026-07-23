@@ -26,8 +26,8 @@ export function StageNavigation({ currentStage, onSelectStage }: StageNavigation
   return (
     <>
       {/* Desktop Left Sidebar */}
-      <aside className="hidden xl:block w-64 border-r border-slate-200/80 bg-white p-4 shrink-0 space-y-4">
-        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2">
+      <aside className="glass-strong hidden xl:block w-64 !rounded-none border-r p-4 shrink-0 space-y-4">
+        <p className="text-[11px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider px-2">
           {t('stage')}
         </p>
 
@@ -43,10 +43,10 @@ export function StageNavigation({ currentStage, onSelectStage }: StageNavigation
                   onClick={() => onSelectStage(i)}
                   className={`focus-ring flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-semibold transition-all ${
                     isCurrent
-                      ? 'bg-teal-600 text-white shadow-xs'
+                      ? 'bg-[linear-gradient(135deg,#1F6FEB,#12B5A6)] text-white shadow-xs'
                       : isCompleted
-                      ? 'bg-emerald-50/60 text-emerald-950 font-bold hover:bg-emerald-100/60'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      ? 'bg-[#EAF9F7]/60 text-[#052B27] font-bold hover:bg-[#D2F1EC]/60'
+                      : 'text-[var(--text-secondary)] hover:bg-[var(--surface)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   <Icon size={15} className="shrink-0" />
@@ -59,7 +59,7 @@ export function StageNavigation({ currentStage, onSelectStage }: StageNavigation
       </aside>
 
       {/* Mobile / Tablet Top Horizontal Scrollable Bar */}
-      <div className="xl:hidden border-b border-slate-200 bg-white px-3 py-2 overflow-x-auto">
+      <div className="glass !rounded-none xl:hidden border-b px-3 py-2 overflow-x-auto">
         <div className="flex items-center gap-2 min-w-max">
           {stageLabels.map((label, i) => {
             const isCompleted = i < currentStage;
@@ -71,19 +71,19 @@ export function StageNavigation({ currentStage, onSelectStage }: StageNavigation
                 onClick={() => onSelectStage(i)}
                 className={`flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
                   isCurrent
-                    ? 'bg-teal-600 text-white shadow-xs'
+                    ? 'bg-[linear-gradient(135deg,#1F6FEB,#12B5A6)] text-white shadow-xs'
                     : isCompleted
-                    ? 'bg-teal-50 text-teal-800 border border-teal-200'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-[#EAF2FE] text-[#124F8C] border border-[#AFCBFB]'
+                    : 'bg-[var(--surface)] text-[var(--text-secondary)] hover:bg-[var(--border-color)]'
                 }`}
               >
                 <span
                   className={`grid size-5 place-items-center rounded-md text-[10px] font-extrabold ${
                     isCurrent
-                      ? 'bg-white text-teal-800'
+                      ? 'bg-white text-[#124F8C]'
                       : isCompleted
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-slate-200 text-slate-700'
+                      ? 'bg-[#12B5A6] text-white'
+                      : 'bg-[var(--border-color)] text-[var(--text-secondary)]'
                   }`}
                 >
                   {isCompleted ? <Check size={11} strokeWidth={3} /> : i + 1}

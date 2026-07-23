@@ -61,7 +61,7 @@ export async function PatientProfileView({
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
       <div className="card rounded-3xl p-7">
-        <p className="label text-teal-700">{t('profileEyebrow')}</p>
+        <p className="label text-[#1A5FD0]">{t('profileEyebrow')}</p>
         <h1 className="mt-2 text-2xl font-bold text-slate-900">
           {patient?.full_name || t('profileNoName')}
         </h1>
@@ -71,10 +71,10 @@ export async function PatientProfileView({
       </div>
 
       {/* Visit-preparation assistant CTA */}
-      <section className="card mt-6 rounded-3xl border-teal-200 bg-gradient-to-br from-teal-50/80 via-white to-teal-50/30 p-6 sm:p-7">
+      <section className="card mt-6 rounded-3xl border-[#AFCBFB] bg-gradient-to-br from-[#EAF2FE]/80 via-white to-[#EAF2FE]/30 p-6 sm:p-7">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-teal-100 text-teal-700">
+            <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-[#D6E5FD] text-[#1A5FD0]">
               <MessageCircleHeart size={24} />
             </div>
             <div>
@@ -85,7 +85,7 @@ export async function PatientProfileView({
 
           <Link
             href={`/patient-portal/${iin}/assistant`}
-            className="focus-ring inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 text-xs font-bold text-white shadow-md shadow-teal-600/20 transition-all hover:bg-teal-700"
+            className="focus-ring inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#1F6FEB] px-6 text-xs font-bold text-white shadow-md shadow-[#1F6FEB]/20 transition-all hover:bg-[#1A5FD0]"
           >
             <span>{t('assistantCtaButton')}</span>
             <ArrowRight size={15} />
@@ -95,7 +95,7 @@ export async function PatientProfileView({
 
       {encounters.length === 0 ? (
         <div className="card mt-8 flex flex-col items-center gap-4 rounded-3xl px-6 py-12 text-center">
-          <div className="grid size-16 place-items-center rounded-2xl bg-teal-50 text-teal-600">
+          <div className="grid size-16 place-items-center rounded-2xl bg-[#EAF2FE] text-[#1F6FEB]">
             <FileText size={28} />
           </div>
           <h2 className="text-lg font-semibold text-slate-900">{t('profileEmptyTitle')}</h2>
@@ -120,7 +120,7 @@ export async function PatientProfileView({
                           {entry.diagnosis.name || t('labelNoDiagnosis')}
                         </p>
                         {entry.diagnosis.code && (
-                          <p className="mt-1 inline-flex rounded-lg bg-teal-50 px-2 py-0.5 text-xs font-bold text-teal-700">
+                          <p className="mt-1 inline-flex rounded-lg bg-[#EAF2FE] px-2 py-0.5 text-xs font-bold text-[#1A5FD0]">
                             {t('labelIcd')}: {entry.diagnosis.code}
                           </p>
                         )}
@@ -164,8 +164,8 @@ export async function PatientProfileView({
                           <span
                             className={`rounded-lg px-2 py-0.5 text-[11px] font-bold ${
                               item.kind === 'referral'
-                                ? 'bg-teal-50 text-teal-700'
-                                : 'bg-cyan-50 text-cyan-700'
+                                ? 'bg-[#EAF2FE] text-[#1A5FD0]'
+                                : 'bg-[#E8F7FA] text-[#167E90]'
                             }`}
                           >
                             {item.kind === 'referral'
@@ -245,7 +245,7 @@ export async function PatientProfileView({
                       </div>
                       <div className="flex items-center gap-2">
                         <StatusBadge label={statusLabel[entry.status]} />
-                        <span className="text-xs font-semibold text-teal-700">
+                        <span className="text-xs font-semibold text-[#1A5FD0]">
                           {t('detailsToggle')}
                         </span>
                       </div>
@@ -283,7 +283,7 @@ function SectionCard({
   return (
     <section className="card rounded-3xl p-6 sm:p-7">
       <div className="flex items-center gap-3">
-        <div className="grid size-11 place-items-center rounded-2xl bg-teal-50 text-teal-600">
+        <div className="grid size-11 place-items-center rounded-2xl bg-[#EAF2FE] text-[#1F6FEB]">
           {icon}
         </div>
         <h2 className="text-lg font-bold text-slate-900">{title}</h2>
@@ -299,7 +299,7 @@ function NoData({ label }: { label: string }) {
 
 function StatusBadge({ label }: { label: string }) {
   return (
-    <span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-bold text-teal-700">
+    <span className="rounded-full bg-[#EAF2FE] px-3 py-1 text-xs font-bold text-[#1A5FD0]">
       {label}
     </span>
   );
@@ -334,7 +334,7 @@ function LabelledList({
   items: string[];
   tone?: 'teal' | 'amber';
 }) {
-  const toneClass = tone === 'amber' ? 'text-amber-700' : 'text-teal-700';
+  const toneClass = tone === 'amber' ? 'text-[#A3661D]' : 'text-[#1A5FD0]';
   return (
     <div className="mt-4">
       <p className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide ${toneClass}`}>
@@ -387,7 +387,7 @@ async function ProtocolReadOnly({ protocol }: { protocol: Record<string, unknown
 
       {history && (
         <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-teal-700">
+          <p className="text-xs font-bold uppercase tracking-wide text-[#1A5FD0]">
             {t('protocolHistory')}
           </p>
           <p className="mt-1 whitespace-pre-wrap">{history}</p>
@@ -396,7 +396,7 @@ async function ProtocolReadOnly({ protocol }: { protocol: Record<string, unknown
 
       {vitals.length > 0 && (
         <div>
-          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-teal-700">
+          <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-[#1A5FD0]">
             <Activity size={14} />
             {t('protocolVitals')}
           </p>
@@ -415,7 +415,7 @@ async function ProtocolReadOnly({ protocol }: { protocol: Record<string, unknown
 
       {blocks.map((block) => (
         <div key={block.title}>
-          <p className="text-xs font-bold uppercase tracking-wide text-teal-700">{block.title}</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-[#1A5FD0]">{block.title}</p>
           <ul className="mt-1 list-disc space-y-1 pl-5">
             {block.items.map((item, index) => (
               <li key={`${index}-${item}`}>{item}</li>

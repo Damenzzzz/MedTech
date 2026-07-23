@@ -49,7 +49,7 @@ export function PatientGrid({
         <div className="flex justify-center pt-4">
           <button
             onClick={() => setVisibleCount((prev) => prev + 12)}
-            className="focus-ring flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-3 text-xs font-bold text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50 transition-all hover:scale-105"
+            className="glass focus-ring flex items-center gap-2 rounded-2xl px-6 py-3 text-xs font-bold text-[var(--text-secondary)] hover:border-[var(--border-color-hover)] transition-all hover:scale-105"
           >
             <span>Показать ещё ({cases.length - visibleCount})</span>
             <ChevronDown size={16} />

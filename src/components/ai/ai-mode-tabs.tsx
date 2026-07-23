@@ -53,7 +53,7 @@ export function AIModeTabs({ activeMode, onChangeMode }: AIModeTabsProps) {
           >
             <div
               className={`grid size-9 shrink-0 place-items-center rounded-xl transition-colors ${
-                isActive ? 'bg-teal-600 text-white' : 'bg-slate-200/80 text-slate-700'
+                isActive ? 'bg-[#1F6FEB] text-white' : 'bg-slate-200/80 text-slate-700'
               }`}
             >
               <Icon size={18} />
@@ -63,7 +63,7 @@ export function AIModeTabs({ activeMode, onChangeMode }: AIModeTabsProps) {
               <div className="flex items-center gap-1.5">
                 <span className="text-xs truncate font-bold">{tab.label}</span>
                 {tab.badge && (
-                  <span className="rounded-md bg-teal-50 px-1.5 py-0.5 text-[10px] font-extrabold text-teal-800 border border-teal-200">
+                  <span className="rounded-md bg-[#EAF2FE] px-1.5 py-0.5 text-[10px] font-extrabold text-[#124F8C] border border-[#AFCBFB]">
                     {tab.badge}
                   </span>
                 )}

@@ -109,7 +109,7 @@ export function Header({
 
   const languageSwitcher = (
     <div
-      className="flex items-center rounded-xl border border-slate-200 bg-slate-50/80 p-1"
+      className="flex items-center rounded-xl border border-[var(--border-color)] bg-[var(--surface)]/70 p-1"
       role="group"
       aria-label={t('languageLabel')}
     >
@@ -119,7 +119,7 @@ export function Header({
           type="button"
           onClick={() => router.replace(path, { locale })}
           aria-label={t('switchLanguage', { locale: locale.toUpperCase() })}
-          className="focus-ring rounded-lg px-2.5 py-1 text-xs font-bold uppercase text-slate-600 transition-colors hover:bg-white hover:text-teal-700 hover:shadow-xs"
+          className="focus-ring rounded-lg px-2.5 py-1 text-xs font-bold uppercase text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface)] hover:text-[#1F6FEB] hover:shadow-xs"
         >
           {locale}
         </button>
@@ -132,14 +132,14 @@ export function Header({
       href={isPatient && patientIin ? `/patient-portal/${patientIin}` : '/'}
       className="focus-ring flex items-center gap-2.5 rounded-xl transition-transform hover:scale-[1.01]"
     >
-      <div className="grid size-10 place-items-center rounded-xl bg-teal-600 text-white shadow-sm shadow-teal-600/30">
+      <div className="brand-mark grid size-10 place-items-center rounded-xl shadow-[0_4px_12px_-2px_rgba(31,111,235,0.5)]">
         <Activity size={20} strokeWidth={2.5} />
       </div>
       <div className="flex flex-col">
-        <span className="font-bold tracking-tight text-slate-900 leading-tight text-base">
+        <span className="font-bold tracking-tight text-[var(--text-primary)] leading-tight text-base">
           КазМедСим
         </span>
-        <span className="text-[10px] font-semibold tracking-wider text-teal-600 uppercase">
+        <span className="text-[10px] font-semibold tracking-wider text-[#12B5A6] uppercase">
           MedTech
         </span>
       </div>
@@ -149,7 +149,7 @@ export function Header({
   // Minimal: brand + language only. No nav, no profile menu, no burger.
   if (isMinimal) {
     return (
-      <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md transition-shadow duration-200 shadow-xs">
+      <header className="sticky top-0 z-40 border-b border-[var(--glass-border)] bg-[var(--surface-glass)] backdrop-blur-xl transition-shadow duration-200 shadow-xs">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           {brand}
           {languageSwitcher}
@@ -159,7 +159,7 @@ export function Header({
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-md transition-shadow duration-200 shadow-xs">
+    <header className="sticky top-0 z-40 border-b border-[var(--glass-border)] bg-[var(--surface-glass)] backdrop-blur-xl transition-shadow duration-200 shadow-xs">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         {brand}
 
@@ -175,15 +175,15 @@ export function Header({
                 aria-current={isActive ? 'page' : undefined}
                 className={`focus-ring relative rounded-lg px-3.5 py-2 text-sm font-medium transition-colors ${
                   isActive
-                    ? 'text-teal-700 bg-teal-50 font-semibold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                    ? 'text-[#1F6FEB] bg-[rgba(31,111,235,0.08)] font-semibold'
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface)]/70'
                 }`}
               >
                 {item.label}
                 {isActive && (
                   <motion.div
                     layoutId="activeNav"
-                    className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-teal-600"
+                    className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-[linear-gradient(135deg,#1F6FEB,#12B5A6)]"
                     transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                   />
                 )}
@@ -200,7 +200,7 @@ export function Header({
             <button
               type="button"
               onClick={handleSignOut}
-              className="focus-ring inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:border-red-200 hover:bg-red-50 hover:text-red-700 transition-all"
+              className="focus-ring inline-flex items-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--surface)]/80 px-4 py-2 text-xs font-semibold text-[var(--text-secondary)] shadow-xs hover:border-red-200 hover:bg-red-50 hover:text-red-700 transition-all"
             >
               <LogOut size={15} />
               {t('switchRole')}
@@ -213,15 +213,15 @@ export function Header({
                 aria-label={t('openProfileMenu')}
                 aria-haspopup="menu"
                 aria-expanded={dropdownOpen}
-                className="focus-ring flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-xs hover:border-slate-300 hover:bg-slate-50 transition-all"
+                className="focus-ring flex items-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--surface)]/80 px-3 py-1.5 text-sm font-medium text-[var(--text-secondary)] shadow-xs hover:border-[var(--border-color-hover)] hover:bg-[var(--surface)] transition-all"
               >
-                <div className="grid size-7 place-items-center rounded-lg bg-teal-700 text-xs font-bold text-white shadow-xs">
+                <div className="brand-mark grid size-7 place-items-center rounded-lg text-xs font-bold shadow-xs">
                   {initials}
                 </div>
-                <span className="max-w-[120px] truncate text-xs font-semibold text-slate-800">
+                <span className="max-w-[120px] truncate text-xs font-semibold text-[var(--text-primary)]">
                   {profile.name}
                 </span>
-                <ChevronDown size={14} className="text-slate-400" />
+                <ChevronDown size={14} className="text-[var(--text-tertiary)]" />
               </button>
 
               <AnimatePresence>
@@ -231,13 +231,13 @@ export function Header({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 8, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl"
+                    className="glass-strong absolute right-0 mt-2 w-56 p-2"
                   >
-                    <div className="border-b border-slate-100 px-3 py-2">
-                      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                    <div className="border-b border-[var(--border-color)] px-3 py-2">
+                      <p className="text-[11px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
                         {t('profile')}
                       </p>
-                      <p className="truncate text-sm font-bold text-slate-900">
+                      <p className="truncate text-sm font-bold text-[var(--text-primary)]">
                         {profile.name}
                       </p>
                     </div>
@@ -249,9 +249,9 @@ export function Header({
                           resetOnboarding();
                           router.push('/intro');
                         }}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-teal-50 hover:text-teal-700 transition-colors text-left"
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[rgba(18,181,166,0.1)] hover:text-[#0E7D72] transition-colors text-left"
                       >
-                        <BookOpen size={15} className="text-teal-600" />
+                        <BookOpen size={15} className="text-[#12B5A6]" />
                         {t('reintro')}
                       </button>
 
@@ -261,9 +261,9 @@ export function Header({
                           clearProfile();
                           router.push('/');
                         }}
-                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 transition-colors text-left"
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--surface)] transition-colors text-left"
                       >
-                        <User size={15} className="text-slate-500" />
+                        <User size={15} className="text-[var(--text-tertiary)]" />
                         {t('changeName')}
                       </button>
 
@@ -282,7 +282,7 @@ export function Header({
           ) : (
             <Link
               href="/"
-              className="focus-ring inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-xs font-semibold text-white shadow-sm shadow-teal-600/20 hover:bg-teal-700 transition-all"
+              className="brand-mark focus-ring inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold shadow-[0_4px_12px_-2px_rgba(31,111,235,0.5)] hover:brightness-105 transition-all"
             >
               <User size={15} />
               {t('login')}
@@ -294,7 +294,7 @@ export function Header({
         <button
           type="button"
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="focus-ring grid size-10 place-items-center rounded-xl border border-slate-200 text-slate-700 md:hidden hover:bg-slate-100"
+          className="focus-ring grid size-10 place-items-center rounded-xl border border-[var(--border-color)] text-[var(--text-secondary)] md:hidden hover:bg-[var(--surface)]"
           aria-label={mobileOpen ? t('closeMenu') : t('openMenu')}
           aria-expanded={mobileOpen}
           aria-controls="mobile-nav"
@@ -313,7 +313,7 @@ export function Header({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 top-16 z-40 bg-slate-900/30 backdrop-blur-xs md:hidden"
+              className="fixed inset-0 top-16 z-40 bg-[rgba(16,32,43,0.35)] backdrop-blur-xs md:hidden"
             />
 
             {/* Drawer */}
@@ -323,20 +323,20 @@ export function Header({
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.25, ease: 'easeInOut' }}
-              className="fixed inset-x-0 top-16 z-50 overflow-hidden border-b border-slate-200 bg-white px-4 py-6 shadow-2xl md:hidden"
+              className="fixed inset-x-0 top-16 z-50 overflow-hidden border-b border-[var(--glass-border)] bg-[var(--surface-glass-strong)] backdrop-blur-xl px-4 py-6 shadow-2xl md:hidden"
             >
               <div className="flex flex-col gap-3">
                 {/* User Header if logged in */}
                 {isDoctor && hydrated && profile && (
-                  <div className="flex items-center gap-3 rounded-2xl bg-teal-50/70 p-3 border border-teal-100 mb-2">
-                    <div className="grid size-10 place-items-center rounded-xl bg-teal-600 font-bold text-white">
+                  <div className="flex items-center gap-3 rounded-2xl bg-[rgba(31,111,235,0.08)] p-3 border border-[rgba(31,111,235,0.18)] mb-2">
+                    <div className="brand-mark grid size-10 place-items-center rounded-xl font-bold">
                       {initials}
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-slate-500">
+                      <p className="text-xs font-medium text-[var(--text-tertiary)]">
                         {t('greeting', { name: profile.name })}
                       </p>
-                      <p className="text-sm font-bold text-teal-900">
+                      <p className="text-sm font-bold text-[var(--text-primary)]">
                         {profile.name}
                       </p>
                     </div>
@@ -356,8 +356,8 @@ export function Header({
                       aria-current={isActive ? 'page' : undefined}
                       className={`focus-ring flex items-center justify-between rounded-xl px-4 py-3 text-base font-semibold transition-colors ${
                         isActive
-                          ? 'bg-teal-600 text-white'
-                          : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+                          ? 'bg-[linear-gradient(135deg,#1F6FEB,#12B5A6)] text-white'
+                          : 'bg-[var(--surface)]/70 text-[var(--text-secondary)] hover:bg-[var(--surface)]'
                       }`}
                     >
                       <span className="flex items-center gap-2">
@@ -370,14 +370,14 @@ export function Header({
 
                 {/* Additional profile options if logged in */}
                 {isDoctor && hydrated && profile && (
-                  <div className="mt-2 grid gap-2 border-t border-slate-100 pt-3">
+                  <div className="mt-2 grid gap-2 border-t border-[var(--border-color)] pt-3">
                     <button
                       onClick={() => {
                         setMobileOpen(false);
                         resetOnboarding();
                         router.push('/intro');
                       }}
-                      className="flex items-center gap-2 rounded-xl border border-teal-200 bg-teal-50 px-4 py-2.5 text-xs font-semibold text-teal-800"
+                      className="flex items-center gap-2 rounded-xl border border-[rgba(18,181,166,0.35)] bg-[rgba(18,181,166,0.08)] px-4 py-2.5 text-xs font-semibold text-[#0E7D72]"
                     >
                       <BookOpen size={16} />
                       {t('reintro')}
@@ -388,7 +388,7 @@ export function Header({
                         clearProfile();
                         router.push('/');
                       }}
-                      className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-700"
+                      className="flex items-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--surface)]/70 px-4 py-2.5 text-xs font-semibold text-[var(--text-secondary)]"
                     >
                       <User size={16} />
                       {t('changeName')}
@@ -406,8 +406,8 @@ export function Header({
                 </button>
 
                 {/* Mobile Language Switcher */}
-                <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 p-2">
-                  <span className="text-xs font-medium text-slate-500 pl-2">
+                <div className="mt-4 flex items-center justify-between rounded-xl border border-[var(--border-color)] bg-[var(--surface)]/70 p-2">
+                  <span className="text-xs font-medium text-[var(--text-tertiary)] pl-2">
                     {t('languageLabel')}
                   </span>
                   <div className="flex gap-1" role="group" aria-label={t('languageLabel')}>
@@ -420,7 +420,7 @@ export function Header({
                           router.replace(path, { locale });
                         }}
                         aria-label={t('switchLanguage', { locale: locale.toUpperCase() })}
-                        className="focus-ring rounded-lg bg-white px-3 py-1.5 text-xs font-bold uppercase text-slate-700 shadow-xs hover:text-teal-700"
+                        className="focus-ring rounded-lg bg-[var(--surface)] px-3 py-1.5 text-xs font-bold uppercase text-[var(--text-secondary)] shadow-xs hover:text-[#1F6FEB]"
                       >
                         {locale}
                       </button>

@@ -75,7 +75,7 @@ export function ConversationPanel({
       {/* Header Panel Title */}
       <div className="flex items-center justify-between border-b border-slate-200 pb-3">
         <div className="flex items-center gap-2.5">
-          <div className="grid size-9 place-items-center rounded-xl bg-teal-100 text-teal-700">
+          <div className="grid size-9 place-items-center rounded-xl bg-[#D6E5FD] text-[#1A5FD0]">
             <MessageSquare size={18} />
           </div>
           <div>
@@ -89,8 +89,8 @@ export function ConversationPanel({
         </div>
 
         {/* Revealed facts badge */}
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-800 border border-teal-200">
-          <Sparkles size={13} className="text-teal-600" />
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-[#EAF2FE] px-3 py-1 text-xs font-semibold text-[#124F8C] border border-[#AFCBFB]">
+          <Sparkles size={13} className="text-[#1F6FEB]" />
           <span>Раскрыто фактов: {revealedFactCount}</span>
         </div>
       </div>
@@ -119,7 +119,7 @@ export function ConversationPanel({
               }`}
             >
               {m.role === 'patient' && (
-                <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-teal-600 text-white font-bold text-xs shadow-xs">
+                <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-[#1F6FEB] text-white font-bold text-xs shadow-xs">
                   П
                 </div>
               )}
@@ -127,14 +127,14 @@ export function ConversationPanel({
               <div
                 className={`max-w-[82%] rounded-2xl p-3.5 text-xs leading-relaxed shadow-xs ${
                   m.role === 'student'
-                    ? 'bg-teal-600 text-white rounded-tr-none'
+                    ? 'bg-[#1F6FEB] text-white rounded-tr-none'
                     : 'bg-white border border-slate-200 text-slate-900 rounded-tl-none'
                 }`}
               >
                 <p className="font-medium">{m.text}</p>
                 <p
                   className={`mt-1 text-[10px] text-right ${
-                    m.role === 'student' ? 'text-teal-100' : 'text-slate-400'
+                    m.role === 'student' ? 'text-[#D6E5FD]' : 'text-slate-400'
                   }`}
                 >
                   {timeStr}
@@ -157,7 +157,7 @@ export function ConversationPanel({
             animate={{ opacity: 1 }}
             className="flex items-center gap-2 text-xs font-medium text-slate-500 bg-slate-100 p-3 rounded-2xl w-fit"
           >
-            <Bot size={15} className="text-teal-600 animate-spin" />
+            <Bot size={15} className="text-[#1F6FEB] animate-spin" />
             <span>{t('thinking')}</span>
           </motion.div>
         )}
@@ -187,7 +187,7 @@ export function ConversationPanel({
             onChange={(e) => setInputQuestion(e.target.value)}
             placeholder={t('ask')}
             disabled={isThinking}
-            className="input text-xs border-slate-200 focus:border-teal-600 h-11 flex-1"
+            className="input text-xs border-slate-200 focus:border-[#1F6FEB] h-11 flex-1"
           />
 
           {/* Voice Input UI Hook */}
@@ -209,7 +209,7 @@ export function ConversationPanel({
             type="submit"
             disabled={!inputQuestion.trim() || isThinking}
             aria-label={t('send')}
-            className="focus-ring grid size-11 shrink-0 place-items-center rounded-xl bg-teal-600 text-white shadow-md shadow-teal-600/20 hover:bg-teal-700 disabled:opacity-40 transition-all"
+            className="focus-ring grid size-11 shrink-0 place-items-center rounded-xl bg-[#1F6FEB] text-white shadow-md shadow-[#1F6FEB]/20 hover:bg-[#1A5FD0] disabled:opacity-40 transition-all"
           >
             <Send size={17} />
           </button>
@@ -225,7 +225,7 @@ export function ConversationPanel({
               key={q}
               type="button"
               onClick={() => handleQuickQuestionClick(q)}
-              className="focus-ring rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-teal-300 hover:bg-teal-50 hover:text-teal-800 transition-colors"
+              className="focus-ring rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-[#7CA9F2] hover:bg-[#EAF2FE] hover:text-[#124F8C] transition-colors"
             >
               {q}
             </button>
@@ -236,7 +236,7 @@ export function ConversationPanel({
       {/* Next Stage Button */}
       <button
         onClick={onNextStage}
-        className="focus-ring mt-auto w-full rounded-xl bg-teal-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all"
+        className="focus-ring mt-auto w-full rounded-xl bg-[#1F6FEB] py-3 text-xs font-bold text-white shadow-sm hover:bg-[#1A5FD0] transition-all"
       >
         Перейти к осмотру →
       </button>

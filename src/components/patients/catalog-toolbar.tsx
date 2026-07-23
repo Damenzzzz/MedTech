@@ -45,10 +45,10 @@ export function CatalogToolbar({
   return (
     <div className="space-y-3">
       {/* Desktop Toolbar */}
-      <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-xs md:grid-cols-[1.4fr_1fr_1fr_1fr_auto_auto_auto]">
+      <div className="glass grid gap-3 rounded-2xl p-3 md:grid-cols-[1.4fr_1fr_1fr_1fr_auto_auto_auto]">
         {/* Search */}
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+          <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)]" size={15} />
           <input
             type="text"
             aria-label={t('search')}
@@ -56,12 +56,12 @@ export function CatalogToolbar({
             value={filters.search}
             onChange={(e) => onFilterChange({ search: e.target.value })}
             style={{ paddingLeft: '2.25rem' }}
-            className="input pl-9 text-xs border-slate-200 focus:border-teal-600 h-10"
+            className="input pl-9 text-xs h-10"
           />
           {filters.search && (
             <button
               onClick={() => onFilterChange({ search: '' })}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
             >
               <X size={14} />
             </button>
@@ -73,7 +73,7 @@ export function CatalogToolbar({
           aria-label={t('specialty')}
           value={filters.specialty}
           onChange={(e) => onFilterChange({ specialty: e.target.value })}
-          className="input text-xs border-slate-200 h-10 bg-white font-medium"
+          className="input text-xs h-10 font-medium"
         >
           <option value="all">{t('specialty')}: {c('all')}</option>
           {specialties.map((s) => (
@@ -88,7 +88,7 @@ export function CatalogToolbar({
           aria-label={t('urgency')}
           value={filters.urgency}
           onChange={(e) => onFilterChange({ urgency: e.target.value })}
-          className="input text-xs border-slate-200 h-10 bg-white font-medium"
+          className="input text-xs h-10 font-medium"
         >
           <option value="all">{t('urgency')}: {c('all')}</option>
           <option value="routine">{t('routine')}</option>
@@ -101,7 +101,7 @@ export function CatalogToolbar({
           aria-label={t('difficulty')}
           value={filters.difficulty}
           onChange={(e) => onFilterChange({ difficulty: e.target.value })}
-          className="input text-xs border-slate-200 h-10 bg-white font-medium"
+          className="input text-xs h-10 font-medium"
         >
           <option value="all">{t('difficulty')}: {c('all')}</option>
           <option value="easy">{t('easy')}</option>
@@ -115,7 +115,7 @@ export function CatalogToolbar({
           className={`focus-ring flex items-center gap-1.5 rounded-xl border px-3.5 h-10 text-xs font-bold transition-all ${
             filters.onlyFavorites
               ? 'border-red-300 bg-red-50 text-red-700 shadow-xs'
-              : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+              : 'border-[var(--border-color)] bg-[var(--surface)]/70 text-[var(--text-secondary)] hover:bg-[var(--surface)]'
           }`}
         >
           <Heart size={15} fill={filters.onlyFavorites ? 'currentColor' : 'none'} />
@@ -128,8 +128,8 @@ export function CatalogToolbar({
           aria-pressed={filters.hideCompleted}
           className={`focus-ring flex items-center gap-1.5 rounded-xl border px-3.5 h-10 text-xs font-bold transition-all ${
             filters.hideCompleted
-              ? 'border-emerald-300 bg-emerald-50 text-emerald-800 shadow-xs'
-              : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+              ? 'border-[#6CD6C9] bg-[#EAF9F7] text-[#0B645C] shadow-xs'
+              : 'border-[var(--border-color)] bg-[var(--surface)]/70 text-[var(--text-secondary)] hover:bg-[var(--surface)]'
           }`}
         >
           <CheckCircle2 size={15} />
@@ -139,7 +139,7 @@ export function CatalogToolbar({
         {/* Mobile Filter Drawer Trigger */}
         <button
           onClick={onOpenMobileDrawer}
-          className="focus-ring flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-slate-700 md:hidden hover:bg-slate-100"
+          className="focus-ring flex items-center justify-center rounded-xl border border-[var(--border-color)] bg-[var(--surface)]/70 p-2.5 text-[var(--text-secondary)] md:hidden hover:bg-[var(--surface)]"
           aria-label="Открыть фильтры"
         >
           <SlidersHorizontal size={18} />
@@ -149,26 +149,26 @@ export function CatalogToolbar({
       {/* Active Filter Chips & Results Count */}
       <div className="flex flex-wrap items-center justify-between gap-2 px-1 text-xs">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-semibold text-slate-500">
-            Найдено: <strong className="text-slate-900 font-bold">{totalResults}</strong>
+          <span className="font-semibold text-[var(--text-tertiary)]">
+            Найдено: <strong className="text-[var(--text-primary)] font-bold">{totalResults}</strong>
           </span>
 
           {filters.specialty !== 'all' && (
-            <span className="inline-flex items-center gap-1 rounded-lg bg-teal-50 px-2.5 py-1 font-semibold text-teal-800 border border-teal-200">
+            <span className="inline-flex items-center gap-1 rounded-lg bg-[#EAF2FE] px-2.5 py-1 font-semibold text-[#124F8C] border border-[#AFCBFB]">
               {filters.specialty}
               <X size={13} className="cursor-pointer" onClick={() => onFilterChange({ specialty: 'all' })} />
             </span>
           )}
 
           {filters.urgency !== 'all' && (
-            <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 font-semibold text-amber-800 border border-amber-200">
+            <span className="inline-flex items-center gap-1 rounded-lg bg-[#FDF3E7] px-2.5 py-1 font-semibold text-[#855518] border border-[#F3CA8D]">
               {t(filters.urgency)}
               <X size={13} className="cursor-pointer" onClick={() => onFilterChange({ urgency: 'all' })} />
             </span>
           )}
 
           {filters.difficulty !== 'all' && (
-            <span className="inline-flex items-center gap-1 rounded-lg bg-cyan-50 px-2.5 py-1 font-semibold text-cyan-800 border border-cyan-200">
+            <span className="inline-flex items-center gap-1 rounded-lg bg-[#E8F7FA] px-2.5 py-1 font-semibold text-[#126374] border border-[#9DE0EC]">
               {t(filters.difficulty)}
               <X size={13} className="cursor-pointer" onClick={() => onFilterChange({ difficulty: 'all' })} />
             </span>
@@ -182,7 +182,7 @@ export function CatalogToolbar({
           )}
 
           {filters.hideCompleted && (
-            <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-800 border border-emerald-200">
+            <span className="inline-flex items-center gap-1 rounded-lg bg-[#EAF9F7] px-2.5 py-1 font-semibold text-[#0B645C] border border-[#A6E3DA]">
               <CheckCircle2 size={13} />
               {t('hideCompleted')}
               <X size={13} className="cursor-pointer" onClick={() => onFilterChange({ hideCompleted: false })} />
@@ -193,7 +193,7 @@ export function CatalogToolbar({
         {hasActiveFilters && (
           <button
             onClick={onResetFilters}
-            className="flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors"
+            className="flex items-center gap-1 text-xs font-semibold text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
           >
             <RotateCcw size={13} />
             {t('reset')}

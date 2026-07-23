@@ -78,10 +78,10 @@ export function VoiceSTTPanel({ onSendTranscriptToAI }: VoiceSTTPanelProps) {
   };
 
   const speakerConfig: Record<string, { label: string; bg: string; text: string; icon: typeof Stethoscope }> = {
-    doctor: { label: 'Врач', bg: 'bg-teal-50 border-teal-200', text: 'text-teal-900', icon: Stethoscope },
+    doctor: { label: 'Врач', bg: 'bg-[#EAF2FE] border-[#AFCBFB]', text: 'text-[#0D3A73]', icon: Stethoscope },
     patient: { label: 'Пациент', bg: 'bg-slate-100 border-slate-200', text: 'text-slate-900', icon: User },
-    nurse: { label: 'Медсестра', bg: 'bg-cyan-50 border-cyan-200', text: 'text-cyan-900', icon: HeartPulse },
-    relative: { label: 'Родственник', bg: 'bg-amber-50 border-amber-200', text: 'text-amber-900', icon: UserCheck },
+    nurse: { label: 'Медсестра', bg: 'bg-[#E8F7FA] border-[#9DE0EC]', text: 'text-[#0D4C59]', icon: HeartPulse },
+    relative: { label: 'Родственник', bg: 'bg-[#FDF3E7] border-[#F3CA8D]', text: 'text-[#6B4414]', icon: UserCheck },
     unknown: { label: 'Голос', bg: 'bg-slate-50 border-slate-200', text: 'text-slate-700', icon: User },
   };
 
@@ -93,13 +93,13 @@ export function VoiceSTTPanel({ onSendTranscriptToAI }: VoiceSTTPanelProps) {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2">
-          <Mic size={20} className="text-teal-600" />
+          <Mic size={20} className="text-[#1F6FEB]" />
           <h3 className="text-sm font-bold text-slate-900">
             Распознавание речи и расшифровка приёма (STT)
           </h3>
         </div>
 
-        <span className="rounded-full bg-teal-50 px-3 py-1 text-[11px] font-bold text-teal-800 border border-teal-200">
+        <span className="rounded-full bg-[#EAF2FE] px-3 py-1 text-[11px] font-bold text-[#124F8C] border border-[#AFCBFB]">
           Диаризация реплик
         </span>
       </div>
@@ -119,7 +119,7 @@ export function VoiceSTTPanel({ onSendTranscriptToAI }: VoiceSTTPanelProps) {
             ))}
           </div>
         ) : (
-          <div className="grid size-14 place-items-center rounded-2xl bg-teal-100 text-teal-700">
+          <div className="grid size-14 place-items-center rounded-2xl bg-[#D6E5FD] text-[#1A5FD0]">
             <Mic size={28} />
           </div>
         )}
@@ -183,7 +183,7 @@ export function VoiceSTTPanel({ onSendTranscriptToAI }: VoiceSTTPanelProps) {
               onClick={handleCopyTranscript}
               className="focus-ring inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
             >
-              {copied ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+              {copied ? <Check size={14} className="text-[#0E9E92]" /> : <Copy size={14} />}
               <span>{copied ? 'Copied' : 'Copy'}</span>
             </button>
           </div>
@@ -198,7 +198,7 @@ export function VoiceSTTPanel({ onSendTranscriptToAI }: VoiceSTTPanelProps) {
               <div key={idx} className={`rounded-2xl border p-3.5 space-y-1 ${cfg.bg}`}>
                 <div className="flex items-center justify-between text-xs font-bold">
                   <div className="flex items-center gap-1.5">
-                    <Icon size={14} className="text-teal-700" />
+                    <Icon size={14} className="text-[#1A5FD0]" />
                     <span>{cfg.label}</span>
                   </div>
                 </div>
@@ -211,7 +211,7 @@ export function VoiceSTTPanel({ onSendTranscriptToAI }: VoiceSTTPanelProps) {
                     next[idx].text = e.target.value;
                     setTurns(next);
                   }}
-                  className="w-full bg-transparent text-xs font-medium text-slate-900 border-b border-slate-300/60 focus:border-teal-600 focus:outline-none py-1"
+                  className="w-full bg-transparent text-xs font-medium text-slate-900 border-b border-slate-300/60 focus:border-[#1F6FEB] focus:outline-none py-1"
                 />
               </div>
             );
@@ -221,7 +221,7 @@ export function VoiceSTTPanel({ onSendTranscriptToAI }: VoiceSTTPanelProps) {
         {/* Send to Clinical Assistant Button */}
         <button
           onClick={handleSendToAI}
-          className="focus-ring w-full rounded-2xl bg-teal-600 py-3.5 text-xs font-bold text-white shadow-md hover:bg-teal-700 transition-all flex items-center justify-center gap-2"
+          className="focus-ring w-full rounded-2xl bg-[#1F6FEB] py-3.5 text-xs font-bold text-white shadow-md hover:bg-[#1A5FD0] transition-all flex items-center justify-center gap-2"
         >
           <Send size={16} />
           <span>Send Transcript to AI Assistant</span>

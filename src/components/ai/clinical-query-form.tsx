@@ -55,7 +55,7 @@ export function ClinicalQueryForm({
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xs space-y-4">
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2">
-          <Sparkles size={18} className="text-teal-600" />
+          <Sparkles size={18} className="text-[#1F6FEB]" />
           <h3 className="text-sm font-bold text-slate-900">
             Введите описательный анамнез и симптомы
           </h3>
@@ -74,13 +74,13 @@ export function ClinicalQueryForm({
             onChange={(e) => setQuery(e.target.value)}
             disabled={isLoading}
             placeholder="Например: Пациент 65 лет обратился с жалобами на внезапную слабость в правой руке и невнятную речь. Симптомы начались 30 минут назад..."
-            className="input text-xs border-slate-200 focus:border-teal-600 min-h-[140px] leading-relaxed p-4 bg-slate-50/50"
+            className="input text-xs border-slate-200 focus:border-[#1F6FEB] min-h-[140px] leading-relaxed p-4 bg-slate-50/50"
           />
         </div>
 
         {/* Data Hint Banner */}
-        <div className="flex items-center gap-2 rounded-xl border border-teal-200/80 bg-teal-50/60 px-3.5 py-2 text-[11px] font-semibold text-teal-900">
-          <HelpCircle size={14} className="text-teal-600 shrink-0" />
+        <div className="flex items-center gap-2 rounded-xl border border-[#AFCBFB]/80 bg-[#EAF2FE]/60 px-3.5 py-2 text-[11px] font-semibold text-[#0D3A73]">
+          <HelpCircle size={14} className="text-[#1F6FEB] shrink-0" />
           <span>
             Совет: для лучшего дифференциала укажите возраст, пол, локализацию боли, факторы риска и показатели витальных функций (АД, ЧСС, SpO₂).
           </span>
@@ -107,7 +107,7 @@ export function ClinicalQueryForm({
             <button
               type="submit"
               disabled={!query.trim() || isLoading}
-              className="focus-ring inline-flex h-11 items-center gap-2 rounded-xl bg-teal-600 px-6 text-xs font-bold text-white shadow-md shadow-teal-600/20 hover:bg-teal-700 disabled:opacity-40 transition-all hover:scale-[1.01]"
+              className="focus-ring inline-flex h-11 items-center gap-2 rounded-xl bg-[#1F6FEB] px-6 text-xs font-bold text-white shadow-md shadow-[#1F6FEB]/20 hover:bg-[#1A5FD0] disabled:opacity-40 transition-all hover:scale-[1.01]"
             >
               <Send size={15} />
               <span>{isLoading ? 'Анализ клинического случая...' : 'Сформировать дифференциал'}</span>
@@ -128,7 +128,7 @@ export function ClinicalQueryForm({
               key={i}
               type="button"
               onClick={() => handleSelectTemplate(tmpl)}
-              className="focus-ring rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-medium text-slate-700 hover:border-teal-300 hover:bg-teal-50 hover:text-teal-900 transition-colors line-clamp-1 max-w-xs text-left"
+              className="focus-ring rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-medium text-slate-700 hover:border-[#7CA9F2] hover:bg-[#EAF2FE] hover:text-[#0D3A73] transition-colors line-clamp-1 max-w-xs text-left"
             >
               {tmpl}
             </button>

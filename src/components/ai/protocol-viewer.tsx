@@ -78,7 +78,7 @@ export function ProtocolViewer({
       <aside className="fixed inset-y-0 right-0 z-[70] flex w-full max-w-3xl flex-col border-l border-white/10 bg-[#0f1917] text-slate-100 shadow-2xl">
         <header className="flex items-start justify-between gap-4 border-b border-white/10 p-5">
           <div className="flex min-w-0 items-start gap-3">
-            <BookOpen className="mt-0.5 shrink-0 text-teal-300" size={20} />
+            <BookOpen className="mt-0.5 shrink-0 text-[#7CA9F2]" size={20} />
             <div className="min-w-0">
               <h2 className="font-semibold">{document?.title || source.title}</h2>
               <p className="mt-1 truncate text-xs text-slate-400">
@@ -99,7 +99,7 @@ export function ProtocolViewer({
               {match ? (
                 <>
                   {document.text.slice(0, match.start)}
-                  <mark ref={markRef} className="rounded bg-amber-300 px-0.5 text-slate-950">{document.text.slice(match.start, match.end)}</mark>
+                  <mark ref={markRef} className="rounded bg-[#EAB165] px-0.5 text-slate-950">{document.text.slice(match.start, match.end)}</mark>
                   {document.text.slice(match.end)}
                 </>
               ) : document.text}

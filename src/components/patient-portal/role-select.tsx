@@ -14,34 +14,36 @@ export function RoleSelect({ headingLevel = 'h1' }: { headingLevel?: 'h1' | 'h2'
   const Heading = headingLevel;
 
   return (
-    <div className="w-full max-w-3xl">
-      <p className="label text-center text-teal-700">{t('hubEyebrow')}</p>
-      <Heading className="mt-3 text-center text-3xl font-semibold">{t('hubTitle')}</Heading>
-      <p className="mx-auto mt-3 max-w-xl text-center text-slate-600 dark:text-slate-300">
+    <div className="w-full max-w-3xl" style={{ animation: 'fadeUp 0.5s ease-out' }}>
+      <p className="label text-center">{t('hubEyebrow')}</p>
+      <Heading className="mt-3 text-center text-3xl font-semibold tracking-tight text-[var(--text-primary)]">
+        {t('hubTitle')}
+      </Heading>
+      <p className="mx-auto mt-3 max-w-xl text-center text-[var(--text-secondary)]">
         {t('hubLead')}
       </p>
 
       <div className="mt-9 grid gap-6 sm:grid-cols-2">
         <Link
           href="/patient-portal/doctor"
-          className="card group flex flex-col items-center gap-4 rounded-3xl p-8 text-center transition hover:-translate-y-1 hover:shadow-lg"
+          className="glass group flex flex-col items-center gap-4 p-8 text-center transition hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
         >
-          <div className="grid size-16 place-items-center rounded-2xl bg-teal-600 text-white shadow-sm shadow-teal-600/30">
+          <div className="brand-mark grid size-16 place-items-center rounded-2xl shadow-[0_8px_18px_-4px_rgba(31,111,235,0.5)]">
             <Stethoscope size={28} />
           </div>
-          <h3 className="text-xl font-bold text-slate-900">{t('doctorCardTitle')}</h3>
-          <p className="text-sm text-slate-600">{t('doctorCardLead')}</p>
+          <h3 className="text-xl font-bold text-[var(--text-primary)]">{t('doctorCardTitle')}</h3>
+          <p className="text-sm text-[var(--text-secondary)]">{t('doctorCardLead')}</p>
         </Link>
 
         <Link
           href="/patient-portal/patient"
-          className="card group flex flex-col items-center gap-4 rounded-3xl p-8 text-center transition hover:-translate-y-1 hover:shadow-lg"
+          className="glass group flex flex-col items-center gap-4 p-8 text-center transition hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]"
         >
-          <div className="grid size-16 place-items-center rounded-2xl bg-cyan-700 text-white shadow-sm shadow-cyan-700/30">
+          <div className="grid size-16 place-items-center rounded-2xl bg-[linear-gradient(135deg,#12B5A6,#1FB6D0)] text-white shadow-[0_8px_18px_-4px_rgba(18,181,166,0.5)]">
             <UserRound size={28} />
           </div>
-          <h3 className="text-xl font-bold text-slate-900">{t('patientCardTitle')}</h3>
-          <p className="text-sm text-slate-600">{t('patientCardLead')}</p>
+          <h3 className="text-xl font-bold text-[var(--text-primary)]">{t('patientCardTitle')}</h3>
+          <p className="text-sm text-[var(--text-secondary)]">{t('patientCardLead')}</p>
         </Link>
       </div>
     </div>

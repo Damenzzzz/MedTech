@@ -112,7 +112,7 @@ export function InvestigationPanel({
     <div className="flex flex-col h-full space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2.5 border-b border-slate-200 pb-3">
-        <div className="grid size-9 place-items-center rounded-xl bg-amber-100 text-amber-700">
+        <div className="grid size-9 place-items-center rounded-xl bg-[#FAE3C4] text-[#A3661D]">
           <FlaskConical size={18} />
         </div>
         <div>
@@ -147,7 +147,7 @@ export function InvestigationPanel({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('tests')}
-            className="input pl-9 text-xs border-slate-200 focus:border-teal-600 h-10"
+            className="input pl-9 text-xs border-slate-200 focus:border-[#1F6FEB] h-10"
           />
         </div>
 
@@ -163,7 +163,7 @@ export function InvestigationPanel({
               onClick={() => setCategory(cat.id as typeof category)}
               className={`rounded-xl px-3 py-1.5 transition-all ${
                 category === cat.id
-                  ? 'bg-teal-600 text-white shadow-xs'
+                  ? 'bg-[#1F6FEB] text-white shadow-xs'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
@@ -192,9 +192,9 @@ export function InvestigationPanel({
               key={invItem.id}
               className={`rounded-2xl border p-4 transition-all ${
                 isReady
-                  ? 'border-emerald-200 bg-emerald-50/40'
+                  ? 'border-[#A6E3DA] bg-[#EAF9F7]/40'
                   : isPending
-                  ? 'border-amber-200 bg-amber-50/40'
+                  ? 'border-[#F3CA8D] bg-[#FDF3E7]/40'
                   : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >
@@ -202,7 +202,7 @@ export function InvestigationPanel({
                 <div>
                   <h4 className="text-xs font-bold text-slate-900">{name}</h4>
                   <div className="flex items-center gap-2 mt-1 text-[11px] font-semibold text-slate-500">
-                    <span className="flex items-center gap-0.5 text-amber-700">
+                    <span className="flex items-center gap-0.5 text-[#A3661D]">
                       {t('cost')}: {invItem.cost} {c('points')}
                     </span>
                     {invItem.delayMs > 0 && (
@@ -216,12 +216,12 @@ export function InvestigationPanel({
                   disabled={isOrdered || isOrderingThis}
                   className={`focus-ring inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
                     isReady
-                      ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 cursor-default'
+                      ? 'bg-[#D2F1EC] text-[#084D47] border border-[#6CD6C9] cursor-default'
                       : isPending
-                      ? 'bg-amber-100 text-amber-900 border border-amber-300 cursor-default animate-pulse'
+                      ? 'bg-[#FAE3C4] text-[#6B4414] border border-[#EAB165] cursor-default animate-pulse'
                       : isOrderingThis
-                      ? 'bg-teal-700 text-white cursor-wait'
-                      : 'bg-teal-600 text-white hover:bg-teal-700 shadow-xs'
+                      ? 'bg-[#1A5FD0] text-white cursor-wait'
+                      : 'bg-[#1F6FEB] text-white hover:bg-[#1A5FD0] shadow-xs'
                   }`}
                 >
                   {isReady ? (
@@ -244,16 +244,16 @@ export function InvestigationPanel({
 
               {/* Pending state banner */}
               {isPending && (
-                <div className="mt-3 pt-2 border-t border-amber-200/60 text-xs font-medium text-amber-900 flex items-center gap-2">
-                  <Clock size={14} className="animate-spin text-amber-600" />
+                <div className="mt-3 pt-2 border-t border-[#F3CA8D]/60 text-xs font-medium text-[#6B4414] flex items-center gap-2">
+                  <Clock size={14} className="animate-spin text-[#C77A1E]" />
                   <span>{t('resultPending')}</span>
                 </div>
               )}
 
               {/* Ready Result View */}
               {isReady && orderedEntry && (
-                <div className="mt-3 pt-3 border-t border-emerald-200/80 text-xs font-medium text-slate-800 leading-relaxed">
-                  <p className="font-bold text-emerald-950">{t('resultReady')}:</p>
+                <div className="mt-3 pt-3 border-t border-[#A6E3DA]/80 text-xs font-medium text-slate-800 leading-relaxed">
+                  <p className="font-bold text-[#052B27]">{t('resultReady')}:</p>
                   <p className="mt-0.5 text-slate-900">{orderedEntry.result}</p>
                 </div>
               )}
@@ -272,7 +272,7 @@ export function InvestigationPanel({
             className="fixed inset-0 z-50 grid place-items-center bg-slate-900/40 backdrop-blur-xs p-4"
           >
             <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl space-y-4">
-              <div className="flex items-center gap-2.5 text-amber-600">
+              <div className="flex items-center gap-2.5 text-[#C77A1E]">
                 <AlertCircle size={22} />
                 <h4 className="text-base font-bold text-slate-900">
                   {t('ordered')}
@@ -296,7 +296,7 @@ export function InvestigationPanel({
                 </button>
                 <button
                   onClick={() => executeOrder(confirmTest)}
-                  className="rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-amber-700"
+                  className="rounded-xl bg-[#C77A1E] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#A3661D]"
                 >
                   {t('ordered')}
                 </button>
@@ -309,7 +309,7 @@ export function InvestigationPanel({
       {/* Next Stage Button */}
       <button
         onClick={onNextStage}
-        className="focus-ring mt-auto w-full rounded-xl bg-teal-600 py-3 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all"
+        className="focus-ring mt-auto w-full rounded-xl bg-[#1F6FEB] py-3 text-xs font-bold text-white shadow-sm hover:bg-[#1A5FD0] transition-all"
       >
         {t('next')}
       </button>

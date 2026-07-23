@@ -32,16 +32,16 @@ export function PatientStage({
 
   // Medical status label & color mapping
   const statusConfig: Record<string, { label: string; bg: string; text: string; icon: typeof HeartPulse }> = {
-    neutral: { label: 'Состояние стабильное', bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-800', icon: HeartPulse },
-    listening: { label: 'Слушает врача', bg: 'bg-teal-50 border-teal-200', text: 'text-teal-800', icon: MessageSquare },
-    thinking: { label: 'Обдумывает ответ…', bg: 'bg-cyan-50 border-cyan-200', text: 'text-cyan-800', icon: Sparkles },
-    speaking: { label: 'Отвечает на вопрос', bg: 'bg-teal-50 border-teal-200', text: 'text-teal-900', icon: MessageSquare },
-    coughing: { label: 'Кашель', bg: 'bg-amber-50 border-amber-200', text: 'text-amber-900', icon: Thermometer },
-    pain: { label: 'Испытывает боль', bg: 'bg-amber-100 border-amber-300', text: 'text-amber-950', icon: AlertTriangle },
+    neutral: { label: 'Состояние стабильное', bg: 'bg-[#EAF9F7] border-[#A6E3DA]', text: 'text-[#0B645C]', icon: HeartPulse },
+    listening: { label: 'Слушает врача', bg: 'bg-[#EAF2FE] border-[#AFCBFB]', text: 'text-[#124F8C]', icon: MessageSquare },
+    thinking: { label: 'Обдумывает ответ…', bg: 'bg-[#E8F7FA] border-[#9DE0EC]', text: 'text-[#126374]', icon: Sparkles },
+    speaking: { label: 'Отвечает на вопрос', bg: 'bg-[#EAF2FE] border-[#AFCBFB]', text: 'text-[#0D3A73]', icon: MessageSquare },
+    coughing: { label: 'Кашель', bg: 'bg-[#FDF3E7] border-[#F3CA8D]', text: 'text-[#6B4414]', icon: Thermometer },
+    pain: { label: 'Испытывает боль', bg: 'bg-[#FAE3C4] border-[#EAB165]', text: 'text-[#4A2F0E]', icon: AlertTriangle },
     dyspnea: { label: 'Затруднённое дыхание (Одышка)', bg: 'bg-rose-50 border-rose-200', text: 'text-rose-900', icon: AlertTriangle },
-    anxious: { label: 'Тревожность', bg: 'bg-amber-50 border-amber-200', text: 'text-amber-900', icon: AlertTriangle },
+    anxious: { label: 'Тревожность', bg: 'bg-[#FDF3E7] border-[#F3CA8D]', text: 'text-[#6B4414]', icon: AlertTriangle },
     dizzy: { label: 'Головокружение', bg: 'bg-orange-50 border-orange-200', text: 'text-orange-900', icon: AlertTriangle },
-    relieved: { label: 'Улучшение состояния', bg: 'bg-emerald-50 border-emerald-200', text: 'text-emerald-800', icon: HeartPulse },
+    relieved: { label: 'Улучшение состояния', bg: 'bg-[#EAF9F7] border-[#A6E3DA]', text: 'text-[#0B645C]', icon: HeartPulse },
     deteriorating: { label: 'Ухудшение состояния', bg: 'bg-rose-100 border-rose-300', text: 'text-rose-950', icon: AlertTriangle },
     emergency: { label: 'Неотложная ситуация!', bg: 'bg-red-100 border-red-300', text: 'text-red-950', icon: AlertTriangle },
   };
@@ -79,7 +79,7 @@ export function PatientStage({
   };
 
   return (
-    <section className="relative flex min-h-[460px] flex-col items-center justify-center overflow-hidden rounded-3xl border border-slate-200/90 bg-gradient-to-b from-slate-50 to-white p-6 shadow-sm">
+    <section className="glass relative flex min-h-[460px] flex-col items-center justify-center overflow-hidden p-6">
       {/* Consultation-room backdrop: doctor and patient in the clinic room. Sits
           behind everything, softened so the portrait and overlays stay readable. */}
       {patient.scene && (
@@ -109,12 +109,12 @@ export function PatientStage({
       </div>
 
       {/* Top Right: Vital Signs Summary Pill */}
-      <div className="absolute right-4 top-4 z-10 hidden sm:flex items-center gap-3 rounded-full border border-slate-200 bg-white/90 px-3.5 py-1 text-xs font-semibold text-slate-700 shadow-xs backdrop-blur-xs">
-        <span>ЧСС: <strong className="text-slate-900 font-bold">{patient.vitals.heartRate}</strong></span>
-        <span className="h-3 w-px bg-slate-300" />
-        <span>АД: <strong className="text-slate-900 font-bold">{patient.vitals.bloodPressure}</strong></span>
-        <span className="h-3 w-px bg-slate-300" />
-        <span>SpO₂: <strong className="text-slate-900 font-bold">{patient.vitals.spo2}%</strong></span>
+      <div className="mono glass absolute right-4 top-4 z-10 hidden sm:flex items-center gap-3 rounded-full px-3.5 py-1 text-xs font-semibold text-[var(--text-secondary)]">
+        <span>ЧСС: <strong className="text-[var(--text-primary)] font-bold">{patient.vitals.heartRate}</strong></span>
+        <span className="h-3 w-px bg-[var(--border-color)]" />
+        <span>АД: <strong className="text-[var(--text-primary)] font-bold">{patient.vitals.bloodPressure}</strong></span>
+        <span className="h-3 w-px bg-[var(--border-color)]" />
+        <span>SpO₂: <strong className="text-[var(--text-primary)] font-bold">{patient.vitals.spo2}%</strong></span>
       </div>
 
       {/* Avatar Container */}
@@ -126,14 +126,14 @@ export function PatientStage({
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              className="mb-4 w-full max-w-sm rounded-2xl border border-teal-200 bg-white p-4 shadow-lg text-xs font-medium text-slate-800 leading-relaxed relative"
+              className="glass-strong mb-4 w-full max-w-sm rounded-2xl p-4 text-xs font-medium text-[var(--text-secondary)] leading-relaxed relative"
             >
-              <div className="flex items-center gap-2 mb-1 text-teal-700 font-bold">
+              <div className="flex items-center gap-2 mb-1 text-[#1A5FD0] font-bold">
                 <MessageSquare size={14} />
                 <span>{patientName}:</span>
               </div>
               {isThinking ? (
-                <div className="flex items-center gap-1 text-slate-400 font-medium">
+                <div className="flex items-center gap-1 text-[var(--text-tertiary)] font-medium">
                   <span>Обдумывает</span>
                   <span className="animate-pulse">...</span>
                 </div>
@@ -141,7 +141,7 @@ export function PatientStage({
                 <p className="line-clamp-3">{latestAnswer}</p>
               )}
               {/* Pointer Triangle */}
-              <div className="absolute bottom-[-8px] left-1/2 -translate-x-1/2 size-0 border-x-8 border-x-transparent border-t-8 border-t-white" />
+              <div className="absolute bottom-[-8px] left-1/2 -translate-x-1/2 size-0 border-x-8 border-x-transparent border-t-8 border-t-[var(--surface-glass-strong)]" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -150,7 +150,7 @@ export function PatientStage({
         <motion.div
           animate={getAnimation()}
           transition={getTransition()}
-          className="relative aspect-[4/3] w-full max-w-sm overflow-hidden rounded-3xl border-2 border-slate-200 bg-slate-100 shadow-xl shadow-slate-200/50"
+          className="relative aspect-[4/3] w-full max-w-sm overflow-hidden rounded-3xl border-2 border-[var(--border-color)] bg-[var(--surface)] shadow-[var(--shadow-lg)]"
         >
           <FallbackImage
             key={patient.id}

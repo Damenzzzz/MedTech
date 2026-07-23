@@ -133,7 +133,7 @@ export function RagSidePanel({
           >
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <div className="flex items-center gap-3">
-                <Stethoscope className="text-teal-300" />
+                <Stethoscope className="text-[#7CA9F2]" />
                 <h2 className="font-semibold">Спросить у RAG</h2>
               </div>
               <button
@@ -175,7 +175,7 @@ export function RagSidePanel({
             </Button>
 
             {!canInsert && (
-              <p className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/8 p-3 text-xs leading-5 text-amber-100">
+              <p className="mt-4 rounded-xl border border-[#E5A04A]/20 bg-[#E5A04A]/8 p-3 text-xs leading-5 text-[#FAE3C4]">
                 Сначала сформируйте черновик протокола — тогда найденные диагнозы и источники можно будет добавить в него одним кликом.
               </p>
             )}
@@ -246,7 +246,7 @@ async function waitDiagnoseJob(jobId: string) {
 
 function EmptyState({ loading }: { loading: boolean }) {
   return <div className="grid min-h-[320px] place-items-center rounded-2xl border border-white/10 bg-white/[.03] p-8 text-center">
-    <div>{loading ? <Loader2 className="mx-auto animate-spin text-teal-300" size={38} /> : <Bot className="mx-auto text-teal-300" size={42} />}<h2 className="mt-5 text-xl font-semibold">{loading ? 'Идёт анализ протоколов' : 'Готов к анализу'}</h2><p className="mt-2 max-w-md text-sm leading-6 text-slate-400">RAG сопоставит запрос с протоколами, вернёт top-3 диагнозов, объяснения и уточняющие вопросы.</p></div>
+    <div>{loading ? <Loader2 className="mx-auto animate-spin text-[#7CA9F2]" size={38} /> : <Bot className="mx-auto text-[#7CA9F2]" size={42} />}<h2 className="mt-5 text-xl font-semibold">{loading ? 'Идёт анализ протоколов' : 'Готов к анализу'}</h2><p className="mt-2 max-w-md text-sm leading-6 text-slate-400">RAG сопоставит запрос с протоколами, вернёт top-3 диагнозов, объяснения и уточняющие вопросы.</p></div>
   </div>
 }
 

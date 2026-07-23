@@ -8,7 +8,7 @@ export default function NotFound() {
   return (
     <div className="min-h-screen bg-[color:var(--canvas)] flex items-center justify-center p-4">
       <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-md space-y-5">
-        <div className="grid size-16 place-items-center rounded-2xl bg-teal-50 text-teal-600 mx-auto">
+        <div className="grid size-16 place-items-center rounded-2xl bg-[#EAF2FE] text-[#1F6FEB] mx-auto">
           <Stethoscope size={32} />
         </div>
 
@@ -22,7 +22,7 @@ export default function NotFound() {
 
         <Link
           href="/"
-          className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-teal-600 px-6 font-bold text-xs text-white shadow-sm hover:bg-teal-700 transition-all"
+          className="focus-ring inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1F6FEB] px-6 font-bold text-xs text-white shadow-sm hover:bg-[#1A5FD0] transition-all"
         >
           <Home size={16} />
           <span>Вернуться на главную</span>
