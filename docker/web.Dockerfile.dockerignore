@@ -1,0 +1,10 @@
+.git
+node_modules
+.next
+rag_service
+debug.log
+.env*
+!.env.example
+test-results
+playwright-report
+coverage
