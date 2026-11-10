@@ -1,0 +1,8 @@
+{
+  "num_protocols": 15,
+  "num_chunks": 27,
+  "embed_provider": "custom",
+  "embed_model": "text-1024",
+  "faiss_dim": 1024,
+  "corpus_fingerprint": "95d0461bd76a14b8c63b9ca46a115d6c4aa8be3d"
+}
