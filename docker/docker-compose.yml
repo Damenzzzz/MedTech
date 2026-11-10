@@ -5,6 +5,7 @@
 #                                      source: ../RAG_medtech cloned next to MedTech/
 # rag-service  http://localhost:8081   askhat RAG from ./rag_service (FAISS/BM25, 15 demo protocols,
 #                                      also serves /api/refine and /api/protocols/{id})
+# gemini-proxy http://localhost:8090   OpenAI-compatible API -> Vertex AI Gemini (replaces GPT in both RAGs)
 # Supabase     http://localhost:54321  API, :54323 Studio — run by `supabase start`, not by compose
 name: medtech
 
@@ -19,7 +20,7 @@ services:
       ALEM_BASE_URL: https://llm.alem.ai/v1
       ALEM_API_KEY: ${ALEM_API_KEY}
       ALEM_CHAT_MODEL: alemllm
-      STT_PROVIDER: ${STT_PROVIDER:-openai}
+      STT_PROVIDER: ${STT_PROVIDER:-mock}
       OPENAI_BASE_URL: https://api.openai.com/v1
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_STT_MODEL: gpt-4o-transcribe-diarize
@@ -36,20 +37,23 @@ services:
     restart: unless-stopped
 
   basic-rag:
+    depends_on: [gemini-proxy]
     build:
       context: ${BASIC_RAG_DIR:-../../RAG_medtech}
     ports: ["8080:8080"]
     environment:
       ALEM_API_KEY: ${ALEM_API_KEY}
       ALEM_BASE_URL: https://llm.alem.ai/v1
-      EMBED_API_KEY: ${ALEM_API_KEY}
+      EMBED_API_KEY: ${EMBED_API_KEY:-${ALEM_API_KEY}}
       EMBED_BASE_URL: https://llm.alem.ai/v1
       EMBED_MODEL: text-1024
-      RERANK_API_KEY: ${ALEM_API_KEY}
+      RERANK_API_KEY: ${RERANK_API_KEY:-${ALEM_API_KEY}}
       RERANK_BASE_URL: https://llm.alem.ai/v1/rerank
       RERANK_MODEL: reranker
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      OPENAI_FINAL_MODEL: ${OPENAI_FINAL_MODEL:-gpt-5.5}
+      # final answer model: Gemini via gemini-proxy (set FINAL_LLM_* to use OpenAI directly)
+      OPENAI_BASE_URL: ${FINAL_LLM_BASE_URL:-http://gemini-proxy:8000/v1}
+      OPENAI_API_KEY: ${FINAL_LLM_API_KEY:-gemini-proxy}
+      OPENAI_FINAL_MODEL: ${FINAL_LLM_MODEL:-gemini-3.6-flash}
       OPENAI_REASONING_EFFORT: low
       FINAL_ALLOW_OUT_OF_RAG: "1"
       BASIC_RAG_DEMO_FAST_CACHE: "1"
@@ -60,22 +64,24 @@ services:
     restart: unless-stopped
 
   rag-service:
+    depends_on: [gemini-proxy]
     build:
       context: ../rag_service
     ports: ["8081:8080"]
     environment:
-      LLM_PROVIDER: openai
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-      LLM_MODEL: ${OPENAI_FINAL_MODEL:-gpt-5.5}
+      LLM_PROVIDER: custom
+      LLM_BASE_URL: ${FINAL_LLM_BASE_URL:-http://gemini-proxy:8000/v1}
+      LLM_API_KEY: ${FINAL_LLM_API_KEY:-gemini-proxy}
+      LLM_MODEL: ${FINAL_LLM_MODEL:-gemini-3.6-flash}
       LLM_REASONING_EFFORT: low
       GENERATION_MAX_TOKENS: "8000"
       EMBED_PROVIDER: custom
       EMBED_BASE_URL: https://llm.alem.ai/v1
-      EMBED_API_KEY: ${ALEM_API_KEY}
+      EMBED_API_KEY: ${EMBED_API_KEY:-${ALEM_API_KEY}}
       EMBED_MODEL: text-1024
       EMBED_TEXT_MAX_CHARS: "300"
       RERANK_BASE_URL: https://llm.alem.ai/v1/rerank
-      RERANK_API_KEY: ${ALEM_API_KEY}
+      RERANK_API_KEY: ${RERANK_API_KEY:-${ALEM_API_KEY}}
       RERANK_MODEL: reranker
       RERANK_TOP_N: "8"
       HYBRID_TOP_K: "16"
@@ -87,4 +93,17 @@ services:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8080/health',timeout=5)"]
       interval: 30s
       start_period: 60s
+    restart: unless-stopped
+
+  gemini-proxy:
+    build:
+      context: gemini-proxy
+    ports: ["8090:8000"]
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODEL: ${FINAL_LLM_MODEL:-gemini-3.6-flash}
+      GEMINI_THINKING_LEVEL: ${GEMINI_THINKING_LEVEL:-low}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=5)"]
+      interval: 30s
     restart: unless-stopped

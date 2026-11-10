@@ -29,7 +29,7 @@ KEY="$(cd "$ROOT" && npx -y supabase@latest status -o env | sed -n 's/^SERVICE_R
 sed -i '' "s|^SUPABASE_SERVICE_ROLE_KEY=.*|SUPABASE_SERVICE_ROLE_KEY=$KEY|" .env
 
 # 2) Warn about missing provider keys (the stack still starts; AI calls will fail)
-for k in ALEM_API_KEY OPENAI_API_KEY; do
+for k in ALEM_API_KEY GEMINI_API_KEY; do
   grep -qE "^$k=.+" .env || echo "WARNING: $k is empty in docker/.env — AI features will fail"
 done
 
