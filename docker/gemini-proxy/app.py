@@ -31,6 +31,7 @@ BASE_URL = os.environ.get("VERTEX_BASE_URL", "https://aiplatform.googleapis.com/
 TIMEOUT = float(os.environ.get("GEMINI_TIMEOUT_SECONDS", "180"))
 # Gemini spends output tokens on thinking; keep room so short max_tokens don't truncate answers.
 MIN_OUTPUT_TOKENS = int(os.environ.get("GEMINI_MIN_OUTPUT_TOKENS", "4096"))
+CHAT_RETRIES = int(os.environ.get("GEMINI_CHAT_RETRIES", "6"))
 
 # OpenAI reasoning_effort -> Gemini thinkingLevel
 EFFORT_TO_LEVEL = {"none": "minimal", "minimal": "minimal", "low": "low", "medium": "medium", "high": "high"}
@@ -199,7 +200,12 @@ async def chat_completions(request: Request) -> dict[str, Any]:
         raise HTTPException(400, "stream=true is not supported by gemini-proxy")
     model, body = _to_gemini(req)
 
-    r = await client.post(f"{BASE_URL}/{model}:generateContent", params={"key": API_KEY}, json=body)
+    # Vertex express mode has tight per-minute quotas: retry 429/5xx with backoff
+    for attempt in range(CHAT_RETRIES):
+        r = await client.post(f"{BASE_URL}/{model}:generateContent", params={"key": API_KEY}, json=body)
+        if r.status_code != 429 and r.status_code < 500:
+            break
+        await asyncio.sleep(min(2 ** attempt, 20))
     if r.status_code != 200:
         raise HTTPException(r.status_code, r.json().get("error", {}).get("message", r.text) if r.headers.get("content-type", "").startswith("application/json") else r.text)
     data = r.json()
