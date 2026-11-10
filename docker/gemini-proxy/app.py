@@ -1,4 +1,4 @@
-"""OpenAI-compatible /v1/chat/completions -> Vertex AI Gemini (express-mode API key).
+"""OpenAI-compatible /v1/chat/completions and /v1/embeddings -> Vertex AI Gemini (express-mode API key).
 
 Lets the RAG services, which speak the OpenAI chat API, use Gemini without code
 changes: point their base URL at http://gemini-proxy:8000/v1.
@@ -12,7 +12,11 @@ Env:
 
 from __future__ import annotations
 
+import asyncio
+import base64
+import math
 import os
+import struct
 import time
 import uuid
 from typing import Any
@@ -82,6 +86,98 @@ def _to_gemini(req: dict[str, Any]) -> tuple[str, dict[str, Any]]:
     if system_parts:
         body["systemInstruction"] = {"parts": system_parts}
     return model, body
+
+
+EMBED_MODEL = os.environ.get("GEMINI_EMBED_MODEL", "gemini-embedding-001")
+EMBED_DIM = int(os.environ.get("GEMINI_EMBED_DIM", "1536"))
+EMBED_BATCH = int(os.environ.get("GEMINI_EMBED_BATCH", "16"))
+TASKS = {"query": "RETRIEVAL_QUERY", "document": "RETRIEVAL_DOCUMENT", "similarity": "SEMANTIC_SIMILARITY"}
+_tokenizer = None
+
+
+def _decode_tokens(tokens: list[int]) -> str:
+    # LangChain's OpenAIEmbeddings sends tiktoken ids for long-context checks.
+    global _tokenizer
+    if _tokenizer is None:
+        import tiktoken
+        _tokenizer = tiktoken.get_encoding("cl100k_base")
+    return _tokenizer.decode(tokens)
+
+
+def _inputs(raw: Any) -> list[str]:
+    if isinstance(raw, str):
+        return [raw]
+    if raw and isinstance(raw, list) and isinstance(raw[0], int):
+        return [_decode_tokens(raw)]
+    return [x if isinstance(x, str) else _decode_tokens(x) for x in raw or []]
+
+
+async def _embed_batch(model: str, task: str | None, texts: list[str], dim: int) -> list[list[float]]:
+    instances = [{"content": t or " ", **({"task_type": task} if task else {})} for t in texts]
+    for attempt in range(6):
+        r = await client.post(f"{BASE_URL}/{model}:predict", params={"key": API_KEY},
+                              json={"instances": instances, "parameters": {"outputDimensionality": dim, "autoTruncate": True}})
+        if r.status_code == 429 or r.status_code >= 500:
+            await asyncio.sleep(2 ** attempt)
+            continue
+        if r.status_code != 200:
+            raise HTTPException(r.status_code, r.text[:500])
+        return [p["embeddings"]["values"] for p in r.json()["predictions"]]
+    raise HTTPException(429, "Vertex embeddings rate-limited, retries exhausted")
+
+
+@app.post("/v1/embeddings")
+async def embeddings(request: Request) -> dict[str, Any]:
+    """OpenAI /v1/embeddings -> Vertex predict. Model may carry a task suffix:
+    `gemini-embedding-001:document` (indexing) / `:query` (search). Vectors are L2-normalised."""
+    if not API_KEY:
+        raise HTTPException(500, "GEMINI_API_KEY is not configured")
+    req = await request.json()
+    name, _, task_key = (req.get("model") or EMBED_MODEL).partition(":")
+    model = name if name.startswith(("gemini-embedding", "text-embedding", "text-multilingual-embedding")) else EMBED_MODEL
+    task = TASKS.get(task_key)
+    dim = int(req.get("dimensions") or EMBED_DIM)
+    texts = _inputs(req.get("input"))
+
+    batches = [texts[i:i + EMBED_BATCH] for i in range(0, len(texts), EMBED_BATCH)]
+    results = await asyncio.gather(*(_embed_batch(model, task, b, dim) for b in batches))
+    vectors = [v for batch in results for v in batch]
+
+    b64 = req.get("encoding_format") == "base64"
+    data = []
+    for i, v in enumerate(vectors):
+        n = math.sqrt(sum(x * x for x in v)) or 1.0
+        v = [x / n for x in v]
+        emb: Any = base64.b64encode(struct.pack(f"<{len(v)}f", *v)).decode() if b64 else v
+        data.append({"object": "embedding", "index": i, "embedding": emb})
+    tokens = sum(len(t) for t in texts) // 4
+    return {"object": "list", "model": model, "data": data, "usage": {"prompt_tokens": tokens, "total_tokens": tokens}}
+
+
+@app.post("/v1/rerank")
+async def rerank(request: Request) -> dict[str, Any]:
+    """Cohere/Alem-style rerank ({query, documents, top_n} -> results[{index, relevance_score}]),
+    scored by cosine similarity of Gemini retrieval embeddings (query vs document task types)."""
+    if not API_KEY:
+        raise HTTPException(500, "GEMINI_API_KEY is not configured")
+    req = await request.json()
+    docs = [d if isinstance(d, str) else d.get("text", "") for d in req.get("documents", [])]
+    if not docs:
+        return {"results": []}
+    batches = [docs[i:i + EMBED_BATCH] for i in range(0, len(docs), EMBED_BATCH)]
+    q_vec, *doc_batches = await asyncio.gather(
+        _embed_batch(EMBED_MODEL, TASKS["query"], [req.get("query", "")], EMBED_DIM),
+        *(_embed_batch(EMBED_MODEL, TASKS["document"], b, EMBED_DIM) for b in batches),
+    )
+    q = q_vec[0]
+    qn = math.sqrt(sum(x * x for x in q)) or 1.0
+    scores = []
+    for i, v in enumerate(v for batch in doc_batches for v in batch):
+        vn = math.sqrt(sum(x * x for x in v)) or 1.0
+        scores.append((i, sum(a * b for a, b in zip(q, v)) / (qn * vn)))
+    scores.sort(key=lambda t: t[1], reverse=True)
+    top_n = int(req.get("top_n") or len(scores))
+    return {"model": EMBED_MODEL, "results": [{"index": i, "relevance_score": round(s, 6)} for i, s in scores[:top_n]]}
 
 
 @app.get("/health")

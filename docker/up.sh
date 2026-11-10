@@ -34,7 +34,26 @@ for k in ALEM_API_KEY GEMINI_API_KEY; do
 done
 
 # 3) App containers
-BASIC_RAG_DIR="$BASIC_RAG_DIR" docker compose up -d --build
+export BASIC_RAG_DIR
+docker compose build
+docker compose up -d gemini-proxy
+
+# 4) First run with Gemini embeddings: re-embed basic-rag's 22,100 chunks once (~10-20 min, resumable).
+#    Skipped when BASIC_RAG_CHROMA_DIR points at the original Alem index.
+mkdir -p "$BASIC_RAG_DIR/basic_rag/chroma_db_gemini"
+if grep -qE '^BASIC_RAG_CHROMA_DIR=/app/basic_rag/chroma_db$' .env; then
+  echo "basic-rag: using original Alem text-1024 index"
+elif ! docker compose run --rm --no-deps -T basic-rag python -c "
+import chromadb,sys
+c=chromadb.PersistentClient('basic_rag/chroma_db_gemini')
+sys.exit(0 if any(x.name=='kz_protocols' for x in c.list_collections()) and c.get_collection('kz_protocols').count()>=22100 else 1)" 2>/dev/null; then
+  echo "basic-rag: building Gemini embedding index (one-time)..."
+  docker compose run --rm --no-deps -T basic-rag python scripts/reindex_chroma.py \
+    --src basic_rag/chroma_db --dst basic_rag/chroma_db_gemini \
+    --base-url http://gemini-proxy:8000/v1 --model gemini-embedding-001:document
+fi
+
+docker compose up -d
 echo
 echo "web         http://localhost:3000"
 echo "basic-rag   http://localhost:8080/health"

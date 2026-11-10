@@ -1,12 +1,18 @@
 # Local KazMedSim stack — start with ./docker/up.sh (it also starts Supabase via the CLI).
 #
-# web          http://localhost:3000   Next.js frontend
+# web          http://localhost:3000   Next.js frontend (chat: Alem alemllm)
 # basic-rag    http://localhost:8080   Chroma RAG, 1207 protocols (default backend for web)
 #                                      source: ../RAG_medtech cloned next to MedTech/
 # rag-service  http://localhost:8081   askhat RAG from ./rag_service (FAISS/BM25, 15 demo protocols,
 #                                      also serves /api/refine and /api/protocols/{id})
-# gemini-proxy http://localhost:8090   OpenAI-compatible API -> Vertex AI Gemini (replaces GPT in both RAGs)
+# gemini-proxy http://localhost:8090   OpenAI-compatible chat/embeddings/rerank -> Vertex AI Gemini
 # Supabase     http://localhost:54321  API, :54323 Studio — run by `supabase start`, not by compose
+#
+# Default AI wiring (only ALEM_API_KEY + GEMINI_API_KEY needed):
+#   final answers  gemini-3.6-flash         via gemini-proxy
+#   embeddings     gemini-embedding-001     via gemini-proxy (indexes rebuilt locally, see up.sh)
+#   rerank         Gemini embedding cosine  via gemini-proxy
+# To use the original Alem text-1024 indexes instead, see docker/.env.example.
 name: medtech
 
 services:
@@ -41,18 +47,21 @@ services:
     build:
       context: ${BASIC_RAG_DIR:-../../RAG_medtech}
     ports: ["8080:8080"]
+    volumes:
+      - ${BASIC_RAG_DIR:-../../RAG_medtech}/basic_rag/chroma_db_gemini:/app/basic_rag/chroma_db_gemini
     environment:
       ALEM_API_KEY: ${ALEM_API_KEY}
       ALEM_BASE_URL: https://llm.alem.ai/v1
-      EMBED_API_KEY: ${EMBED_API_KEY:-${ALEM_API_KEY}}
-      EMBED_BASE_URL: https://llm.alem.ai/v1
-      EMBED_MODEL: text-1024
-      RERANK_API_KEY: ${RERANK_API_KEY:-${ALEM_API_KEY}}
-      RERANK_BASE_URL: https://llm.alem.ai/v1/rerank
+      EMBED_BASE_URL: ${EMBED_BASE_URL:-http://gemini-proxy:8000/v1}
+      EMBED_API_KEY: ${EMBED_API_KEY:-local-proxy}
+      EMBED_MODEL: ${BASIC_RAG_EMBED_MODEL:-gemini-embedding-001:query}
+      BASIC_RAG_CHROMA_DIR: ${BASIC_RAG_CHROMA_DIR:-/app/basic_rag/chroma_db_gemini}
+      RERANK_BASE_URL: ${RERANK_BASE_URL:-http://gemini-proxy:8000/v1/rerank}
+      RERANK_API_KEY: ${RERANK_API_KEY:-local-proxy}
       RERANK_MODEL: reranker
       # final answer model: Gemini via gemini-proxy (set FINAL_LLM_* to use OpenAI directly)
       OPENAI_BASE_URL: ${FINAL_LLM_BASE_URL:-http://gemini-proxy:8000/v1}
-      OPENAI_API_KEY: ${FINAL_LLM_API_KEY:-gemini-proxy}
+      OPENAI_API_KEY: ${FINAL_LLM_API_KEY:-local-proxy}
       OPENAI_FINAL_MODEL: ${FINAL_LLM_MODEL:-gemini-3.6-flash}
       OPENAI_REASONING_EFFORT: low
       FINAL_ALLOW_OUT_OF_RAG: "1"
@@ -68,20 +77,24 @@ services:
     build:
       context: ../rag_service
     ports: ["8081:8080"]
+    volumes:
+      - rag-service-indexes:/app/data/indexes-gemini
     environment:
       LLM_PROVIDER: custom
       LLM_BASE_URL: ${FINAL_LLM_BASE_URL:-http://gemini-proxy:8000/v1}
-      LLM_API_KEY: ${FINAL_LLM_API_KEY:-gemini-proxy}
+      LLM_API_KEY: ${FINAL_LLM_API_KEY:-local-proxy}
       LLM_MODEL: ${FINAL_LLM_MODEL:-gemini-3.6-flash}
       LLM_REASONING_EFFORT: low
       GENERATION_MAX_TOKENS: "8000"
       EMBED_PROVIDER: custom
-      EMBED_BASE_URL: https://llm.alem.ai/v1
-      EMBED_API_KEY: ${EMBED_API_KEY:-${ALEM_API_KEY}}
-      EMBED_MODEL: text-1024
+      EMBED_BASE_URL: ${EMBED_BASE_URL:-http://gemini-proxy:8000/v1}
+      EMBED_API_KEY: ${EMBED_API_KEY:-local-proxy}
+      EMBED_MODEL: ${RAG_SERVICE_EMBED_MODEL:-gemini-embedding-001}
       EMBED_TEXT_MAX_CHARS: "300"
-      RERANK_BASE_URL: https://llm.alem.ai/v1/rerank
-      RERANK_API_KEY: ${RERANK_API_KEY:-${ALEM_API_KEY}}
+      # built on first start if empty (15 protocols, ~1 min)
+      INDEX_DIR: ${RAG_SERVICE_INDEX_DIR:-data/indexes-gemini}
+      RERANK_BASE_URL: ${RERANK_BASE_URL:-http://gemini-proxy:8000/v1/rerank}
+      RERANK_API_KEY: ${RERANK_API_KEY:-local-proxy}
       RERANK_MODEL: reranker
       RERANK_TOP_N: "8"
       HYBRID_TOP_K: "16"
@@ -92,7 +105,7 @@ services:
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8080/health',timeout=5)"]
       interval: 30s
-      start_period: 60s
+      start_period: 120s
     restart: unless-stopped
 
   gemini-proxy:
@@ -103,7 +116,12 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       GEMINI_MODEL: ${FINAL_LLM_MODEL:-gemini-3.6-flash}
       GEMINI_THINKING_LEVEL: ${GEMINI_THINKING_LEVEL:-low}
+      GEMINI_EMBED_MODEL: gemini-embedding-001
+      GEMINI_EMBED_DIM: "1536"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=5)"]
       interval: 30s
     restart: unless-stopped
+
+volumes:
+  rag-service-indexes:
