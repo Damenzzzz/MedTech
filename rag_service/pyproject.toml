@@ -40,3 +40,8 @@ pythonpath = ["."]
 
 [tool.setuptools.packages.find]
 include = ["app*", "askhat_rag*"]
+
+[tool.vercel]
+# FastAPI app for Vercel (Root Directory = rag_service). No catch-all rewrite:
+# Vercel routes every path straight to this app.
+entrypoint = "askhat_rag.server:app"
